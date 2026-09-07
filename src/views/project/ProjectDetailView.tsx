@@ -1001,6 +1001,7 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                               width: 'auto',
                               borderRadius: '9999px',
                               cursor: 'pointer',
+                              colorScheme: 'dark',
                               background:
                                 mod.status === 'Completed'
                                   ? 'rgba(16, 185, 129, 0.15)'
@@ -1028,10 +1029,10 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                             }}
                             title="Click to update module status"
                           >
-                            <option value="Planned">Planned</option>
-                            <option value="In Progress">In Progress</option>
-                            <option value="Delayed">Delayed</option>
-                            <option value="Completed">Completed ✓</option>
+                            <option value="Planned" style={{ backgroundColor: '#131722', color: '#94a3b8' }}>Planned</option>
+                            <option value="In Progress" style={{ backgroundColor: '#131722', color: '#60a5fa' }}>In Progress</option>
+                            <option value="Delayed" style={{ backgroundColor: '#131722', color: '#f87171' }}>Delayed</option>
+                            <option value="Completed" style={{ backgroundColor: '#131722', color: '#34d399' }}>Completed ✓</option>
                           </select>
                         </div>
                         <div className="flex items-center gap-1.5">
@@ -1054,6 +1055,7 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                               borderRadius: '6px',
                               cursor: 'pointer',
                               width: 'auto',
+                              colorScheme: 'dark',
                               backgroundColor: calculatedModProgress === 100 ? 'rgba(16, 185, 129, 0.15)' : 'rgba(255, 255, 255, 0.08)',
                               borderColor: calculatedModProgress === 100 ? 'var(--status-healthy)' : 'var(--border-subtle)',
                               color: calculatedModProgress === 100 ? 'var(--status-healthy)' : 'var(--text-primary)',
@@ -1061,7 +1063,7 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                             title="Click to change completion %"
                           >
                             {[0, 10, 20, 25, 30, 40, 50, 60, 70, 75, 80, 90, 100].map((pct) => (
-                              <option key={pct} value={pct}>
+                              <option key={pct} value={pct} style={{ backgroundColor: '#131722', color: '#f8fafc' }}>
                                 {pct}% Done
                               </option>
                             ))}

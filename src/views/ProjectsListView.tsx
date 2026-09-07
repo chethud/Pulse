@@ -34,15 +34,23 @@ export const ProjectsListView: React.FC = () => {
   const [healthFilter, setHealthFilter] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState('');
 
-  const filteredProjects = projects.filter((p) => {
-    if (statusFilter !== 'All' && p.status !== statusFilter) return false;
-    if (healthFilter !== 'All' && p.health.overall !== healthFilter) return false;
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      return p.name.toLowerCase().includes(q) || p.code.toLowerCase().includes(q);
-    }
-    return true;
-  });
+  const filteredProjects = projects
+    .filter((p) => {
+      if (statusFilter !== 'All' && p.status !== statusFilter) return false;
+      if (healthFilter !== 'All' && p.health.overall !== healthFilter) return false;
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        return p.name.toLowerCase().includes(q) || p.code.toLowerCase().includes(q);
+      }
+      return true;
+    })
+    .sort((a, b) => {
+      const aCompleted = a.status === 'Completed' || a.progress === 100;
+      const bCompleted = b.status === 'Completed' || b.progress === 100;
+      if (aCompleted && !bCompleted) return 1;
+      if (!aCompleted && bCompleted) return -1;
+      return 0;
+    });
 
   return (
     <div
