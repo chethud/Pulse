@@ -137,12 +137,11 @@ export const ProjectsListView: React.FC = () => {
         <table className="admark-table">
           <thead>
             <tr>
-              <th style={{ width: '28%' }}>Project</th>
-              <th style={{ width: '15%' }}>Client</th>
-              <th style={{ width: '15%' }}>Project Manager</th>
-              <th style={{ width: '13%' }}>Progress</th>
+              <th style={{ width: '30%' }}>Project</th>
+              <th style={{ width: '18%' }}>Client</th>
+              <th style={{ width: '16%' }}>Project Manager</th>
+              <th style={{ width: '14%' }}>Progress</th>
               <th style={{ width: '10%' }}>Health</th>
-              <th style={{ width: '7%', textAlign: 'right' }}>Deadline</th>
               <th style={{ width: '12%', textAlign: 'center' }}>Actions</th>
             </tr>
           </thead>
@@ -233,10 +232,6 @@ export const ProjectsListView: React.FC = () => {
                       />
                       <span>{proj.health.overall}</span>
                     </span>
-                  </td>
-
-                  <td style={{ textAlign: 'right', fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
-                    {proj.deadline.replace('2025-', '').replace('-', '/')}
                   </td>
 
                   <td style={{ textAlign: 'center' }}>
