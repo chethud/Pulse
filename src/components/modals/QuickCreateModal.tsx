@@ -11,6 +11,7 @@ import {
   Globe,
   Database,
   Server,
+  Code2,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { TaskPriority } from '../../types';
@@ -47,6 +48,7 @@ export const QuickCreateModal: React.FC = () => {
   const [projName, setProjName] = useState('');
   const [projCode, setProjCode] = useState('');
   const [projClientId, setProjClientId] = useState(clients[0]?.id || '');
+  const [projLeadDevId, setProjLeadDevId] = useState(users.find((u) => u.department === 'Engineering')?.id || users[0]?.id || '');
   const [projBudget, setProjBudget] = useState('120000');
   const [projPriority, setProjPriority] = useState<TaskPriority>('High');
   const [projDeadline, setProjDeadline] = useState('2025-10-31');
@@ -91,8 +93,8 @@ export const QuickCreateModal: React.FC = () => {
       code,
       clientId: projClientId,
       description: projDesc || 'Client software delivery project.',
-      projectManagerId: currentUser.id,
-      teamMemberIds: [currentUser.id, users[2]?.id, users[3]?.id].filter(Boolean),
+      projectManagerId: projLeadDevId || currentUser.id,
+      teamMemberIds: [projLeadDevId, users[2]?.id, users[3]?.id].filter(Boolean),
       startDate: new Date().toISOString().split('T')[0],
       deadline: projDeadline,
       priority: projPriority,
@@ -406,6 +408,28 @@ export const QuickCreateModal: React.FC = () => {
                     className="input-field"
                     style={{ marginTop: '4px' }}
                   />
+                </div>
+              </div>
+
+              <div>
+                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <Code2 size={12} style={{ color: 'var(--brand-crimson)' }} />
+                  <span>Assigned Developer (Engineering) *</span>
+                </label>
+                <select
+                  value={projLeadDevId}
+                  onChange={(e) => setProjLeadDevId(e.target.value)}
+                  className="input-field"
+                  style={{ marginTop: '4px', fontWeight: 600 }}
+                >
+                  {users.map((u) => (
+                    <option key={u.id} value={u.id}>
+                      {u.name} — {u.title} ({u.department})
+                    </option>
+                  ))}
+                </select>
+                <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+                  Primary engineer assigned for development and delivery.
                 </div>
               </div>
 

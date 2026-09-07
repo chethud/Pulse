@@ -138,7 +138,7 @@ export const ProjectsListView: React.FC = () => {
             <tr>
               <th style={{ width: '30%' }}>Project</th>
               <th style={{ width: '18%' }}>Client</th>
-              <th style={{ width: '16%' }}>Project Manager</th>
+              <th style={{ width: '16%' }}>Assigned Developer</th>
               <th style={{ width: '14%' }}>Progress</th>
               <th style={{ width: '10%' }}>Health</th>
               <th style={{ width: '12%', textAlign: 'center' }}>Actions</th>
@@ -147,7 +147,7 @@ export const ProjectsListView: React.FC = () => {
           <tbody>
             {filteredProjects.map((proj) => {
               const client = clients.find((c) => c.id === proj.clientId);
-              const pm = users.find((u) => u.id === proj.projectManagerId);
+              const assignedDev = users.find((u) => u.id === proj.projectManagerId);
 
               return (
                 <tr
@@ -188,11 +188,11 @@ export const ProjectsListView: React.FC = () => {
                   <td>
                     <div className="flex items-center gap-1.5">
                       <img
-                        src={pm?.avatar}
-                        alt={pm?.name}
+                        src={assignedDev?.avatar}
+                        alt={assignedDev?.name}
                         style={{ width: '18px', height: '18px', borderRadius: '50%', objectFit: 'cover' }}
                       />
-                      <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>{pm?.name}</span>
+                      <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>{assignedDev?.name}</span>
                     </div>
                   </td>
 

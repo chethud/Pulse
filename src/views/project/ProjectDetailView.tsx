@@ -33,6 +33,7 @@ import {
   Lock,
   Database,
   Server,
+  Code2,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { TaskStatus, TaskPriority, ChangeRequestStatus, MaintenanceTask } from '../../types';
@@ -153,9 +154,11 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
 
   const project = projects.find((p) => p.id === selectedProjectId) || projects[0];
   const client = clients.find((c) => c.id === project.clientId);
-  const pm = users.find((u) => u.id === project.projectManagerId);
+  const leadDev = users.find((u) => u.id === project.projectManagerId);
 
   // Project settings form state
+  const [settingsLeadDevId, setSettingsLeadDevId] = useState(project.projectManagerId || users[0]?.id || '');
+  const [settingsTeamMemberIds, setSettingsTeamMemberIds] = useState<string[]>(project.teamMemberIds || []);
   const [settingsLiveUrl, setSettingsLiveUrl] = useState(project.liveUrl || project.productionUrl || project.stagingUrl || '');
   const [settingsStagingUrl, setSettingsStagingUrl] = useState(project.stagingUrl || '');
   const [settingsRepoUrl, setSettingsRepoUrl] = useState(project.repositoryUrl || '');
@@ -175,6 +178,8 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
   const [settingsSavedNotice, setSettingsSavedNotice] = useState(false);
 
   useEffect(() => {
+    setSettingsLeadDevId(project.projectManagerId || users[0]?.id || '');
+    setSettingsTeamMemberIds(project.teamMemberIds || []);
     setSettingsLiveUrl(project.liveUrl || project.productionUrl || project.stagingUrl || '');
     setSettingsStagingUrl(project.stagingUrl || '');
     setSettingsRepoUrl(project.repositoryUrl || '');
@@ -201,6 +206,8 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
       name: settingsName.trim(),
       code: settingsCode.trim(),
       description: settingsDesc.trim(),
+      projectManagerId: settingsLeadDevId,
+      teamMemberIds: settingsTeamMemberIds,
       liveUrl: settingsLiveUrl.trim(),
       stagingUrl: settingsStagingUrl.trim(),
       productionUrl: settingsLiveUrl.trim(),
@@ -422,7 +429,7 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                 <span>{project.health.overall}</span>
               </span>
               <span>•</span>
-              <span>PM: <strong style={{ color: 'var(--text-secondary)' }}>{pm?.name || 'Alex Morgan'}</strong></span>
+              <span>Lead Dev: <strong style={{ color: 'var(--text-secondary)' }}>{leadDev?.name || 'Unassigned'}</strong></span>
               <span>•</span>
               <span>Due: {project.deadline}</span>
             </div>
@@ -432,7 +439,7 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
           <div className="flex items-center gap-2">
             <button onClick={() => setQuickCreateOpen(true)} className="btn btn-primary btn-sm">
               <Plus size={14} />
-              <span>Add Task</span>
+              <span>Add Module</span>
             </button>
             <button
               onClick={() => {
@@ -614,6 +621,132 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                 <SettingsIcon size={12} />
                 <span>Configure Cloud & Hosting</span>
               </button>
+            </div>
+
+            {/* Development Assignment Card (Who the project is assigned to for development) */}
+            <div
+              className="admark-card"
+              style={{
+                padding: '0.85rem 1.25rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: '1rem',
+                borderLeft: '3px solid var(--brand-crimson)',
+                background: 'linear-gradient(90deg, rgba(230, 57, 70, 0.06) 0%, rgba(255, 255, 255, 0.02) 100%)',
+              }}
+            >
+              <div className="flex items-center gap-4 flex-wrap">
+                {/* Lead Developer Avatar and Info */}
+                <div className="flex items-center gap-3">
+                  <div style={{ position: 'relative' }}>
+                    <img
+                      src={leadDev?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'}
+                      alt={leadDev?.name}
+                      style={{
+                        width: '40px',
+                        height: '40px',
+                        borderRadius: '50%',
+                        objectFit: 'cover',
+                        border: '2px solid var(--brand-crimson)',
+                      }}
+                    />
+                    <div
+                      style={{
+                        position: 'absolute',
+                        bottom: 0,
+                        right: 0,
+                        width: '10px',
+                        height: '10px',
+                        borderRadius: '50%',
+                        backgroundColor: '#10b981',
+                        border: '2px solid var(--bg-card)',
+                      }}
+                      title="Active"
+                    />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                        {leadDev?.name || 'Unassigned Developer'}
+                      </span>
+                      <span
+                        className="badge"
+                        style={{
+                          fontSize: '0.65rem',
+                          padding: '1px 6px',
+                          background: 'rgba(230, 57, 70, 0.14)',
+                          color: 'var(--brand-crimson)',
+                          borderColor: 'rgba(230, 57, 70, 0.35)',
+                          fontWeight: 700,
+                          textTransform: 'uppercase',
+                        }}
+                      >
+                        Assigned Developer
+                      </span>
+                    </div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                      <span>{leadDev?.title || 'Engineer'}</span>
+                      {leadDev?.department && <span> • {leadDev.department}</span>}
+                      {leadDev?.email && <span style={{ color: 'var(--text-muted)' }}> ({leadDev.email})</span>}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Supporting Development Team Members */}
+                {project.teamMemberIds && project.teamMemberIds.length > 0 && (
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      paddingLeft: '1.25rem',
+                      borderLeft: '1px solid var(--border-subtle)',
+                    }}
+                  >
+                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                      Team Devs:
+                    </span>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      {users
+                        .filter((u) => project.teamMemberIds?.includes(u.id) && u.id !== leadDev?.id)
+                        .map((u) => (
+                          <div
+                            key={u.id}
+                            className="flex items-center gap-1.5"
+                            style={{
+                              padding: '2px 8px',
+                              borderRadius: '4px',
+                              background: 'var(--bg-elevated)',
+                              border: '1px solid var(--border-subtle)',
+                              fontSize: '0.72rem',
+                              color: 'var(--text-secondary)',
+                            }}
+                            title={`${u.name} (${u.title || 'Developer'})`}
+                          >
+                            <img
+                              src={u.avatar}
+                              alt={u.name}
+                              style={{ width: '15px', height: '15px', borderRadius: '50%', objectFit: 'cover' }}
+                            />
+                            <span>{u.name}</span>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Right: Project Assignment Scope Badge */}
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ fontSize: '0.65rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Project Assignment
+                </div>
+                <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                  Engineering & Development
+                </div>
+              </div>
             </div>
 
             {/* 2-Column: Project Module Progress & Activity Timeline */}
@@ -2292,6 +2425,78 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                       <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginTop: '3px' }}>
                         Supabase project ID/org, AWS IAM account, or database cluster reference.
                       </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Development Assignment */}
+              <div className="admark-card" style={{ padding: '1.25rem' }}>
+                <div className="flex items-center gap-2" style={{ marginBottom: '0.75rem' }}>
+                  <Code2 size={16} style={{ color: 'var(--brand-crimson)' }} />
+                  <h3 style={{ fontSize: '0.95rem', fontWeight: 700 }}>Development Assignment</h3>
+                  <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>— Assign project for development execution (not manager)</span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                      <Code2 size={13} style={{ color: 'var(--brand-crimson)' }} />
+                      <span>Assigned for Development (Lead Developer) *</span>
+                    </label>
+                    <select
+                      value={settingsLeadDevId}
+                      onChange={(e) => setSettingsLeadDevId(e.target.value)}
+                      className="input-field"
+                      style={{ marginTop: '4px', fontWeight: 600 }}
+                    >
+                      {users.map((u) => (
+                        <option key={u.id} value={u.id}>
+                          {u.name} — {u.title} ({u.department})
+                        </option>
+                      ))}
+                    </select>
+                    <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginTop: '3px' }}>
+                      Assigned developer responsible for technical implementation, architecture, and code delivery.
+                    </div>
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                      Supporting Developers / Team Members
+                    </label>
+                    <div style={{ marginTop: '6px', display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                      {users.map((u) => {
+                        const isSelected = settingsTeamMemberIds.includes(u.id);
+                        return (
+                          <button
+                            key={u.id}
+                            type="button"
+                            onClick={() => {
+                              setSettingsTeamMemberIds((prev) =>
+                                isSelected ? prev.filter((id) => id !== u.id) : [...prev, u.id]
+                              );
+                            }}
+                            style={{
+                              padding: '4px 9px',
+                              borderRadius: '4px',
+                              fontSize: '0.75rem',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                              border: isSelected ? '1px solid var(--brand-crimson)' : '1px solid var(--border-subtle)',
+                              backgroundColor: isSelected ? 'rgba(230, 57, 70, 0.12)' : 'var(--bg-card)',
+                              color: isSelected ? 'var(--brand-crimson)' : 'var(--text-secondary)',
+                              cursor: 'pointer',
+                              fontWeight: isSelected ? 600 : 450,
+                            }}
+                          >
+                            <img src={u.avatar} alt={u.name} style={{ width: '15px', height: '15px', borderRadius: '50%', objectFit: 'cover' }} />
+                            <span>{u.name}</span>
+                            {isSelected && <span style={{ fontSize: '0.7rem' }}>✓</span>}
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
                 </div>
