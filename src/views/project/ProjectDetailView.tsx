@@ -84,6 +84,8 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
     setSelectedProjectId,
   } = useApp();
 
+  const isCEO = isSuperAdmin;
+
   const [showDeleteProjectModal, setShowDeleteProjectModal] = useState(false);
   const [showCeoRequiredModal, setShowCeoRequiredModal] = useState(false);
 
