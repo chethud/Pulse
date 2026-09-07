@@ -305,56 +305,6 @@ export const DashboardView: React.FC = () => {
             </div>
           </div>
 
-          {/* 15. Team Workload (Compact rows with thin progress bars) */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            <div className="flex items-center justify-between" style={{ padding: '0 0.25rem' }}>
-              <div style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                Team Workload
-              </div>
-              <button
-                onClick={() => setCurrentView('team')}
-                className="btn btn-ghost btn-sm"
-                style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}
-              >
-                <span>Details</span>
-              </button>
-            </div>
-
-            <div className="admark-card" style={{ padding: '0.75rem 0.85rem' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
-                {teamMembers.slice(0, 5).map((user) => {
-                  const userTasks = tasks.filter((t) => t.assigneeId === user.id && t.status !== 'Done');
-                  const assigned = userTasks.reduce((s, t) => s + t.estimatedHours, 0);
-                  const isOverloaded = assigned > 40;
-                  const utilPct = Math.round((assigned / 40) * 100);
-
-                  return (
-                    <div key={user.id}>
-                      <div className="flex items-center justify-between" style={{ fontSize: '0.75rem', marginBottom: '3px' }}>
-                        <div className="flex items-center gap-1.5">
-                          <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{user.name}</span>
-                          <span style={{ color: 'var(--text-muted)', fontSize: '0.6875rem' }}>{user.title}</span>
-                        </div>
-                        <div style={{ fontSize: '0.72rem', color: isOverloaded ? 'var(--status-danger)' : 'var(--text-secondary)', fontWeight: 500 }}>
-                          {isOverloaded ? `${assigned || 42}h / 40h (Over capacity)` : `${assigned}h / 40h (${utilPct}%)`}
-                        </div>
-                      </div>
-                      <div className="progress-bar-track" style={{ height: '3px' }}>
-                        <div
-                          className="progress-bar-fill"
-                          style={{
-                            width: `${Math.min(100, utilPct)}%`,
-                            backgroundColor: isOverloaded ? 'var(--status-danger)' : 'var(--text-secondary)',
-                          }}
-                        />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-
           {/* 19. Recent Activity (Clean timeline with subtle dots) */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
             <div style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', padding: '0 0.25rem' }}>
@@ -363,7 +313,7 @@ export const DashboardView: React.FC = () => {
 
             <div className="admark-card" style={{ padding: '0.75rem 0.85rem' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-                {activities.slice(0, 4).map((act) => {
+                {activities.slice(0, 6).map((act) => {
                   const actor = users.find((u) => u.id === act.userId);
                   return (
                     <div key={act.id} className="flex items-start gap-2" style={{ fontSize: '0.75rem' }}>
