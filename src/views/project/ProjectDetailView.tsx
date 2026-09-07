@@ -44,6 +44,30 @@ interface ProjectDetailViewProps {
   setCurrentTab: (tab: string) => void;
 }
 
+const BACKEND_ACCOUNT_PRESETS: Record<string, string[]> = {
+  Supabase: [
+    'Supabase Org: avighna-speciality',
+    'Supabase Org: avighna-prod',
+    'Supabase Org: admark-shared',
+  ],
+  AWS: [
+    'AWS ap-south-1 (asian-apex)',
+    'AWS Acc: 4829... (ap-south-1)',
+    'AWS us-east-1 (admark-prod)',
+  ],
+  Firebase: [
+    'Firebase Project: admark-app',
+  ],
+  Neon: [
+    'Neon Project: admark-postgres',
+  ],
+  'Self-Hosted': [
+    'VPS: Coolify (admark-host)',
+  ],
+  Other: [],
+  None: [],
+};
+
 export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab, setCurrentTab }) => {
   const {
     selectedProjectId,
@@ -838,70 +862,37 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
               </div>
             </div>
 
-            {/* 2-Column: Project Module Progress & Activity Timeline */}
-            <div className="grid grid-cols-12 gap-5 items-start">
-              {/* Left 7 cols: Module Progress */}
-              <div style={{ gridColumn: 'span 7', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                <div style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', padding: '0 0.25rem' }}>
-                  Project Progress by Module
-                </div>
-
-                <div className="admark-card" style={{ padding: '0.85rem 1rem' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-                    {projectModules.map((mod) => {
-                      const modTasks = projectTasks.filter((t) => t.moduleId === mod.id);
-                      const modCompleted = modTasks.filter((t) => t.status === 'Done').length;
-                      const modProgress = typeof mod.progress === 'number' ? mod.progress : (modTasks.length > 0 ? Math.round((modCompleted / modTasks.length) * 100) : 0);
-
-                      return (
-                        <div key={mod.id}>
-                          <div className="flex items-center justify-between" style={{ fontSize: '0.78rem', marginBottom: '4px' }}>
-                            <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{mod.name}</span>
-                            <span style={{ color: 'var(--text-secondary)', fontWeight: 500 }}>{modProgress}%</span>
-                          </div>
-                          <div className="progress-bar-track" style={{ height: '4px' }}>
-                            <div
-                              className="progress-bar-fill"
-                              style={{
-                                width: `${modProgress}%`,
-                                backgroundColor: modProgress === 100 ? 'var(--status-healthy)' : 'var(--text-secondary)',
-                              }}
-                            />
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
+            {/* Project Module Progress */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              <div style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', padding: '0 0.25rem' }}>
+                Project Progress by Module
               </div>
 
-              {/* Right 5 cols: 19. Project Activity Timeline */}
-              <div style={{ gridColumn: 'span 5', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                <div style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', padding: '0 0.25rem' }}>
-                  Project Activity
-                </div>
+              <div className="admark-card" style={{ padding: '0.85rem 1rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                  {projectModules.map((mod) => {
+                    const modTasks = projectTasks.filter((t) => t.moduleId === mod.id);
+                    const modCompleted = modTasks.filter((t) => t.status === 'Done').length;
+                    const modProgress = typeof mod.progress === 'number' ? mod.progress : (modTasks.length > 0 ? Math.round((modCompleted / modTasks.length) * 100) : 0);
 
-                <div className="admark-card" style={{ padding: '0.85rem 1rem' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                    {projectActs.slice(0, 5).map((act) => {
-                      const actor = users.find((u) => u.id === act.userId);
-                      return (
-                        <div key={act.id} className="flex items-start gap-2.5" style={{ fontSize: '0.78rem' }}>
-                          <span className="status-dot neutral" style={{ marginTop: '5px' }} />
-                          <div style={{ lineHeight: 1.35, flex: 1 }}>
-                            <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
-                              {actor?.name || 'Team member'}
-                            </span>{' '}
-                            <span style={{ color: 'var(--text-secondary)' }}>{act.action}</span>{' '}
-                            <span style={{ color: 'var(--text-primary)', fontWeight: 500 }}>{act.targetTitle}</span>
-                            <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-                              {act.timestamp}
-                            </div>
-                          </div>
+                    return (
+                      <div key={mod.id}>
+                        <div className="flex items-center justify-between" style={{ fontSize: '0.78rem', marginBottom: '4px' }}>
+                          <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{mod.name}</span>
+                          <span style={{ color: 'var(--text-secondary)', fontWeight: 500 }}>{modProgress}%</span>
                         </div>
-                      );
-                    })}
-                  </div>
+                        <div className="progress-bar-track" style={{ height: '4px' }}>
+                          <div
+                            className="progress-bar-fill"
+                            style={{
+                              width: `${modProgress}%`,
+                              backgroundColor: modProgress === 100 ? 'var(--status-healthy)' : 'var(--text-secondary)',
+                            }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </div>
@@ -2481,7 +2472,18 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                       </label>
                       <select
                         value={settingsBackendProvider}
-                        onChange={(e) => setSettingsBackendProvider(e.target.value as any)}
+                        onChange={(e) => {
+                          const next = e.target.value as typeof settingsBackendProvider;
+                          setSettingsBackendProvider(next);
+                          const presets = BACKEND_ACCOUNT_PRESETS[next] || [];
+                          if (next === 'None') {
+                            setSettingsBackendAccount('');
+                          } else if (settingsBackendAccount && !presets.includes(settingsBackendAccount)) {
+                            setSettingsBackendAccount(presets[0] || '');
+                          } else if (!settingsBackendAccount && presets[0]) {
+                            setSettingsBackendAccount(presets[0]);
+                          }
+                        }}
                         className="input-field"
                         style={{ marginTop: '4px', fontWeight: 600 }}
                       >
@@ -2503,14 +2505,28 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                         <Server size={13} style={{ color: '#fbbf24' }} />
                         <span>Cloud Account / Project Identifier</span>
                       </label>
-                      <input
-                        type="text"
+                      <select
                         value={settingsBackendAccount}
                         onChange={(e) => setSettingsBackendAccount(e.target.value)}
-                        placeholder="e.g. Supabase Org: avighna-prod or AWS Acc: 4829... (ap-south-1)"
                         className="input-field"
-                        style={{ marginTop: '4px' }}
-                      />
+                        style={{ marginTop: '4px', fontWeight: 600 }}
+                        disabled={settingsBackendProvider === 'None'}
+                      >
+                        <option value="">
+                          {settingsBackendProvider === 'None'
+                            ? 'Not applicable'
+                            : 'Select cloud account / project…'}
+                        </option>
+                        {(BACKEND_ACCOUNT_PRESETS[settingsBackendProvider] || []).map((account) => (
+                          <option key={account} value={account}>
+                            {account}
+                          </option>
+                        ))}
+                        {settingsBackendAccount &&
+                          !(BACKEND_ACCOUNT_PRESETS[settingsBackendProvider] || []).includes(settingsBackendAccount) && (
+                            <option value={settingsBackendAccount}>{settingsBackendAccount}</option>
+                          )}
+                      </select>
                       <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginTop: '3px' }}>
                         Supabase project ID/org, AWS IAM account, or database cluster reference.
                       </div>
