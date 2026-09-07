@@ -91,7 +91,7 @@ export const ProjectsListView: React.FC = () => {
         <button
           onClick={() => {
             if (isSuperAdmin) {
-              setQuickCreateOpen(true);
+              setQuickCreateOpen(true, 'project');
             } else {
               setShowCeoRequiredModal(true);
             }

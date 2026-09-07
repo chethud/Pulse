@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   X,
   FolderTree,
@@ -21,6 +21,7 @@ type CreateTab = 'module' | 'project';
 export const QuickCreateModal: React.FC = () => {
   const {
     quickCreateOpen,
+    quickCreateMode,
     setQuickCreateOpen,
     projects,
     clients,
@@ -33,8 +34,19 @@ export const QuickCreateModal: React.FC = () => {
   } = useApp();
 
   const isCEO = currentUser.title === 'CEO' || currentUser.name.toLowerCase().includes('jois');
+  const projectOnly = quickCreateMode === 'project';
+  const showTabs = quickCreateMode === 'any';
 
-  const [activeTab, setActiveTab] = useState<CreateTab>('module');
+  const [activeTab, setActiveTab] = useState<CreateTab>('project');
+
+  useEffect(() => {
+    if (!quickCreateOpen) return;
+    if (quickCreateMode === 'project' || quickCreateMode === 'module') {
+      setActiveTab(quickCreateMode);
+    } else {
+      setActiveTab('project');
+    }
+  }, [quickCreateOpen, quickCreateMode]);
 
   // Module form state
   const [moduleName, setModuleName] = useState('');
@@ -164,9 +176,13 @@ export const QuickCreateModal: React.FC = () => {
               <Sparkles size={16} />
             </span>
             <div>
-              <div style={{ fontWeight: 700, fontSize: '0.95rem' }}>Quick Create</div>
+              <div style={{ fontWeight: 700, fontSize: '0.95rem' }}>
+                {projectOnly ? 'Create Project' : 'Quick Create'}
+              </div>
               <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                Create project modules or client projects
+                {projectOnly
+                  ? 'Launch a new client software delivery project'
+                  : 'Create project modules or client projects'}
               </div>
             </div>
           </div>
@@ -176,46 +192,48 @@ export const QuickCreateModal: React.FC = () => {
         </div>
 
         {/* Tab selector */}
-        <div
-          style={{
-            display: 'flex',
-            borderBottom: '1px solid var(--border-subtle)',
-            background: 'var(--bg-elevated)',
-            overflowX: 'auto',
-          }}
-        >
-          {[
-            { id: 'module', label: 'Module', icon: <FolderTree size={14} /> },
-            { id: 'project', label: 'Project', icon: <FolderKanban size={14} /> },
-          ].map((t) => (
-            <button
-              key={t.id}
-              onClick={() => setActiveTab(t.id as CreateTab)}
-              style={{
-                flex: 1,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '6px',
-                padding: '0.625rem 0.75rem',
-                border: 'none',
-                background: activeTab === t.id ? 'var(--bg-card)' : 'transparent',
-                color: activeTab === t.id ? 'var(--brand-crimson)' : 'var(--text-secondary)',
-                fontWeight: activeTab === t.id ? 700 : 500,
-                fontSize: '0.8125rem',
-                cursor: 'pointer',
-                borderBottom: activeTab === t.id ? '2px solid var(--brand-crimson)' : '2px solid transparent',
-              }}
-            >
-              {t.icon}
-              <span>{t.label}</span>
-            </button>
-          ))}
-        </div>
+        {showTabs && (
+          <div
+            style={{
+              display: 'flex',
+              borderBottom: '1px solid var(--border-subtle)',
+              background: 'var(--bg-elevated)',
+              overflowX: 'auto',
+            }}
+          >
+            {[
+              { id: 'module', label: 'Module', icon: <FolderTree size={14} /> },
+              { id: 'project', label: 'Project', icon: <FolderKanban size={14} /> },
+            ].map((t) => (
+              <button
+                key={t.id}
+                onClick={() => setActiveTab(t.id as CreateTab)}
+                style={{
+                  flex: 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px',
+                  padding: '0.625rem 0.75rem',
+                  border: 'none',
+                  background: activeTab === t.id ? 'var(--bg-card)' : 'transparent',
+                  color: activeTab === t.id ? 'var(--brand-crimson)' : 'var(--text-secondary)',
+                  fontWeight: activeTab === t.id ? 700 : 500,
+                  fontSize: '0.8125rem',
+                  cursor: 'pointer',
+                  borderBottom: activeTab === t.id ? '2px solid var(--brand-crimson)' : '2px solid transparent',
+                }}
+              >
+                {t.icon}
+                <span>{t.label}</span>
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* Form body */}
         <div style={{ padding: '1.25rem', overflowY: 'auto', flex: 1 }}>
-          {activeTab === 'module' && (
+          {activeTab === 'module' && !projectOnly && (
             <form onSubmit={handleCreateModule} className="flex flex-col gap-4">
               <div>
                 <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>

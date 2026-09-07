@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Users2, Clock, CheckSquare, FolderKanban, X, UserPlus, Shield } from 'lucide-react';
+import { X, UserPlus } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { UserRole, isPhotoAdminUser } from '../types';
 import { CreateAccountModal } from '../components/modals/CreateAccountModal';
@@ -9,7 +9,6 @@ export const TeamCapacityView: React.FC = () => {
     users,
     tasks,
     projects,
-    timeLogs,
     setSelectedTaskId,
     canCreateAccount,
     canManageRoles,
@@ -36,10 +35,10 @@ export const TeamCapacityView: React.FC = () => {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
-            Team Directory & Workload
+            Team Directory
           </h1>
           <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
-            Engineering team capacity distribution, active sprint commitments, and project assignments.
+            Engineering team roster, project assignments, and active task commitments.
           </p>
         </div>
         {canCreateAccount && (
@@ -61,21 +60,16 @@ export const TeamCapacityView: React.FC = () => {
             <table className="admark-table">
               <thead>
                 <tr>
-                  <th style={{ width: '28%' }}>Team Member</th>
-                  <th style={{ width: '22%' }}>Role & Department</th>
-                  <th style={{ width: '18%' }}>Active Projects</th>
-                  <th style={{ width: '12%' }}>Tasks</th>
-                  <th style={{ width: '20%', textAlign: 'right' }}>Workload</th>
+                  <th style={{ width: '34%' }}>Team Member</th>
+                  <th style={{ width: '28%' }}>Role & Department</th>
+                  <th style={{ width: '22%' }}>Active Projects</th>
+                  <th style={{ width: '16%' }}>Tasks</th>
                 </tr>
               </thead>
               <tbody>
                 {internalUsers.map((u) => {
                   const isUserCEO = u.role === 'SUPERADMIN' || u.title === 'CEO' || u.name.toLowerCase().includes('jois');
                   const userTasks = tasks.filter((t) => t.assigneeId === u.id && t.status !== 'Done');
-                  const assignedHours = userTasks.reduce((acc, t) => acc + t.estimatedHours, 0);
-                  const capacity = u.capacityHoursPerWeek || 40;
-                  const util = Math.round((assignedHours / capacity) * 100);
-                  const isOverloaded = assignedHours > capacity;
                   const userProjects = projects.filter((p) => p.teamMemberIds.includes(u.id) || p.projectManagerId === u.id);
 
                   return (
@@ -171,32 +165,6 @@ export const TeamCapacityView: React.FC = () => {
                         <span style={{ fontSize: '0.78rem', color: 'var(--text-primary)', fontWeight: 600 }}>
                           {userTasks.length} in flight
                         </span>
-                      </td>
-
-                      <td style={{ textAlign: 'right' }}>
-                        <div className="flex items-center justify-end gap-2">
-                          <div style={{ width: '70px' }}>
-                            <div className="progress-bar-track" style={{ height: '3px' }}>
-                              <div
-                                className="progress-bar-fill"
-                                style={{
-                                  width: `${Math.min(100, util)}%`,
-                                  backgroundColor: isOverloaded ? 'var(--status-danger)' : 'var(--text-secondary)',
-                                }}
-                              />
-                            </div>
-                          </div>
-                          <span
-                            style={{
-                              fontSize: '0.75rem',
-                              fontWeight: 600,
-                              color: isOverloaded ? 'var(--status-danger)' : 'var(--text-primary)',
-                              minWidth: '40px',
-                            }}
-                          >
-                            {util}%
-                          </span>
-                        </div>
                       </td>
                     </tr>
                   );
@@ -319,9 +287,6 @@ export const TeamCapacityView: React.FC = () => {
                       >
                         <span style={{ fontSize: '0.75rem', color: 'var(--text-primary)' }} className="truncate">
                           #{t.taskNumber} {t.title}
-                        </span>
-                        <span style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>
-                          {t.estimatedHours}h
                         </span>
                       </div>
                     ))}

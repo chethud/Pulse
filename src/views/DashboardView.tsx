@@ -84,7 +84,7 @@ export const DashboardView: React.FC = () => {
             <span>All Projects</span>
           </button>
           <button
-            onClick={() => setQuickCreateOpen(true)}
+            onClick={() => setQuickCreateOpen(true, 'project')}
             className="btn btn-primary btn-sm"
           >
             <Plus size={14} />

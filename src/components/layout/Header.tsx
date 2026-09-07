@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
   Search,
-  Plus,
   Bell,
   Moon,
   Sun,
@@ -39,7 +38,6 @@ export const Header: React.FC = () => {
     markNotificationRead,
     markAllNotificationsRead,
     setCommandPaletteOpen,
-    setQuickCreateOpen,
     resetToSeedData,
     supabaseSyncStatus,
     retrySupabaseSync,
@@ -236,18 +234,6 @@ export const Header: React.FC = () => {
             </button>
           )}
         </div>
-
-        {/* Primary CTA: + Create */}
-        {!isPhotoAdmin && (
-          <button
-            onClick={() => setQuickCreateOpen(true)}
-            className="btn btn-primary btn-sm"
-            style={{ gap: '0.3rem' }}
-          >
-            <Plus size={14} />
-            <span>Create</span>
-          </button>
-        )}
 
         {/* Notifications */}
         <div style={{ position: 'relative' }} ref={notifRef}>

@@ -1,7 +1,6 @@
-import React, { useState, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { ChevronRight, FolderKanban } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { isPhotoAdminUser } from '../types';
 
 function formatDeadline(dateStr: string): string {
   const d = new Date(dateStr);
@@ -22,31 +21,18 @@ function isDeadlineWithin15Days(dateStr: string): boolean {
 export const MyWorkView: React.FC = () => {
   const {
     currentUser,
-    users,
     projects,
     clients,
     setSelectedProjectId,
     setCurrentView,
   } = useApp();
 
-  const [selectedUserId, setSelectedUserId] = useState<string>(currentUser.id);
-
-  React.useEffect(() => {
-    setSelectedUserId(currentUser.id);
-  }, [currentUser.id]);
-
-  const viewUser = users.find((u) => u.id === selectedUserId) || currentUser;
-  const isViewingSelf = viewUser.id === currentUser.id;
-  const viewingAll = selectedUserId === 'ALL';
-
   const assignedProjects = useMemo(() => {
-    const list = viewingAll
-      ? projects.filter((p) => p.status !== 'Completed')
-      : projects.filter(
-          (p) =>
-            p.projectManagerId === viewUser.id ||
-            (p.teamMemberIds || []).includes(viewUser.id)
-        );
+    const list = projects.filter(
+      (p) =>
+        p.projectManagerId === currentUser.id ||
+        (p.teamMemberIds || []).includes(currentUser.id)
+    );
 
     return [...list].sort((a, b) => {
       const aDone = a.status === 'Completed' || a.progress === 100;
@@ -55,12 +41,10 @@ export const MyWorkView: React.FC = () => {
       if (!aDone && bDone) return -1;
       return a.name.localeCompare(b.name);
     });
-  }, [projects, viewUser.id, viewingAll]);
+  }, [projects, currentUser.id]);
 
   const activeCount = assignedProjects.filter((p) => p.status === 'Active').length;
-  const leadCount = viewingAll
-    ? 0
-    : assignedProjects.filter((p) => p.projectManagerId === viewUser.id).length;
+  const leadCount = assignedProjects.filter((p) => p.projectManagerId === currentUser.id).length;
   const atRiskCount = assignedProjects.filter((p) => p.health.overall !== 'Healthy').length;
 
   return (
@@ -75,52 +59,20 @@ export const MyWorkView: React.FC = () => {
         width: '100%',
       }}
     >
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h1
-            style={{
-              fontSize: '1.25rem',
-              fontWeight: 700,
-              color: 'var(--text-primary)',
-              letterSpacing: '-0.02em',
-            }}
-          >
-            {isViewingSelf ? 'My Work' : viewingAll ? 'Team Projects' : `${viewUser.name}'s Work`}
-          </h1>
-          <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
-            {viewingAll
-              ? 'Active delivery projects across the team.'
-              : `Projects assigned to ${isViewingSelf ? 'you' : viewUser.name} as lead or team member.`}
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2" style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-          <span>View:</span>
-          <select
-            value={selectedUserId}
-            onChange={(e) => setSelectedUserId(e.target.value)}
-            className="input-field"
-            style={{
-              fontSize: '0.75rem',
-              padding: '0.35rem 0.65rem',
-              width: 'auto',
-              minWidth: '170px',
-              height: '32px',
-              backgroundColor: 'var(--bg-elevated)',
-              borderRadius: 'var(--radius-sm)',
-            }}
-          >
-            <option value={currentUser.id}>My Projects ({currentUser.name})</option>
-            <option value="ALL">All Active Projects</option>
-            {users
-              .filter((u) => !isPhotoAdminUser(u) && u.role !== 'CLIENT' && u.id !== currentUser.id)
-              .map((u) => (
-                <option key={u.id} value={u.id}>
-                  {u.name} ({u.title})
-                </option>
-              ))}
-          </select>
-        </div>
+      <div>
+        <h1
+          style={{
+            fontSize: '1.25rem',
+            fontWeight: 700,
+            color: 'var(--text-primary)',
+            letterSpacing: '-0.02em',
+          }}
+        >
+          My Work
+        </h1>
+        <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
+          Projects assigned to you as lead or team member.
+        </p>
       </div>
 
       <div className="kpi-strip">
@@ -140,16 +92,14 @@ export const MyWorkView: React.FC = () => {
             {activeCount}
           </div>
         </div>
-        {!viewingAll && (
-          <div className="kpi-strip-item">
-            <div style={{ fontSize: '0.6875rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              As Lead
-            </div>
-            <div style={{ fontSize: '1.35rem', fontWeight: 700, color: 'var(--text-primary)', marginTop: '2px' }}>
-              {leadCount}
-            </div>
+        <div className="kpi-strip-item">
+          <div style={{ fontSize: '0.6875rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            As Lead
           </div>
-        )}
+          <div style={{ fontSize: '1.35rem', fontWeight: 700, color: 'var(--text-primary)', marginTop: '2px' }}>
+            {leadCount}
+          </div>
+        </div>
         <div className="kpi-strip-item">
           <div style={{ fontSize: '0.6875rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
             At Risk
@@ -175,9 +125,7 @@ export const MyWorkView: React.FC = () => {
               No projects assigned
             </div>
             <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '4px' }}>
-              {viewingAll
-                ? 'No active projects found.'
-                : `${isViewingSelf ? 'You are' : `${viewUser.name} is`} not assigned to any projects yet.`}
+              You are not assigned to any projects yet.
             </div>
           </div>
         ) : (
@@ -186,20 +134,19 @@ export const MyWorkView: React.FC = () => {
               <tr>
                 <th style={{ width: '28%' }}>Project</th>
                 <th style={{ width: '18%' }}>Client</th>
-                {!viewingAll && <th style={{ width: '10%' }}>Role</th>}
+                <th style={{ width: '10%' }}>Role</th>
                 <th style={{ width: '14%' }}>Progress</th>
                 <th style={{ width: '12%' }}>Health</th>
-                <th style={{ width: viewingAll ? '14%' : '10%' }}>Status</th>
+                <th style={{ width: '10%' }}>Status</th>
                 <th style={{ width: '12%', textAlign: 'right' }}>Deadline</th>
               </tr>
             </thead>
             <tbody>
               {assignedProjects.map((proj) => {
                 const client = clients.find((c) => c.id === proj.clientId);
-                const isLead = !viewingAll && proj.projectManagerId === viewUser.id;
+                const isLead = proj.projectManagerId === currentUser.id;
                 const deadlineUrgent =
                   proj.status !== 'Completed' && isDeadlineWithin15Days(proj.deadline);
-                const lead = users.find((u) => u.id === proj.projectManagerId);
 
                 return (
                   <tr
@@ -231,11 +178,6 @@ export const MyWorkView: React.FC = () => {
                           <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.8125rem' }} className="truncate">
                             {proj.name}
                           </div>
-                          {viewingAll && (
-                            <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }} className="truncate">
-                              Lead: {lead?.name || 'Unassigned'}
-                            </div>
-                          )}
                         </div>
                       </div>
                     </td>
@@ -244,24 +186,22 @@ export const MyWorkView: React.FC = () => {
                       {client?.name || '—'}
                     </td>
 
-                    {!viewingAll && (
-                      <td>
-                        <span
-                          className="badge"
-                          style={{
-                            fontSize: '0.65rem',
-                            fontWeight: 700,
-                            padding: '1px 6px',
-                            background: isLead ? 'rgba(225, 29, 72, 0.14)' : 'rgba(255,255,255,0.06)',
-                            color: isLead ? 'var(--brand-crimson)' : 'var(--text-secondary)',
-                            borderColor: isLead ? 'rgba(225, 29, 72, 0.3)' : 'var(--border-subtle)',
-                            textTransform: 'uppercase',
-                          }}
-                        >
-                          {isLead ? 'Lead' : 'Team'}
-                        </span>
-                      </td>
-                    )}
+                    <td>
+                      <span
+                        className="badge"
+                        style={{
+                          fontSize: '0.65rem',
+                          fontWeight: 700,
+                          padding: '1px 6px',
+                          background: isLead ? 'rgba(225, 29, 72, 0.14)' : 'rgba(255,255,255,0.06)',
+                          color: isLead ? 'var(--brand-crimson)' : 'var(--text-secondary)',
+                          borderColor: isLead ? 'rgba(225, 29, 72, 0.3)' : 'var(--border-subtle)',
+                          textTransform: 'uppercase',
+                        }}
+                      >
+                        {isLead ? 'Lead' : 'Team'}
+                      </span>
+                    </td>
 
                     <td>
                       <div className="flex items-center gap-2">

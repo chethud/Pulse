@@ -116,7 +116,8 @@ interface AppContextType {
   commandPaletteOpen: boolean;
   setCommandPaletteOpen: (open: boolean) => void;
   quickCreateOpen: boolean;
-  setQuickCreateOpen: (open: boolean) => void;
+  quickCreateMode: 'module' | 'project' | 'any';
+  setQuickCreateOpen: (open: boolean, mode?: 'module' | 'project' | 'any') => void;
 
   // Timer
   activeTimer: ActiveTimer;
@@ -419,7 +420,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [selectedBugId, setSelectedBugId] = useState<string | null>(null);
 
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
-  const [quickCreateOpen, setQuickCreateOpen] = useState(false);
+  const [quickCreateOpen, setQuickCreateOpenState] = useState(false);
+  const [quickCreateMode, setQuickCreateMode] = useState<'module' | 'project' | 'any'>('any');
+
+  const setQuickCreateOpen = (open: boolean, mode: 'module' | 'project' | 'any' = 'any') => {
+    if (open) setQuickCreateMode(mode);
+    setQuickCreateOpenState(open);
+  };
 
   // Save changes to localStorage helper
   const syncStorage = (key: string, val: unknown) => {
@@ -1263,6 +1270,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         commandPaletteOpen,
         setCommandPaletteOpen,
         quickCreateOpen,
+        quickCreateMode,
         setQuickCreateOpen,
         activeTimer,
         startTimer,
