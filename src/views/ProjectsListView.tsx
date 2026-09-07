@@ -147,7 +147,15 @@ export const ProjectsListView: React.FC = () => {
           <tbody>
             {filteredProjects.map((proj) => {
               const client = clients.find((c) => c.id === proj.clientId);
-              const assignedDev = users.find((u) => u.id === proj.projectManagerId);
+              const devUsers = users.filter(
+                (u) =>
+                  u.department === 'Engineering' ||
+                  (u.department !== 'Leadership' && !['CEO', 'COO', 'CFO'].includes(u.title || '') && u.role !== 'SUPERADMIN' && u.role !== 'ADMIN')
+              );
+              const assignedDev =
+                devUsers.find((u) => u.id === proj.projectManagerId) ||
+                devUsers.find((u) => proj.teamMemberIds?.includes(u.id)) ||
+                devUsers[0];
 
               return (
                 <tr

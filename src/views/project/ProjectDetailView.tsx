@@ -154,11 +154,25 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
 
   const project = projects.find((p) => p.id === selectedProjectId) || projects[0];
   const client = clients.find((c) => c.id === project.clientId);
-  const leadDev = users.find((u) => u.id === project.projectManagerId);
+
+  // Strictly filter to Dev / Engineering team members only (exclude Leadership: CEO, COO, CFO)
+  const devUsers = users.filter(
+    (u) =>
+      u.department === 'Engineering' ||
+      (u.department !== 'Leadership' && !['CEO', 'COO', 'CFO'].includes(u.title || '') && u.role !== 'SUPERADMIN' && u.role !== 'ADMIN')
+  );
+
+  // Fallback to engineering team member if previously assigned to a leadership account
+  const leadDev =
+    devUsers.find((u) => u.id === project.projectManagerId) ||
+    devUsers.find((u) => project.teamMemberIds?.includes(u.id)) ||
+    devUsers[0];
 
   // Project settings form state
-  const [settingsLeadDevId, setSettingsLeadDevId] = useState(project.projectManagerId || users[0]?.id || '');
-  const [settingsTeamMemberIds, setSettingsTeamMemberIds] = useState<string[]>(project.teamMemberIds || []);
+  const [settingsLeadDevId, setSettingsLeadDevId] = useState(leadDev?.id || devUsers[0]?.id || '');
+  const [settingsTeamMemberIds, setSettingsTeamMemberIds] = useState<string[]>(
+    project.teamMemberIds?.filter((id) => devUsers.some((d) => d.id === id)) || []
+  );
   const [settingsLiveUrl, setSettingsLiveUrl] = useState(project.liveUrl || project.productionUrl || project.stagingUrl || '');
   const [settingsStagingUrl, setSettingsStagingUrl] = useState(project.stagingUrl || '');
   const [settingsRepoUrl, setSettingsRepoUrl] = useState(project.repositoryUrl || '');
@@ -178,8 +192,14 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
   const [settingsSavedNotice, setSettingsSavedNotice] = useState(false);
 
   useEffect(() => {
-    setSettingsLeadDevId(project.projectManagerId || users[0]?.id || '');
-    setSettingsTeamMemberIds(project.teamMemberIds || []);
+    const activeDev =
+      devUsers.find((u) => u.id === project.projectManagerId) ||
+      devUsers.find((u) => project.teamMemberIds?.includes(u.id)) ||
+      devUsers[0];
+    setSettingsLeadDevId(activeDev?.id || devUsers[0]?.id || '');
+    setSettingsTeamMemberIds(
+      project.teamMemberIds?.filter((id) => devUsers.some((d) => d.id === id)) || []
+    );
     setSettingsLiveUrl(project.liveUrl || project.productionUrl || project.stagingUrl || '');
     setSettingsStagingUrl(project.stagingUrl || '');
     setSettingsRepoUrl(project.repositoryUrl || '');
@@ -709,7 +729,7 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                       Team Devs:
                     </span>
                     <div className="flex items-center gap-1.5 flex-wrap">
-                      {users
+                      {devUsers
                         .filter((u) => project.teamMemberIds?.includes(u.id) && u.id !== leadDev?.id)
                         .map((u) => (
                           <div
@@ -2450,7 +2470,7 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                       className="input-field"
                       style={{ marginTop: '4px', fontWeight: 600 }}
                     >
-                      {users.map((u) => (
+                      {devUsers.map((u) => (
                         <option key={u.id} value={u.id}>
                           {u.name} — {u.title} ({u.department})
                         </option>
@@ -2466,7 +2486,7 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                       Supporting Developers / Team Members
                     </label>
                     <div style={{ marginTop: '6px', display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                      {users.map((u) => {
+                      {devUsers.map((u) => {
                         const isSelected = settingsTeamMemberIds.includes(u.id);
                         return (
                           <button

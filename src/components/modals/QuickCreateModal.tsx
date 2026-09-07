@@ -422,11 +422,17 @@ export const QuickCreateModal: React.FC = () => {
                   className="input-field"
                   style={{ marginTop: '4px', fontWeight: 600 }}
                 >
-                  {users.map((u) => (
-                    <option key={u.id} value={u.id}>
-                      {u.name} — {u.title} ({u.department})
-                    </option>
-                  ))}
+                  {users
+                    .filter(
+                      (u) =>
+                        u.department === 'Engineering' ||
+                        (u.department !== 'Leadership' && !['CEO', 'COO', 'CFO'].includes(u.title || '') && u.role !== 'SUPERADMIN' && u.role !== 'ADMIN')
+                    )
+                    .map((u) => (
+                      <option key={u.id} value={u.id}>
+                        {u.name} — {u.title} ({u.department})
+                      </option>
+                    ))}
                 </select>
                 <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginTop: '2px' }}>
                   Primary engineer assigned for development and delivery.
