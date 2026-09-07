@@ -117,6 +117,8 @@ interface AppContextType {
   addProject: (project: Omit<Project, 'id' | 'progress' | 'health'>) => void;
   updateProject: (projectId: string, updates: Partial<Project>) => void;
   deleteProject: (projectId: string) => void;
+  addModule: (module: Omit<ProjectModule, 'id' | 'progress'>) => void;
+  addMilestone: (milestone: Omit<Milestone, 'id' | 'number' | 'progress' | 'isClientApproved'>) => void;
   addClient: (client: Omit<Client, 'id' | 'lastActivity'>) => void;
   addRequirement: (req: Omit<Requirement, 'id' | 'code' | 'createdAt'>) => void;
   addChangeRequest: (cr: Omit<ChangeRequest, 'id' | 'crNumber' | 'date'>) => void;
@@ -467,6 +469,32 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
+  const addModule = (m: Omit<ProjectModule, 'id' | 'progress'>) => {
+    const newMod: ProjectModule = {
+      ...m,
+      id: `mod-${Date.now()}`,
+      progress: 0,
+    };
+    const updated = [...modules, newMod];
+    setModules(updated);
+    syncStorage('modules', updated);
+  };
+
+  const addMilestone = (mil: Omit<Milestone, 'id' | 'number' | 'progress' | 'isClientApproved'>) => {
+    const projMilestones = milestones.filter((m) => m.projectId === mil.projectId);
+    const nextNum = projMilestones.length + 1;
+    const newMilestone: Milestone = {
+      ...mil,
+      id: `mil-${Date.now()}`,
+      number: nextNum,
+      progress: 0,
+      isClientApproved: false,
+    };
+    const updated = [...milestones, newMilestone];
+    setMilestones(updated);
+    syncStorage('milestones', updated);
+  };
+
   const addClient = (c: Omit<Client, 'id' | 'lastActivity'>) => {
     const newCli: Client = {
       ...c,
@@ -713,6 +741,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         addProject,
         updateProject,
         deleteProject,
+        addModule,
+        addMilestone,
         addClient,
         addRequirement,
         addChangeRequest,
