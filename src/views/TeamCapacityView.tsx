@@ -1,10 +1,20 @@
 import React, { useState } from 'react';
-import { Users2, Clock, CheckSquare, FolderKanban, X, UserPlus } from 'lucide-react';
+import { Users2, Clock, CheckSquare, FolderKanban, X, UserPlus, Shield } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { UserRole } from '../types';
 import { CreateAccountModal } from '../components/modals/CreateAccountModal';
 
 export const TeamCapacityView: React.FC = () => {
-  const { users, tasks, projects, timeLogs, setSelectedTaskId, canCreateAccount } = useApp();
+  const {
+    users,
+    tasks,
+    projects,
+    timeLogs,
+    setSelectedTaskId,
+    canCreateAccount,
+    canManageRoles,
+    updateUserRole,
+  } = useApp();
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [createModalOpen, setCreateModalOpen] = useState(false);
 
@@ -60,6 +70,7 @@ export const TeamCapacityView: React.FC = () => {
               </thead>
               <tbody>
                 {internalUsers.map((u) => {
+                  const isUserCEO = u.role === 'SUPERADMIN' || u.title === 'CEO' || u.name.toLowerCase().includes('jois');
                   const userTasks = tasks.filter((t) => t.assigneeId === u.id && t.status !== 'Done');
                   const assignedHours = userTasks.reduce((acc, t) => acc + t.estimatedHours, 0);
                   const capacity = u.capacityHoursPerWeek || 40;
@@ -98,18 +109,56 @@ export const TeamCapacityView: React.FC = () => {
                         <div className="flex items-center gap-1.5" style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', marginTop: '2px' }}>
                           <span>{u.department || 'Engineering'}</span>
                           <span>•</span>
-                          <span
-                            className={`badge ${
-                              u.role === 'SUPERADMIN'
-                                ? 'badge-critical'
-                                : u.role === 'ADMIN'
-                                ? 'badge-warning'
-                                : 'badge-neutral'
-                            }`}
-                            style={{ fontSize: '0.62rem', padding: '0.1rem 0.35rem' }}
-                          >
-                            {u.role}
-                          </span>
+                          {canManageRoles && !isUserCEO ? (
+                            <select
+                              value={u.role}
+                              onClick={(e) => e.stopPropagation()}
+                              onChange={(e) => {
+                                e.stopPropagation();
+                                updateUserRole(u.id, e.target.value as UserRole);
+                              }}
+                              className="input-field"
+                              style={{
+                                padding: '0.1rem 0.4rem',
+                                fontSize: '0.68rem',
+                                fontWeight: 700,
+                                height: '23px',
+                                width: 'auto',
+                                cursor: 'pointer',
+                                borderColor:
+                                  u.role === 'ADMIN'
+                                    ? 'var(--status-warning)'
+                                    : u.role === 'SUPERADMIN'
+                                    ? 'var(--brand-crimson)'
+                                    : 'var(--border-subtle)',
+                                color:
+                                  u.role === 'ADMIN'
+                                    ? 'var(--status-warning)'
+                                    : u.role === 'SUPERADMIN'
+                                    ? 'var(--brand-crimson)'
+                                    : 'var(--text-secondary)',
+                                backgroundColor: 'var(--bg-card)',
+                              }}
+                              title="CEO Authority: Change Role between Admin and Employee"
+                            >
+                              <option value="ADMIN">ADMIN</option>
+                              <option value="USER">EMPLOYEE</option>
+                              <option value="SUPERADMIN">SUPERADMIN</option>
+                            </select>
+                          ) : (
+                            <span
+                              className={`badge ${
+                                u.role === 'SUPERADMIN' || isUserCEO
+                                  ? 'badge-critical'
+                                  : u.role === 'ADMIN'
+                                  ? 'badge-warning'
+                                  : 'badge-neutral'
+                              }`}
+                              style={{ fontSize: '0.62rem', padding: '0.1rem 0.35rem' }}
+                            >
+                              {isUserCEO ? 'SUPERADMIN' : u.role === 'USER' ? 'EMPLOYEE' : u.role}
+                            </span>
+                          )}
                         </div>
                       </td>
 
@@ -181,6 +230,61 @@ export const TeamCapacityView: React.FC = () => {
                 <button onClick={() => setSelectedUserId(null)} className="btn btn-ghost btn-sm" style={{ padding: '3px' }}>
                   <X size={14} />
                 </button>
+              </div>
+
+              {/* Security Role & Role Switcher */}
+              <div style={{ marginBottom: '0.85rem', padding: '0.65rem 0.75rem', borderRadius: '6px', background: 'var(--bg-app)', border: '1px solid var(--border-subtle)' }}>
+                <div className="flex items-center justify-between" style={{ marginBottom: '4px' }}>
+                  <span style={{ fontSize: '0.6875rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                    Access Level
+                  </span>
+                  <span
+                    className={`badge ${
+                      inspectUser.role === 'SUPERADMIN'
+                        ? 'badge-critical'
+                        : inspectUser.role === 'ADMIN'
+                        ? 'badge-warning'
+                        : 'badge-neutral'
+                    }`}
+                    style={{ fontSize: '0.65rem' }}
+                  >
+                    {inspectUser.role === 'SUPERADMIN' ? 'Full Access' : inspectUser.role === 'ADMIN' ? 'Can Delete' : 'No Delete'}
+                  </span>
+                </div>
+                {canManageRoles && inspectUser.role !== 'SUPERADMIN' && inspectUser.title !== 'CEO' ? (
+                  <div style={{ marginTop: '6px' }}>
+                    <label style={{ fontSize: '0.6875rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
+                      Change Role (Admin ↔ Employee):
+                    </label>
+                    <select
+                      value={inspectUser.role}
+                      onChange={(e) => updateUserRole(inspectUser.id, e.target.value as UserRole)}
+                      className="input-field"
+                      style={{
+                        width: '100%',
+                        fontSize: '0.75rem',
+                        fontWeight: 700,
+                        padding: '0.35rem 0.6rem',
+                        borderColor:
+                          inspectUser.role === 'ADMIN'
+                            ? 'var(--status-warning)'
+                            : 'var(--border-subtle)',
+                        color:
+                          inspectUser.role === 'ADMIN'
+                            ? 'var(--status-warning)'
+                            : 'var(--text-primary)',
+                      }}
+                    >
+                      <option value="ADMIN">ADMIN (Can Delete Projects/Tasks/Bugs)</option>
+                      <option value="USER">EMPLOYEE (Standard, No Delete)</option>
+                      <option value="SUPERADMIN">SUPERADMIN (Full Access)</option>
+                    </select>
+                  </div>
+                ) : (
+                  <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-primary)', marginTop: '2px' }}>
+                    {inspectUser.role === 'SUPERADMIN' || inspectUser.title === 'CEO' ? 'CEO / Superadmin (Full Authority)' : inspectUser.role === 'USER' ? 'Employee (Operational, No Delete)' : inspectUser.role}
+                  </div>
+                )}
               </div>
 
               {/* Projects */}
