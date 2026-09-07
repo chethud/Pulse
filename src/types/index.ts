@@ -96,6 +96,7 @@ export interface Project {
     currency: string;
   };
   techStack: string[];
+  liveUrl?: string;
   repositoryUrl?: string;
   stagingUrl?: string;
   productionUrl?: string;

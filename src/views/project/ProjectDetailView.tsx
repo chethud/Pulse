@@ -27,6 +27,10 @@ import {
   X,
   Trash2,
   ShieldAlert,
+  Settings as SettingsIcon,
+  Globe,
+  Link2,
+  Save,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { TaskStatus, TaskPriority, ChangeRequestStatus } from '../../types';
@@ -68,6 +72,7 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
     activeRole,
     currentUser,
     startTimer,
+    updateProject,
     deleteProject,
     logout,
     setCurrentView,
@@ -106,6 +111,51 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
   const project = projects.find((p) => p.id === selectedProjectId) || projects[0];
   const client = clients.find((c) => c.id === project.clientId);
   const pm = users.find((u) => u.id === project.projectManagerId);
+
+  // Project settings form state
+  const [settingsLiveUrl, setSettingsLiveUrl] = useState(project.liveUrl || project.productionUrl || project.stagingUrl || '');
+  const [settingsStagingUrl, setSettingsStagingUrl] = useState(project.stagingUrl || '');
+  const [settingsRepoUrl, setSettingsRepoUrl] = useState(project.repositoryUrl || '');
+  const [settingsName, setSettingsName] = useState(project.name);
+  const [settingsCode, setSettingsCode] = useState(project.code);
+  const [settingsDesc, setSettingsDesc] = useState(project.description);
+  const [settingsStatus, setSettingsStatus] = useState(project.status);
+  const [settingsPriority, setSettingsPriority] = useState(project.priority);
+  const [settingsDeadline, setSettingsDeadline] = useState(project.deadline);
+  const [settingsTech, setSettingsTech] = useState(project.techStack?.join(', ') || '');
+  const [settingsSavedNotice, setSettingsSavedNotice] = useState(false);
+
+  useEffect(() => {
+    setSettingsLiveUrl(project.liveUrl || project.productionUrl || project.stagingUrl || '');
+    setSettingsStagingUrl(project.stagingUrl || '');
+    setSettingsRepoUrl(project.repositoryUrl || '');
+    setSettingsName(project.name);
+    setSettingsCode(project.code);
+    setSettingsDesc(project.description);
+    setSettingsStatus(project.status);
+    setSettingsPriority(project.priority);
+    setSettingsDeadline(project.deadline);
+    setSettingsTech(project.techStack?.join(', ') || '');
+  }, [project.id]);
+
+  const handleSaveProjectSettings = (e: React.FormEvent) => {
+    e.preventDefault();
+    updateProject(project.id, {
+      name: settingsName.trim(),
+      code: settingsCode.trim(),
+      description: settingsDesc.trim(),
+      liveUrl: settingsLiveUrl.trim(),
+      stagingUrl: settingsStagingUrl.trim(),
+      productionUrl: settingsLiveUrl.trim(),
+      repositoryUrl: settingsRepoUrl.trim(),
+      status: settingsStatus,
+      priority: settingsPriority,
+      deadline: settingsDeadline,
+      techStack: settingsTech.split(',').map((t) => t.trim()).filter(Boolean),
+    });
+    setSettingsSavedNotice(true);
+    setTimeout(() => setSettingsSavedNotice(false), 3500);
+  };
 
   // Project-scoped data
   const projectTasks = tasks.filter((t) => t.projectId === project.id);
@@ -176,7 +226,7 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
     { id: 'quality', label: 'Quality & QA', count: openBugsCount + projectTestRuns.length },
     { id: 'client-review', label: 'Client Review', count: projectUAT.length },
     { id: 'maintenance', label: 'Maintenance' },
-    { id: 'activity', label: 'Activity' },
+    { id: 'settings', label: 'Settings' },
   ];
 
   return (
@@ -243,18 +293,26 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
               <Plus size={14} />
               <span>Add Task</span>
             </button>
-            {project.stagingUrl && (
-              <a
-                href={project.stagingUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="btn btn-ghost btn-sm"
-                title="Staging Preview"
-              >
-                <ExternalLink size={13} />
-                <span>Staging</span>
-              </a>
-            )}
+            <button
+              onClick={() => {
+                const url = project.liveUrl || project.productionUrl || project.stagingUrl;
+                if (url) {
+                  window.open(url, '_blank', 'noopener,noreferrer');
+                } else {
+                  setCurrentTab('settings');
+                }
+              }}
+              className="btn btn-secondary btn-sm"
+              title={
+                project.liveUrl || project.productionUrl || project.stagingUrl
+                  ? `Open live hosted project: ${project.liveUrl || project.productionUrl || project.stagingUrl}`
+                  : 'Configure Live URL in Settings'
+              }
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}
+            >
+              <ExternalLink size={13} />
+              <span>Preview Live Site</span>
+            </button>
             <button
               onClick={() => {
                 if (isCEO) {
@@ -1612,6 +1670,252 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
             </div>
           </div>
         )}
+
+        {/* ================= TAB: PROJECT SETTINGS ================= */}
+        {currentTab === 'settings' && (
+          <div className="flex flex-col gap-5 animate-fade-in">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 style={{ fontSize: '1.25rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <SettingsIcon size={20} style={{ color: 'var(--brand-crimson)' }} />
+                  <span>Project Settings & Hosting Configuration</span>
+                </h2>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+                  Configure live hosted preview URLs, staging environments, repository destinations, and project delivery parameters.
+                </div>
+              </div>
+
+              {settingsSavedNotice && (
+                <div
+                  className="animate-fade-in"
+                  style={{
+                    padding: '0.45rem 0.9rem',
+                    borderRadius: '6px',
+                    background: 'rgba(34, 197, 94, 0.15)',
+                    border: '1px solid rgba(34, 197, 94, 0.4)',
+                    color: 'var(--status-healthy)',
+                    fontSize: '0.8rem',
+                    fontWeight: 600,
+                  }}
+                >
+                  ✓ Project settings & live hosted URL updated!
+                </div>
+              )}
+            </div>
+
+            <form onSubmit={handleSaveProjectSettings} className="flex flex-col gap-4">
+              {/* Live Hosting & Deployment URLs */}
+              <div className="admark-card" style={{ padding: '1.25rem' }}>
+                <div className="flex items-center gap-2" style={{ marginBottom: '0.75rem' }}>
+                  <Globe size={16} style={{ color: 'var(--brand-crimson)' }} />
+                  <h3 style={{ fontSize: '0.95rem', fontWeight: 700 }}>Live Hosting & Preview Environments</h3>
+                </div>
+
+                <div className="flex flex-col gap-3">
+                  <div>
+                    <div className="flex items-center justify-between">
+                      <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                        Live Hosted Project URL (Preview URL) *
+                      </label>
+                      {settingsLiveUrl.trim() && (
+                        <a
+                          href={settingsLiveUrl.trim()}
+                          target="_blank"
+                          rel="noreferrer"
+                          style={{
+                            fontSize: '0.72rem',
+                            color: 'var(--brand-crimson)',
+                            textDecoration: 'none',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '3px',
+                            fontWeight: 600,
+                          }}
+                        >
+                          <span>Test / Open Preview</span>
+                          <ExternalLink size={11} />
+                        </a>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2" style={{ marginTop: '4px' }}>
+                      <input
+                        type="url"
+                        value={settingsLiveUrl}
+                        onChange={(e) => setSettingsLiveUrl(e.target.value)}
+                        placeholder="https://your-project.admarkdigitals.com"
+                        className="input-field"
+                        style={{ flex: 1 }}
+                      />
+                    </div>
+                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+                      This hosted URL opens whenever anyone clicks the <strong>Preview</strong> button on the Projects list or header.
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                        Staging Environment URL
+                      </label>
+                      <input
+                        type="url"
+                        value={settingsStagingUrl}
+                        onChange={(e) => setSettingsStagingUrl(e.target.value)}
+                        placeholder="https://staging.your-project.dev"
+                        className="input-field"
+                        style={{ marginTop: '4px' }}
+                      />
+                    </div>
+
+                    <div>
+                      <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                        Code Repository URL (GitHub / GitLab)
+                      </label>
+                      <input
+                        type="url"
+                        value={settingsRepoUrl}
+                        onChange={(e) => setSettingsRepoUrl(e.target.value)}
+                        placeholder="https://github.com/organization/repo"
+                        className="input-field"
+                        style={{ marginTop: '4px' }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Project Information */}
+              <div className="admark-card" style={{ padding: '1.25rem' }}>
+                <div className="flex items-center gap-2" style={{ marginBottom: '0.75rem' }}>
+                  <Link2 size={16} style={{ color: 'var(--text-muted)' }} />
+                  <h3 style={{ fontSize: '0.95rem', fontWeight: 700 }}>Project Details</h3>
+                </div>
+
+                <div className="flex flex-col gap-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                        Project Name *
+                      </label>
+                      <input
+                        required
+                        type="text"
+                        value={settingsName}
+                        onChange={(e) => setSettingsName(e.target.value)}
+                        className="input-field"
+                        style={{ marginTop: '4px' }}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                        Project Code *
+                      </label>
+                      <input
+                        required
+                        type="text"
+                        value={settingsCode}
+                        onChange={(e) => setSettingsCode(e.target.value)}
+                        className="input-field"
+                        style={{ marginTop: '4px' }}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-3">
+                    <div>
+                      <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                        Delivery Status
+                      </label>
+                      <select
+                        value={settingsStatus}
+                        onChange={(e) => setSettingsStatus(e.target.value as any)}
+                        className="input-field"
+                        style={{ marginTop: '4px' }}
+                      >
+                        <option value="Active">Active</option>
+                        <option value="Planning">Planning</option>
+                        <option value="On Hold">On Hold</option>
+                        <option value="Completed">Completed</option>
+                        <option value="Deployed">Deployed</option>
+                        <option value="Maintenance">Maintenance</option>
+                        <option value="Archived">Archived</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                        Priority
+                      </label>
+                      <select
+                        value={settingsPriority}
+                        onChange={(e) => setSettingsPriority(e.target.value as any)}
+                        className="input-field"
+                        style={{ marginTop: '4px' }}
+                      >
+                        <option value="Low">Low</option>
+                        <option value="Medium">Medium</option>
+                        <option value="High">High</option>
+                        <option value="Urgent">Urgent</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                        Target Delivery Deadline
+                      </label>
+                      <input
+                        type="date"
+                        value={settingsDeadline}
+                        onChange={(e) => setSettingsDeadline(e.target.value)}
+                        className="input-field"
+                        style={{ marginTop: '4px' }}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                      Tech Stack (comma separated)
+                    </label>
+                    <input
+                      type="text"
+                      value={settingsTech}
+                      onChange={(e) => setSettingsTech(e.target.value)}
+                      placeholder="e.g. React, Next.js, Node.js, PostgreSQL"
+                      className="input-field"
+                      style={{ marginTop: '4px' }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                      Project Description
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={settingsDesc}
+                      onChange={(e) => setSettingsDesc(e.target.value)}
+                      className="input-field"
+                      style={{ marginTop: '4px', resize: 'vertical' }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Save Button */}
+              <div className="flex items-center justify-between" style={{ marginTop: '0.5rem' }}>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                  Updates are saved and immediately reflected on live previews and the project board.
+                </div>
+                <button type="submit" className="btn btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                  <Save size={14} />
+                  <span>Save Project Settings</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
+
         {/* Add Client Review Modal */}
         {showAddReviewModal && (
           <div className="modal-backdrop animate-fade-in" onClick={() => setShowAddReviewModal(false)}>

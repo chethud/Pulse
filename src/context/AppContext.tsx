@@ -115,6 +115,7 @@ interface AppContextType {
   addBug: (bug: Omit<Bug, 'id' | 'bugNumber' | 'createdAt'>) => void;
   updateBugStatus: (bugId: string, newStatus: BugStatus) => void;
   addProject: (project: Omit<Project, 'id' | 'progress' | 'health'>) => void;
+  updateProject: (projectId: string, updates: Partial<Project>) => void;
   deleteProject: (projectId: string) => void;
   addClient: (client: Omit<Client, 'id' | 'lastActivity'>) => void;
   addRequirement: (req: Omit<Requirement, 'id' | 'code' | 'createdAt'>) => void;
@@ -451,6 +452,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     syncStorage('projects', updated);
   };
 
+  const updateProject = (projectId: string, updates: Partial<Project>) => {
+    const updated = projects.map((p) => (p.id === projectId ? { ...p, ...updates } : p));
+    setProjects(updated);
+    syncStorage('projects', updated);
+  };
+
   const deleteProject = (projectId: string) => {
     const updated = projects.filter((p) => p.id !== projectId);
     setProjects(updated);
@@ -704,6 +711,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         addBug,
         updateBugStatus,
         addProject,
+        updateProject,
         deleteProject,
         addClient,
         addRequirement,

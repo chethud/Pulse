@@ -67,6 +67,7 @@ export const QuickCreateModal: React.FC = () => {
   const [projDeadline, setProjDeadline] = useState('2025-10-31');
   const [projDesc, setProjDesc] = useState('');
   const [projTech, setProjTech] = useState('React, Node.js, PostgreSQL');
+  const [projLiveUrl, setProjLiveUrl] = useState('');
 
   // Time log form state
   const [timeProjId, setTimeProjId] = useState(projects[0]?.id || '');
@@ -154,9 +155,12 @@ export const QuickCreateModal: React.FC = () => {
         currency: 'USD',
       },
       techStack: projTech.split(',').map((t) => t.trim()),
+      liveUrl: projLiveUrl.trim() || undefined,
+      productionUrl: projLiveUrl.trim() || undefined,
     });
 
     setProjName('');
+    setProjLiveUrl('');
     setQuickCreateOpen(false);
   };
 
@@ -631,6 +635,20 @@ export const QuickCreateModal: React.FC = () => {
                   value={projTech}
                   onChange={(e) => setProjTech(e.target.value)}
                   placeholder="React, Next.js, Node.js"
+                  className="input-field"
+                  style={{ marginTop: '4px' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                  Live Hosted Project URL (Preview Link)
+                </label>
+                <input
+                  type="url"
+                  value={projLiveUrl}
+                  onChange={(e) => setProjLiveUrl(e.target.value)}
+                  placeholder="https://your-project.admarkdigitals.com"
                   className="input-field"
                   style={{ marginTop: '4px' }}
                 />

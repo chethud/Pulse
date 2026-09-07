@@ -6,6 +6,7 @@ import {
   Trash2,
   ShieldAlert,
   X,
+  ExternalLink,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
@@ -125,13 +126,13 @@ export const ProjectsListView: React.FC = () => {
         <table className="admark-table">
           <thead>
             <tr>
-              <th style={{ width: '30%' }}>Project</th>
-              <th style={{ width: '16%' }}>Client</th>
-              <th style={{ width: '16%' }}>Project Manager</th>
-              <th style={{ width: '14%' }}>Progress</th>
+              <th style={{ width: '28%' }}>Project</th>
+              <th style={{ width: '15%' }}>Client</th>
+              <th style={{ width: '15%' }}>Project Manager</th>
+              <th style={{ width: '13%' }}>Progress</th>
               <th style={{ width: '10%' }}>Health</th>
-              <th style={{ width: '8%', textAlign: 'right' }}>Deadline</th>
-              <th style={{ width: '6%', textAlign: 'center' }}>Actions</th>
+              <th style={{ width: '7%', textAlign: 'right' }}>Deadline</th>
+              <th style={{ width: '12%', textAlign: 'center' }}>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -228,23 +229,54 @@ export const ProjectsListView: React.FC = () => {
                   </td>
 
                   <td style={{ textAlign: 'center' }}>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (isCEO) {
-                          setProjectToDelete(proj);
-                        } else {
-                          setShowCeoRequiredModal(true);
+                    <div className="flex items-center justify-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                      <button
+                        onClick={() => {
+                          const url = proj.liveUrl || proj.productionUrl || proj.stagingUrl;
+                          if (url) {
+                            window.open(url, '_blank', 'noopener,noreferrer');
+                          } else {
+                            setSelectedProjectId(proj.id);
+                          }
+                        }}
+                        className="btn btn-secondary btn-sm"
+                        style={{
+                          height: '24px',
+                          padding: '0 8px',
+                          fontSize: '0.72rem',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          fontWeight: 500,
+                          whiteSpace: 'nowrap',
+                        }}
+                        title={
+                          proj.liveUrl || proj.productionUrl || proj.stagingUrl
+                            ? `Open live hosted project: ${proj.liveUrl || proj.productionUrl || proj.stagingUrl}`
+                            : 'Set live URL in Project Settings'
                         }
-                      }}
-                      className="btn btn-ghost btn-icon"
-                      style={{ height: '26px', width: '26px', padding: 0, color: 'var(--text-muted)' }}
-                      onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--status-danger)')}
-                      onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-muted)')}
-                      title={isCEO ? `Delete ${proj.code}` : 'Delete Project (CEO T Jois only)'}
-                    >
-                      <Trash2 size={13} />
-                    </button>
+                      >
+                        <ExternalLink size={11} />
+                        <span>Preview</span>
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          if (isCEO) {
+                            setProjectToDelete(proj);
+                          } else {
+                            setShowCeoRequiredModal(true);
+                          }
+                        }}
+                        className="btn btn-ghost btn-icon"
+                        style={{ height: '24px', width: '24px', padding: 0, color: 'var(--text-muted)' }}
+                        onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--status-danger)')}
+                        onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-muted)')}
+                        title={isCEO ? `Delete ${proj.code}` : 'Delete Project (CEO T Jois only)'}
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               );
