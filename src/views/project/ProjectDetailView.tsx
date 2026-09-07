@@ -37,7 +37,7 @@ import {
   UserCheck,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
-import { TaskStatus, TaskPriority, ChangeRequestStatus, MaintenanceTask } from '../../types';
+import { TaskStatus, TaskPriority, ChangeRequestStatus, MaintenanceTask, isPhotoAdminUser } from '../../types';
 
 interface ProjectDetailViewProps {
   currentTab: string;
@@ -156,8 +156,8 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
   const project = projects.find((p) => p.id === selectedProjectId) || projects[0];
   const client = clients.find((c) => c.id === project.clientId);
 
-  // Allow assigning any person across the organization / team
-  const assignableUsers = users;
+  // Assignable people across the org (exclude Photo Admin system account and clients)
+  const assignableUsers = users.filter((u) => u.role !== 'CLIENT' && !isPhotoAdminUser(u));
 
   const leadPerson =
     assignableUsers.find((u) => u.id === project.projectManagerId) ||
@@ -899,7 +899,7 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                   style={{ width: 'auto', padding: '0.3rem 0.6rem', fontSize: '0.78rem' }}
                 >
                   <option value="All">All Assignees</option>
-                  {users.filter((u) => u.role !== 'CLIENT').map((u) => (
+                  {users.filter((u) => u.role !== 'CLIENT' && !isPhotoAdminUser(u)).map((u) => (
                     <option key={u.id} value={u.id}>
                       {u.name}
                     </option>
@@ -2839,7 +2839,7 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                       className="input-field"
                       style={{ marginTop: '4px' }}
                     >
-                      {users.map((u) => (
+                      {assignableUsers.map((u) => (
                         <option key={u.id} value={u.id}>
                           {u.name} ({u.title})
                         </option>
@@ -3024,7 +3024,7 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                       className="input-field"
                       style={{ marginTop: '4px' }}
                     >
-                      {users.map((u) => (
+                      {assignableUsers.map((u) => (
                         <option key={u.id} value={u.id}>
                           {u.name} ({u.role})
                         </option>

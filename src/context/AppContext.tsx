@@ -889,8 +889,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (!isSuperAdmin) {
       throw new Error('Unauthorized: Only SuperAdmin can create accounts.');
     }
+    // SUPERADMIN and PHOTO_ADMIN cannot be provisioned — reserved system accounts only
+    if (newUser.role === 'SUPERADMIN' || newUser.role === 'SUPER_ADMIN' || newUser.role === 'PHOTO_ADMIN') {
+      throw new Error('Unauthorized: SUPERADMIN and Photo Admin roles cannot be assigned to new accounts.');
+    }
     const user: User = {
       ...newUser,
+      role: newUser.role === 'ADMIN' ? 'ADMIN' : 'USER',
       id: `user-${Date.now()}`,
       avatar:
         newUser.avatar ||
@@ -906,6 +911,29 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const updateUserRole = (userId: string, newRole: UserRole) => {
     if (!isSuperAdmin) {
       console.warn('Unauthorized: Only SuperAdmin can change user roles.');
+      return;
+    }
+    // Nobody can be promoted to SUPERADMIN or PHOTO_ADMIN — those stay reserved
+    if (newRole === 'SUPERADMIN' || newRole === 'SUPER_ADMIN' || newRole === 'PHOTO_ADMIN') {
+      console.warn('Unauthorized: SUPERADMIN / Photo Admin roles cannot be assigned.');
+      return;
+    }
+    const target = users.find((u) => u.id === userId);
+    if (!target) return;
+    // Protect existing CEO / Photo Admin accounts from role changes
+    if (
+      target.role === 'SUPERADMIN' ||
+      target.role === 'SUPER_ADMIN' ||
+      target.role === 'PHOTO_ADMIN' ||
+      target.title === 'CEO' ||
+      target.name.toLowerCase().includes('jois') ||
+      target.email.toLowerCase() === 'photo@gmail.com'
+    ) {
+      console.warn('Unauthorized: Reserved accounts cannot have their role changed.');
+      return;
+    }
+    if (newRole !== 'ADMIN' && newRole !== 'USER') {
+      console.warn('Unauthorized: Only ADMIN or USER roles can be assigned.');
       return;
     }
     const updated = users.map((u) => (u.id === userId ? { ...u, role: newRole } : u));

@@ -41,7 +41,7 @@ export const DashboardView: React.FC = () => {
   });
 
   // Team capacity
-  const teamMembers = users.filter((u) => u.role !== 'CLIENT');
+  const teamMembers = users.filter((u) => u.role !== 'CLIENT' && u.role !== 'PHOTO_ADMIN');
   const totalCapacity = teamMembers.length * 40;
   const assignedHours = tasks.reduce((sum, t) => sum + (t.status !== 'Done' ? t.estimatedHours : 0), 0);
   const utilizationPct = Math.min(96, Math.round((assignedHours / totalCapacity) * 100));

@@ -230,7 +230,7 @@ export const TaskDetailDrawer: React.FC = () => {
               style={{ width: 'auto', padding: '0.3rem 0.6rem', fontSize: '0.8125rem' }}
             >
               {users
-                .filter((u) => u.role !== 'CLIENT')
+                .filter((u) => u.role !== 'CLIENT' && u.role !== 'PHOTO_ADMIN')
                 .map((u) => (
                   <option key={u.id} value={u.id}>
                     {u.name}

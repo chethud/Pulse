@@ -252,14 +252,8 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({ isOpen, 
             <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
               Security Role *
             </label>
-            <div className="grid grid-cols-3 gap-2.5" style={{ marginTop: '6px' }}>
+            <div className="grid grid-cols-2 gap-2.5" style={{ marginTop: '6px' }}>
               {[
-                {
-                  id: 'SUPERADMIN' as UserRole,
-                  title: 'SUPERADMIN',
-                  badge: 'Full Access',
-                  desc: 'CEO level: account creation, role assignment, and full deletion.',
-                },
                 {
                   id: 'ADMIN' as UserRole,
                   title: 'ADMIN',
@@ -296,13 +290,7 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({ isOpen, 
                     </div>
                     <div>
                       <span
-                        className={`badge ${
-                          r.id === 'SUPERADMIN'
-                            ? 'badge-critical'
-                            : r.id === 'ADMIN'
-                            ? 'badge-warning'
-                            : 'badge-neutral'
-                        }`}
+                        className={`badge ${r.id === 'ADMIN' ? 'badge-warning' : 'badge-neutral'}`}
                         style={{ fontSize: '0.62rem', padding: '0.12rem 0.45rem', display: 'inline-block' }}
                       >
                         {r.badge}

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Users2, Clock, CheckSquare, FolderKanban, X, UserPlus, Shield } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { UserRole } from '../types';
+import { UserRole, isPhotoAdminUser } from '../types';
 import { CreateAccountModal } from '../components/modals/CreateAccountModal';
 
 export const TeamCapacityView: React.FC = () => {
@@ -18,7 +18,7 @@ export const TeamCapacityView: React.FC = () => {
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [createModalOpen, setCreateModalOpen] = useState(false);
 
-  const internalUsers = users.filter((u) => u.role !== 'CLIENT');
+  const internalUsers = users.filter((u) => u.role !== 'CLIENT' && !isPhotoAdminUser(u));
   const inspectUser = internalUsers.find((u) => u.id === selectedUserId);
 
   return (
@@ -143,7 +143,6 @@ export const TeamCapacityView: React.FC = () => {
                             >
                               <option value="ADMIN">ADMIN</option>
                               <option value="USER">EMPLOYEE</option>
-                              <option value="SUPERADMIN">SUPERADMIN</option>
                             </select>
                           ) : (
                             <span
@@ -277,7 +276,6 @@ export const TeamCapacityView: React.FC = () => {
                     >
                       <option value="ADMIN">ADMIN (Can Delete Projects/Tasks/Modules)</option>
                       <option value="USER">EMPLOYEE (Standard, No Delete)</option>
-                      <option value="SUPERADMIN">SUPERADMIN (Full Access)</option>
                     </select>
                   </div>
                 ) : (

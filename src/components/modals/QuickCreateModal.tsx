@@ -261,7 +261,7 @@ export const QuickCreateModal: React.FC = () => {
                     style={{ marginTop: '4px' }}
                   >
                     {users
-                      .filter((u) => u.role !== 'CLIENT')
+                      .filter((u) => u.role !== 'CLIENT' && u.role !== 'PHOTO_ADMIN')
                       .map((u) => (
                         <option key={u.id} value={u.id}>
                           {u.name} ({u.role})

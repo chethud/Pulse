@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Camera, Search, ShieldCheck } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { User } from '../types';
+import { User, isPhotoAdminUser } from '../types';
 import { EditProfilePhotoModal } from '../components/modals/EditProfilePhotoModal';
 
 export const PhotoAdminView: React.FC = () => {
@@ -19,6 +19,7 @@ export const PhotoAdminView: React.FC = () => {
   }
 
   const filteredUsers = users.filter((u) => {
+    if (isPhotoAdminUser(u)) return false;
     if (!searchQuery.trim()) return true;
     const q = searchQuery.toLowerCase();
     return (

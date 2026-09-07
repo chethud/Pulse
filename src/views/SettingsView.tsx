@@ -18,7 +18,7 @@ import {
   Camera,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { UserRole, User } from '../types';
+import { UserRole, User, isPhotoAdminUser } from '../types';
 import { CreateAccountModal } from '../components/modals/CreateAccountModal';
 import { EditProfilePhotoModal } from '../components/modals/EditProfilePhotoModal';
 
@@ -246,8 +246,8 @@ export const SettingsView: React.FC = () => {
               <span className="badge badge-critical" style={{ fontSize: '0.65rem' }}>Full Access</span>
             </div>
             <p style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.4 }}>
-              • Only role that can create accounts<br />
-              • Can assign & modify user roles<br />
+              • Reserved for CEO only — cannot be assigned to anyone else<br />
+              • Can create accounts and assign ADMIN / USER roles<br />
               • Full delete authority on projects, modules & tasks
             </p>
           </div>
@@ -309,7 +309,7 @@ export const SettingsView: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {users.map((u) => {
+              {users.filter((u) => !isPhotoAdminUser(u)).map((u) => {
                 const isCurrent = u.id === currentUser.id;
                 const isCEO = u.role === 'SUPERADMIN' || u.title === 'CEO' || u.name.toLowerCase().includes('jois');
                 const showPwd = showPasswords[u.id];
@@ -415,7 +415,6 @@ export const SettingsView: React.FC = () => {
                                 : 'var(--border-subtle)',
                           }}
                         >
-                          <option value="SUPERADMIN">SUPERADMIN (Full)</option>
                           <option value="ADMIN">ADMIN (Can Delete)</option>
                           <option value="USER">USER (No Delete)</option>
                         </select>

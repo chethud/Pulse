@@ -29,6 +29,16 @@ export interface User {
   password?: string;
 }
 
+/** Hidden system account — never shown in team/settings directories. */
+export function isPhotoAdminUser(u: Pick<User, 'role' | 'email'>): boolean {
+  return u.role === 'PHOTO_ADMIN' || u.email.toLowerCase() === 'photo@gmail.com';
+}
+
+/** Visible directory users (excludes Photo Admin and clients by default when filtered). */
+export function isAssignableRole(role: UserRole): boolean {
+  return role === 'ADMIN' || role === 'USER';
+}
+
 export interface ClientContact {
   id: string;
   name: string;
