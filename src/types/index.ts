@@ -104,6 +104,10 @@ export interface Project {
   stagingUrl?: string;
   productionUrl?: string;
   figmaUrl?: string;
+  gitAccount?: string;
+  vercelAccount?: string;
+  backendProvider?: 'Supabase' | 'AWS' | 'Firebase' | 'Neon' | 'Self-Hosted' | 'Other' | 'None';
+  backendAccount?: string;
   progress: number; // calculated dynamically
   pinned?: boolean;
   maintenanceNotes?: string;

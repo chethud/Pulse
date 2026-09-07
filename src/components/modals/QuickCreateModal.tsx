@@ -8,6 +8,10 @@ import {
   GitPullRequest,
   Clock,
   Sparkles,
+  GitBranch,
+  Globe,
+  Database,
+  Server,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { TaskPriority, BugSeverity } from '../../types';
@@ -68,6 +72,10 @@ export const QuickCreateModal: React.FC = () => {
   const [projDesc, setProjDesc] = useState('');
   const [projTech, setProjTech] = useState('React, Node.js, PostgreSQL');
   const [projLiveUrl, setProjLiveUrl] = useState('');
+  const [projGitAccount, setProjGitAccount] = useState('');
+  const [projVercelAccount, setProjVercelAccount] = useState('');
+  const [projBackendProvider, setProjBackendProvider] = useState<'Supabase' | 'AWS' | 'Firebase' | 'Neon' | 'Self-Hosted' | 'Other' | 'None'>('Supabase');
+  const [projBackendAccount, setProjBackendAccount] = useState('');
 
   // Time log form state
   const [timeProjId, setTimeProjId] = useState(projects[0]?.id || '');
@@ -157,10 +165,17 @@ export const QuickCreateModal: React.FC = () => {
       techStack: projTech.split(',').map((t) => t.trim()),
       liveUrl: projLiveUrl.trim() || undefined,
       productionUrl: projLiveUrl.trim() || undefined,
+      gitAccount: projGitAccount.trim() || undefined,
+      vercelAccount: projVercelAccount.trim() || undefined,
+      backendProvider: projBackendProvider,
+      backendAccount: projBackendAccount.trim() || undefined,
     });
 
     setProjName('');
     setProjLiveUrl('');
+    setProjGitAccount('');
+    setProjVercelAccount('');
+    setProjBackendAccount('');
     setQuickCreateOpen(false);
   };
 
@@ -652,6 +667,76 @@ export const QuickCreateModal: React.FC = () => {
                   className="input-field"
                   style={{ marginTop: '4px' }}
                 />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <GitBranch size={12} style={{ color: 'var(--brand-crimson)' }} />
+                    <span>Git Account / Org</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={projGitAccount}
+                    onChange={(e) => setProjGitAccount(e.target.value)}
+                    placeholder="github.com/chethud"
+                    className="input-field"
+                    style={{ marginTop: '4px' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <Globe size={12} style={{ color: '#38bdf8' }} />
+                    <span>Vercel User / Team</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={projVercelAccount}
+                    onChange={(e) => setProjVercelAccount(e.target.value)}
+                    placeholder="chethan-team"
+                    className="input-field"
+                    style={{ marginTop: '4px' }}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <Database size={12} style={{ color: '#34d399' }} />
+                    <span>Backend Platform</span>
+                  </label>
+                  <select
+                    value={projBackendProvider}
+                    onChange={(e) => setProjBackendProvider(e.target.value as any)}
+                    className="input-field"
+                    style={{ marginTop: '4px', fontWeight: 600 }}
+                  >
+                    <option value="Supabase">Supabase</option>
+                    <option value="AWS">AWS</option>
+                    <option value="Firebase">Firebase</option>
+                    <option value="Neon">Neon Postgres</option>
+                    <option value="Self-Hosted">Self-Hosted / VPS</option>
+                    <option value="Other">Other</option>
+                    <option value="None">None (Static)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <Server size={12} style={{ color: '#fbbf24' }} />
+                    <span>Cloud / DB Identifier</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={projBackendAccount}
+                    onChange={(e) => setProjBackendAccount(e.target.value)}
+                    placeholder="Supabase org or AWS account"
+                    className="input-field"
+                    style={{ marginTop: '4px' }}
+                  />
+                </div>
               </div>
 
               <div>

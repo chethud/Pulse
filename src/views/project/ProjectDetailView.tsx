@@ -32,6 +32,9 @@ import {
   Link2,
   Save,
   Edit3,
+  Lock,
+  Database,
+  Server,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { TaskStatus, TaskPriority, ChangeRequestStatus } from '../../types';
@@ -143,6 +146,12 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
   const [settingsLiveUrl, setSettingsLiveUrl] = useState(project.liveUrl || project.productionUrl || project.stagingUrl || '');
   const [settingsStagingUrl, setSettingsStagingUrl] = useState(project.stagingUrl || '');
   const [settingsRepoUrl, setSettingsRepoUrl] = useState(project.repositoryUrl || '');
+  const [settingsGitAccount, setSettingsGitAccount] = useState(project.gitAccount || '');
+  const [settingsVercelAccount, setSettingsVercelAccount] = useState(project.vercelAccount || '');
+  const [settingsBackendProvider, setSettingsBackendProvider] = useState<'Supabase' | 'AWS' | 'Firebase' | 'Neon' | 'Self-Hosted' | 'Other' | 'None'>(
+    project.backendProvider || 'Supabase'
+  );
+  const [settingsBackendAccount, setSettingsBackendAccount] = useState(project.backendAccount || '');
   const [settingsName, setSettingsName] = useState(project.name);
   const [settingsCode, setSettingsCode] = useState(project.code);
   const [settingsDesc, setSettingsDesc] = useState(project.description);
@@ -156,6 +165,10 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
     setSettingsLiveUrl(project.liveUrl || project.productionUrl || project.stagingUrl || '');
     setSettingsStagingUrl(project.stagingUrl || '');
     setSettingsRepoUrl(project.repositoryUrl || '');
+    setSettingsGitAccount(project.gitAccount || '');
+    setSettingsVercelAccount(project.vercelAccount || '');
+    setSettingsBackendProvider(project.backendProvider || 'Supabase');
+    setSettingsBackendAccount(project.backendAccount || '');
     setSettingsName(project.name);
     setSettingsCode(project.code);
     setSettingsDesc(project.description);
@@ -167,6 +180,10 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
 
   const handleSaveProjectSettings = (e: React.FormEvent) => {
     e.preventDefault();
+    if (settingsStatus === 'Completed' && !isSuperAdmin) {
+      setShowCeoRequiredModal(true);
+      return;
+    }
     updateProject(project.id, {
       name: settingsName.trim(),
       code: settingsCode.trim(),
@@ -175,6 +192,10 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
       stagingUrl: settingsStagingUrl.trim(),
       productionUrl: settingsLiveUrl.trim(),
       repositoryUrl: settingsRepoUrl.trim(),
+      gitAccount: settingsGitAccount.trim(),
+      vercelAccount: settingsVercelAccount.trim(),
+      backendProvider: settingsBackendProvider,
+      backendAccount: settingsBackendAccount.trim(),
       status: settingsStatus,
       priority: settingsPriority,
       deadline: settingsDeadline,
@@ -459,6 +480,78 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                   {pendingClientReviewCount}
                 </div>
               </div>
+            </div>
+
+            {/* Cloud & Hosting Infrastructure Summary */}
+            <div
+              className="admark-card"
+              style={{
+                padding: '0.65rem 1rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: '0.75rem',
+                fontSize: '0.78rem',
+                background: 'rgba(255, 255, 255, 0.02)',
+              }}
+            >
+              <div className="flex items-center gap-4 flex-wrap">
+                {/* Git Account */}
+                <div className="flex items-center gap-1.5" title="Connected Git Repository Account">
+                  <GitBranch size={13} style={{ color: 'var(--brand-crimson)' }} />
+                  <span style={{ color: 'var(--text-muted)', fontSize: '0.72rem' }}>Git Org:</span>
+                  <strong style={{ color: project.gitAccount ? 'var(--text-primary)' : 'var(--text-muted)', fontFamily: 'var(--font-mono)', fontSize: '0.75rem' }}>
+                    {project.gitAccount || (project.repositoryUrl ? project.repositoryUrl.replace(/^https?:\/\//, '') : 'Not configured')}
+                  </strong>
+                </div>
+
+                <span style={{ color: 'var(--border-subtle)', opacity: 0.6 }}>|</span>
+
+                {/* Vercel Account */}
+                <div className="flex items-center gap-1.5" title="Vercel Hosting Account">
+                  <Globe size={13} style={{ color: '#38bdf8' }} />
+                  <span style={{ color: 'var(--text-muted)', fontSize: '0.72rem' }}>Vercel:</span>
+                  <strong style={{ color: project.vercelAccount ? 'var(--text-primary)' : 'var(--text-muted)', fontSize: '0.75rem' }}>
+                    {project.vercelAccount || 'Not configured'}
+                  </strong>
+                </div>
+
+                <span style={{ color: 'var(--border-subtle)', opacity: 0.6 }}>|</span>
+
+                {/* Cloud & Database Provider: Supabase or AWS */}
+                <div className="flex items-center gap-1.5" title="Backend & Database Platform">
+                  <Database size={13} style={{ color: project.backendProvider === 'AWS' ? '#fbbf24' : '#34d399' }} />
+                  <span style={{ color: 'var(--text-muted)', fontSize: '0.72rem' }}>Backend:</span>
+                  <span
+                    className="badge"
+                    style={{
+                      fontSize: '0.68rem',
+                      padding: '1px 6px',
+                      background: project.backendProvider === 'AWS' ? 'rgba(251, 191, 36, 0.14)' : 'rgba(52, 211, 153, 0.14)',
+                      color: project.backendProvider === 'AWS' ? '#fbbf24' : '#34d399',
+                      borderColor: project.backendProvider === 'AWS' ? 'rgba(251, 191, 36, 0.35)' : 'rgba(52, 211, 153, 0.35)',
+                      fontWeight: 600,
+                    }}
+                  >
+                    {project.backendProvider || 'Supabase'}
+                  </span>
+                  {project.backendAccount && (
+                    <span style={{ color: 'var(--text-secondary)', fontSize: '0.72rem' }}>
+                      ({project.backendAccount})
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <button
+                onClick={() => setCurrentTab('settings')}
+                className="btn btn-ghost btn-sm"
+                style={{ fontSize: '0.72rem', height: '24px', padding: '0 8px', color: 'var(--brand-crimson)' }}
+              >
+                <SettingsIcon size={12} />
+                <span>Configure Cloud & Hosting</span>
+              </button>
             </div>
 
             {/* 2-Column: Project Module Progress & Activity Timeline */}
@@ -2049,53 +2142,90 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                   {/* One-click Project Complete Button */}
                   <div className="flex items-center gap-2">
                     {project.status !== 'Completed' ? (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          updateProject(project.id, { status: 'Completed', progress: 100 });
-                          setSettingsStatus('Completed');
-                          setSettingsSavedNotice(true);
-                          setTimeout(() => setSettingsSavedNotice(false), 3500);
-                        }}
-                        className="btn btn-primary"
-                        style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '6px',
-                          background: 'var(--status-healthy)',
-                          borderColor: 'var(--status-healthy)',
-                          fontWeight: 700,
-                          fontSize: '0.85rem',
-                          padding: '0.5rem 1rem',
-                        }}
-                        title="Mark project as 100% Completed"
-                      >
-                        <CheckCircle2 size={16} />
-                        <span>Mark Project as Completed</span>
-                      </button>
+                      isSuperAdmin ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            updateProject(project.id, { status: 'Completed', progress: 100 });
+                            setSettingsStatus('Completed');
+                            setSettingsSavedNotice(true);
+                            setTimeout(() => setSettingsSavedNotice(false), 3500);
+                          }}
+                          className="btn btn-primary"
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            background: 'var(--status-healthy)',
+                            borderColor: 'var(--status-healthy)',
+                            fontWeight: 700,
+                            fontSize: '0.85rem',
+                            padding: '0.5rem 1rem',
+                          }}
+                          title="Mark project as 100% Completed (CEO / Superadmin Authority)"
+                        >
+                          <CheckCircle2 size={16} />
+                          <span>Mark Project as Completed</span>
+                        </button>
+                      ) : (
+                        <div
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            padding: '0.45rem 0.85rem',
+                            borderRadius: '6px',
+                            background: 'rgba(239, 68, 68, 0.08)',
+                            border: '1px solid rgba(239, 68, 68, 0.25)',
+                            color: '#f87171',
+                            fontSize: '0.78rem',
+                            fontWeight: 600,
+                          }}
+                          title="Only CEO (Super Admin) is authorized to mark a project as Completed"
+                        >
+                          <Lock size={13} />
+                          <span>Complete Project: Restricted to CEO (Superadmin)</span>
+                        </div>
+                      )
                     ) : (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          updateProject(project.id, { status: 'Active' });
-                          setSettingsStatus('Active');
-                          setSettingsSavedNotice(true);
-                          setTimeout(() => setSettingsSavedNotice(false), 3500);
-                        }}
-                        className="btn btn-secondary"
-                        style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '6px',
-                          borderColor: 'var(--border-subtle)',
-                          fontWeight: 600,
-                          fontSize: '0.85rem',
-                          padding: '0.5rem 1rem',
-                        }}
-                        title="Reopen this project as Active"
-                      >
-                        <span>Reopen Project (Set to Active)</span>
-                      </button>
+                      isSuperAdmin ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            updateProject(project.id, { status: 'Active' });
+                            setSettingsStatus('Active');
+                            setSettingsSavedNotice(true);
+                            setTimeout(() => setSettingsSavedNotice(false), 3500);
+                          }}
+                          className="btn btn-secondary"
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            borderColor: 'var(--border-subtle)',
+                            fontWeight: 600,
+                            fontSize: '0.85rem',
+                            padding: '0.5rem 1rem',
+                          }}
+                          title="Reopen this project as Active (CEO Authority)"
+                        >
+                          <span>Reopen Project (Set to Active)</span>
+                        </button>
+                      ) : (
+                        <span
+                          className="badge"
+                          style={{
+                            background: 'rgba(16, 185, 129, 0.16)',
+                            color: '#34d399',
+                            borderColor: 'rgba(16, 185, 129, 0.5)',
+                            fontWeight: 700,
+                            padding: '0.35rem 0.75rem',
+                            fontSize: '0.8rem',
+                          }}
+                        >
+                          ✓ Project Completed (Closed by CEO)
+                        </span>
+                      )
                     )}
                   </div>
                 </div>
@@ -2119,6 +2249,10 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                       value={settingsStatus}
                       onChange={(e) => {
                         const next = e.target.value as any;
+                        if (next === 'Completed' && !isSuperAdmin) {
+                          setShowCeoRequiredModal(true);
+                          return;
+                        }
                         setSettingsStatus(next);
                         updateProject(project.id, {
                           status: next,
@@ -2136,7 +2270,13 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                       <option value="Planning">Planning</option>
                       <option value="In Progress">In Progress</option>
                       <option value="On Hold">On Hold</option>
-                      <option value="Completed">Completed ✓</option>
+                      {isSuperAdmin ? (
+                        <option value="Completed">Completed ✓</option>
+                      ) : (
+                        <option value="Completed" disabled title="Only CEO (Super Admin) can complete projects">
+                          Completed (CEO / Superadmin Only)
+                        </option>
+                      )}
                       <option value="Deployed">Deployed / Live</option>
                       <option value="Maintenance">Maintenance Mode</option>
                       <option value="Archived">Archived</option>
@@ -2240,6 +2380,90 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                         className="input-field"
                         style={{ marginTop: '4px' }}
                       />
+                    </div>
+                  </div>
+
+                  {/* Connected Git Account & Vercel Account */}
+                  <div className="grid grid-cols-2 gap-3" style={{ marginTop: '2px' }}>
+                    <div>
+                      <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                        <GitBranch size={13} style={{ color: 'var(--brand-crimson)' }} />
+                        <span>Connected Git Account / Organization</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={settingsGitAccount}
+                        onChange={(e) => setSettingsGitAccount(e.target.value)}
+                        placeholder="e.g. github.com/chethud or admark-digitals"
+                        className="input-field"
+                        style={{ marginTop: '4px' }}
+                      />
+                      <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginTop: '3px' }}>
+                        Git user or organization account where this project repository is created.
+                      </div>
+                    </div>
+
+                    <div>
+                      <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                        <Globe size={13} style={{ color: '#38bdf8' }} />
+                        <span>Vercel / Hosting Deployment Account</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={settingsVercelAccount}
+                        onChange={(e) => setSettingsVercelAccount(e.target.value)}
+                        placeholder="e.g. chethan-team or harshith@admarkdigitals.com"
+                        className="input-field"
+                        style={{ marginTop: '4px' }}
+                      />
+                      <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginTop: '3px' }}>
+                        Vercel user or team workspace account linked to this deployment.
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Backend & Database Infrastructure (Supabase or AWS) */}
+                  <div className="grid grid-cols-2 gap-3" style={{ marginTop: '4px', paddingTop: '0.75rem', borderTop: '1px dashed var(--border-subtle)' }}>
+                    <div>
+                      <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                        <Database size={13} style={{ color: '#34d399' }} />
+                        <span>Backend & Cloud Platform (Supabase / AWS)</span>
+                      </label>
+                      <select
+                        value={settingsBackendProvider}
+                        onChange={(e) => setSettingsBackendProvider(e.target.value as any)}
+                        className="input-field"
+                        style={{ marginTop: '4px', fontWeight: 600 }}
+                      >
+                        <option value="Supabase">Supabase (PostgreSQL, Auth & Realtime)</option>
+                        <option value="AWS">AWS (Amazon Web Services — RDS, S3, EC2)</option>
+                        <option value="Firebase">Firebase (Firestore, Cloud Functions)</option>
+                        <option value="Neon">Neon (Serverless Postgres)</option>
+                        <option value="Self-Hosted">Self-Hosted / VPS (Docker, Coolify)</option>
+                        <option value="Other">Other Custom Cloud Backend</option>
+                        <option value="None">None (Pure Frontend / Static)</option>
+                      </select>
+                      <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginTop: '3px' }}>
+                        Choose whether this project runs on Supabase, AWS, or other cloud service.
+                      </div>
+                    </div>
+
+                    <div>
+                      <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                        <Server size={13} style={{ color: '#fbbf24' }} />
+                        <span>Cloud Account / Project Identifier</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={settingsBackendAccount}
+                        onChange={(e) => setSettingsBackendAccount(e.target.value)}
+                        placeholder="e.g. Supabase Org: avighna-prod or AWS Acc: 4829... (ap-south-1)"
+                        className="input-field"
+                        style={{ marginTop: '4px' }}
+                      />
+                      <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginTop: '3px' }}>
+                        Supabase project ID/org, AWS IAM account, or database cluster reference.
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -2935,7 +3159,7 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
               </div>
 
               <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                Only <strong>CEO (T Jois)</strong> is authorized to create/delete projects and add modules in the Admark Digitals workspace. Please sign in with the CEO account credentials to perform this action.
+                Only <strong>CEO (T Jois)</strong> is authorized to create/delete projects, mark projects as completed, and add modules in the Admark Digitals workspace. Please sign in with the CEO account credentials to perform this action.
               </p>
 
               <div style={{ marginTop: '1rem', padding: '0.75rem', background: 'var(--bg-app)', borderRadius: '6px', fontSize: '0.8rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>

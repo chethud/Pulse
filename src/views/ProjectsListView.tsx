@@ -242,47 +242,66 @@ export const ProjectsListView: React.FC = () => {
                   <td style={{ textAlign: 'center' }}>
                     <div className="flex items-center justify-center gap-1.5" onClick={(e) => e.stopPropagation()}>
                       {proj.status !== 'Completed' ? (
-                        <button
-                          onClick={() => updateProject(proj.id, { status: 'Completed', progress: 100 })}
-                          className="btn btn-secondary btn-sm"
-                          style={{
-                            height: '24px',
-                            padding: '0 8px',
-                            fontSize: '0.7rem',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '4px',
-                            color: '#38bdf8',
-                            borderColor: 'rgba(56, 189, 248, 0.35)',
-                            background: 'rgba(56, 189, 248, 0.08)',
-                            fontWeight: 600,
-                          }}
-                          title="Mark project Completed"
-                        >
-                          <CheckCircle2 size={11} style={{ color: '#38bdf8' }} />
-                          <span>Complete</span>
-                        </button>
+                        isSuperAdmin ? (
+                          <button
+                            onClick={() => updateProject(proj.id, { status: 'Completed', progress: 100 })}
+                            className="btn btn-secondary btn-sm"
+                            style={{
+                              height: '24px',
+                              padding: '0 8px',
+                              fontSize: '0.7rem',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              color: '#38bdf8',
+                              borderColor: 'rgba(56, 189, 248, 0.35)',
+                              background: 'rgba(56, 189, 248, 0.08)',
+                              fontWeight: 600,
+                            }}
+                            title="Mark project Completed (CEO / Super Admin authority)"
+                          >
+                            <CheckCircle2 size={11} style={{ color: '#38bdf8' }} />
+                            <span>Complete</span>
+                          </button>
+                        ) : null
                       ) : (
-                        <button
-                          onClick={() => updateProject(proj.id, { status: 'Active' })}
-                          className="btn btn-secondary btn-sm"
-                          style={{
-                            height: '24px',
-                            padding: '0 8px',
-                            fontSize: '0.7rem',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '4px',
-                            background: 'rgba(16, 185, 129, 0.16)',
-                            color: '#34d399',
-                            borderColor: 'rgba(16, 185, 129, 0.5)',
-                            fontWeight: 700,
-                          }}
-                          title="Project is Completed (click to reopen as Active)"
-                        >
-                          <CheckCircle2 size={11} style={{ color: '#34d399' }} />
-                          <span>✓ Done</span>
-                        </button>
+                        isSuperAdmin ? (
+                          <button
+                            onClick={() => updateProject(proj.id, { status: 'Active' })}
+                            className="btn btn-secondary btn-sm"
+                            style={{
+                              height: '24px',
+                              padding: '0 8px',
+                              fontSize: '0.7rem',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              background: 'rgba(16, 185, 129, 0.16)',
+                              color: '#34d399',
+                              borderColor: 'rgba(16, 185, 129, 0.5)',
+                              fontWeight: 700,
+                            }}
+                            title="Project is Completed (click to reopen as Active)"
+                          >
+                            <CheckCircle2 size={11} style={{ color: '#34d399' }} />
+                            <span>✓ Done</span>
+                          </button>
+                        ) : (
+                          <span
+                            className="badge"
+                            style={{
+                              background: 'rgba(16, 185, 129, 0.16)',
+                              color: '#34d399',
+                              borderColor: 'rgba(16, 185, 129, 0.4)',
+                              fontWeight: 700,
+                              fontSize: '0.68rem',
+                              padding: '2px 8px',
+                            }}
+                            title="Project is Completed (Closed by CEO)"
+                          >
+                            ✓ Done
+                          </span>
+                        )
                       )}
 
                       <button
@@ -392,7 +411,7 @@ export const ProjectsListView: React.FC = () => {
             </div>
 
             <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-              Only <strong>CEO (T Jois)</strong> is authorized to create and delete projects in the Admark Digitals workspace. Please sign in with the CEO account credentials to perform this action.
+              Only <strong>CEO (T Jois)</strong> is authorized to create, delete, or mark projects as completed in the Admark Digitals workspace. Please sign in with the CEO account credentials to perform this action.
             </p>
 
             <div style={{ marginTop: '1rem', padding: '0.75rem', background: 'var(--bg-app)', borderRadius: '6px', fontSize: '0.8rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
