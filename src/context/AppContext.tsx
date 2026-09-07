@@ -151,14 +151,14 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // One-time purge of legacy mock clients, projects, tasks, etc.
-  const CLEAN_DATA_TAG = 'pulse_clean_slate_v1';
+  // One-time load of live production clients and projects
+  const LIVE_DATA_TAG = 'pulse_live_projects_v5';
   try {
-    if (localStorage.getItem(CLEAN_DATA_TAG) !== 'true') {
-      const keysToPurge = [
-        'clients',
-        'projects',
-        'modules',
+    if (localStorage.getItem(LIVE_DATA_TAG) !== 'true') {
+      localStorage.setItem('admark_clients', JSON.stringify(INITIAL_CLIENTS));
+      localStorage.setItem('admark_projects', JSON.stringify(INITIAL_PROJECTS));
+      localStorage.setItem('admark_modules', JSON.stringify(INITIAL_MODULES));
+      const keysToClear = [
         'requirements',
         'tasks',
         'bugs',
@@ -175,8 +175,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         'testRuns',
         'clientUAT',
       ];
-      keysToPurge.forEach((k) => localStorage.removeItem(`admark_${k}`));
-      localStorage.setItem(CLEAN_DATA_TAG, 'true');
+      keysToClear.forEach((k) => localStorage.removeItem(`admark_${k}`));
+      localStorage.setItem(LIVE_DATA_TAG, 'true');
     }
   } catch {
     // Ignore storage issues
