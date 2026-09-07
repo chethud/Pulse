@@ -15,10 +15,12 @@ import {
   ShieldAlert,
   ShieldCheck,
   Users,
+  Camera,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { UserRole } from '../types';
+import { UserRole, User } from '../types';
 import { CreateAccountModal } from '../components/modals/CreateAccountModal';
+import { EditProfilePhotoModal } from '../components/modals/EditProfilePhotoModal';
 
 export const SettingsView: React.FC = () => {
   const {
@@ -32,7 +34,14 @@ export const SettingsView: React.FC = () => {
   } = useApp();
 
   const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [photoModalOpen, setPhotoModalOpen] = useState(false);
+  const [photoTargetUser, setPhotoTargetUser] = useState<User | undefined>(undefined);
   const [showPasswords, setShowPasswords] = useState<Record<string, boolean>>({});
+
+  const handleOpenPhotoModal = (user?: User) => {
+    setPhotoTargetUser(user || currentUser);
+    setPhotoModalOpen(true);
+  };
 
   const togglePasswordVisibility = (userId: string) => {
     setShowPasswords((prev) => ({ ...prev, [userId]: !prev[userId] }));
@@ -57,6 +66,107 @@ export const SettingsView: React.FC = () => {
         <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
           Admark Digitals workspace configuration, account credentials, and 3-Tier RBAC access control.
         </p>
+      </div>
+
+      {/* My Profile & Personal Avatar Card */}
+      <div
+        className="admark-card"
+        style={{
+          padding: '1.25rem 1.5rem',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '1.25rem',
+          background: 'linear-gradient(135deg, rgba(230, 57, 70, 0.05) 0%, var(--bg-card) 60%)',
+          border: '1px solid rgba(230, 57, 70, 0.2)',
+        }}
+      >
+        <div className="flex items-center gap-4">
+          <div
+            style={{
+              position: 'relative',
+              cursor: 'pointer',
+              display: 'inline-block',
+            }}
+            onClick={() => handleOpenPhotoModal(currentUser)}
+            title="Click to change your profile photo"
+          >
+            <img
+              src={currentUser.avatar}
+              alt={currentUser.name}
+              style={{
+                width: '64px',
+                height: '64px',
+                borderRadius: '50%',
+                objectFit: 'cover',
+                border: '2px solid var(--brand-crimson)',
+                boxShadow: '0 4px 14px rgba(230, 57, 70, 0.25)',
+              }}
+            />
+            <div
+              style={{
+                position: 'absolute',
+                bottom: 0,
+                right: 0,
+                backgroundColor: 'var(--brand-crimson)',
+                color: '#fff',
+                width: '24px',
+                height: '24px',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                border: '2px solid var(--bg-card)',
+                boxShadow: '0 2px 5px rgba(0,0,0,0.3)',
+              }}
+            >
+              <Camera size={12} />
+            </div>
+          </div>
+
+          <div>
+            <div className="flex items-center gap-2">
+              <h2 style={{ fontSize: '1.15rem', fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>
+                {currentUser.name}
+              </h2>
+              <span
+                className={`badge ${
+                  currentUser.role === 'SUPERADMIN'
+                    ? 'badge-critical'
+                    : currentUser.role === 'ADMIN'
+                    ? 'badge-warning'
+                    : 'badge-neutral'
+                }`}
+                style={{ fontSize: '0.7rem', fontWeight: 700 }}
+              >
+                {currentUser.role}
+              </span>
+            </div>
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
+              {currentUser.title} • {currentUser.department} • <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem' }}>{currentUser.email}</span>
+            </div>
+            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+              Your profile photo is displayed across deliverables, assigned projects, task avatars, and time logs. Changes sync locally and to the cloud database.
+            </div>
+          </div>
+        </div>
+
+        <button
+          onClick={() => handleOpenPhotoModal(currentUser)}
+          className="btn btn-secondary"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            fontSize: '0.8125rem',
+            padding: '0.55rem 1rem',
+            fontWeight: 600,
+          }}
+        >
+          <Camera size={15} style={{ color: 'var(--brand-crimson)' }} />
+          <span>Change Profile Photo</span>
+        </button>
       </div>
 
       {/* Role-Based Access Control & User Provisioning Section */}
@@ -205,11 +315,41 @@ export const SettingsView: React.FC = () => {
                   <tr key={u.id} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
                     <td style={{ padding: '0.65rem 0.85rem' }}>
                       <div className="flex items-center gap-2.5">
-                        <img
-                          src={u.avatar}
-                          alt={u.name}
-                          style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover' }}
-                        />
+                        <div
+                          style={{ position: 'relative', cursor: 'pointer' }}
+                          onClick={() => handleOpenPhotoModal(u)}
+                          title={`Click to change photo for ${u.name}`}
+                        >
+                          <img
+                            src={u.avatar}
+                            alt={u.name}
+                            style={{
+                              width: '30px',
+                              height: '30px',
+                              borderRadius: '50%',
+                              objectFit: 'cover',
+                              border: isCurrent ? '1.5px solid var(--brand-crimson)' : '1px solid var(--border-subtle)',
+                            }}
+                          />
+                          <div
+                            style={{
+                              position: 'absolute',
+                              bottom: -2,
+                              right: -2,
+                              width: '13px',
+                              height: '13px',
+                              borderRadius: '50%',
+                              backgroundColor: 'var(--brand-crimson)',
+                              color: '#fff',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              border: '1px solid var(--bg-card)',
+                            }}
+                          >
+                            <Camera size={7} />
+                          </div>
+                        </div>
                         <div>
                           <div style={{ fontWeight: 700, color: 'var(--text-primary)' }}>
                             {u.name} {isCurrent && <span style={{ color: 'var(--brand-crimson)', fontSize: '0.7rem' }}>(You)</span>}
@@ -438,6 +578,13 @@ export const SettingsView: React.FC = () => {
 
       {/* Account Creation Modal */}
       <CreateAccountModal isOpen={createModalOpen} onClose={() => setCreateModalOpen(false)} />
+
+      {/* Profile Photo Edit Modal */}
+      <EditProfilePhotoModal
+        isOpen={photoModalOpen}
+        onClose={() => setPhotoModalOpen(false)}
+        targetUser={photoTargetUser}
+      />
     </div>
   );
 };

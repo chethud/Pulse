@@ -17,10 +17,12 @@ import {
   Copy,
   Check,
   X,
+  Camera,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { UserRole } from '../../types';
 import { SUPABASE_SCHEMA_SQL } from '../../lib/schemaSql';
+import { EditProfilePhotoModal } from '../modals/EditProfilePhotoModal';
 
 export const Header: React.FC = () => {
   const {
@@ -52,6 +54,7 @@ export const Header: React.FC = () => {
   const [isRetrying, setIsRetrying] = useState(false);
 
 
+  const [showProfilePhotoModal, setShowProfilePhotoModal] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
@@ -444,6 +447,17 @@ export const Header: React.FC = () => {
                   <Settings size={13} />
                   <span>Preferences</span>
                 </button>
+                <button
+                  onClick={() => {
+                    setShowProfilePhotoModal(true);
+                    setUserMenuOpen(false);
+                  }}
+                  className="btn btn-ghost btn-sm"
+                  style={{ width: '100%', justifyContent: 'flex-start', padding: '0.4rem 0.65rem' }}
+                >
+                  <Camera size={13} style={{ color: 'var(--brand-crimson)' }} />
+                  <span>Change Profile Photo</span>
+                </button>
               </div>
 
               {/* Sign Out */}
@@ -585,6 +599,11 @@ export const Header: React.FC = () => {
           </div>
         </div>
       )}
+      {/* Edit Profile Photo Modal */}
+      <EditProfilePhotoModal
+        isOpen={showProfilePhotoModal}
+        onClose={() => setShowProfilePhotoModal(false)}
+      />
     </header>
 
   );

@@ -133,6 +133,7 @@ interface AppContextType {
   // Mutations
   addUser: (user: Omit<User, 'id'>) => User;
   updateUserRole: (userId: string, newRole: UserRole) => void;
+  updateUserProfile: (userId: string, updates: Partial<User>) => void;
   deleteUser: (userId: string) => void;
   deleteTask: (taskId: string) => void;
   deleteBug: (bugId: string) => void;
@@ -876,6 +877,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     syncStorage('users', updated);
   };
 
+  const updateUserProfile = (userId: string, updates: Partial<User>) => {
+    const updated = users.map((u) => (u.id === userId ? { ...u, ...updates } : u));
+    setUsers(updated);
+    syncStorage('users', updated);
+    const target = updated.find((u) => u.id === userId);
+    if (target) syncEntityToSupabase('users', userToDb(target));
+  };
+
   const deleteUser = (userId: string) => {
     const updated = users.filter((u) => u.id !== userId);
     setUsers(updated);
@@ -1109,6 +1118,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         isAdmin,
         addUser,
         updateUserRole,
+        updateUserProfile,
         deleteUser,
         deleteTask,
         deleteBug,
