@@ -355,12 +355,10 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
   };
 
   const isTasksActive = currentTab === 'tasks' || currentTab === 'board' || currentTab === 'what-left' || currentTab === 'blockers';
-  const isQualityActive = currentTab === 'quality' || currentTab === 'bugs' || currentTab === 'testing';
   const isClientReviewActive = currentTab === 'client-review' || currentTab === 'uat' || currentTab === 'cr';
 
   const isTabActive = (tabId: string) => {
     if (tabId === 'tasks') return isTasksActive;
-    if (tabId === 'quality') return isQualityActive;
     if (tabId === 'client-review') return isClientReviewActive;
     return currentTab === tabId;
   };
@@ -370,11 +368,11 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
     { id: 'overview', label: 'Overview' },
     { id: 'tasks', label: 'Tasks', count: projectTasks.length },
     { id: 'modules', label: 'Modules', count: projectModules.length },
-    { id: 'quality', label: 'Quality & QA', count: openBugsCount + projectTestRuns.length },
     { id: 'client-review', label: 'Client Review', count: projectUAT.length },
     { id: 'maintenance', label: 'Maintenance' },
     { id: 'settings', label: 'Settings' },
   ];
+
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflowY: 'auto' }}>
@@ -499,13 +497,12 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                   if (tab.id === 'tasks') {
                     setTaskScopeFilter('all');
                     setCurrentTab('tasks');
-                  } else if (tab.id === 'quality') {
-                    setCurrentTab('quality');
                   } else if (tab.id === 'client-review') {
                     setCurrentTab('client-review');
                   } else {
                     setCurrentTab(tab.id);
                   }
+
                 }}
                 className={`tab-button ${active ? 'active' : ''}`}
               >
@@ -1587,164 +1584,10 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
           </div>
         )}
 
-        {/* ================= QUALITY & QA (BUGS & TESTING) ================= */}
-        {isQualityActive && (
-          <div className="flex flex-col gap-4">
-            <div className="flex items-center justify-between flex-wrap gap-2 border-b border-[var(--border-subtle)] pb-3">
-              <div className="flex items-center gap-1" style={{ background: 'var(--bg-elevated)', padding: '3px', borderRadius: '0.5rem' }}>
-                <button
-                  onClick={() => setQualitySubTab('bugs')}
-                  className={`btn btn-sm ${qualitySubTab === 'bugs' ? 'btn-primary' : 'btn-ghost'}`}
-                >
-                  <BugIcon size={14} />
-                  <span>Bugs & Defects ({projectBugs.length})</span>
-                </button>
-                <button
-                  onClick={() => setQualitySubTab('test-runs')}
-                  className={`btn btn-sm ${qualitySubTab === 'test-runs' ? 'btn-primary' : 'btn-ghost'}`}
-                >
-                  <TestTube2 size={14} />
-                  <span>Test Runs ({projectTestRuns.length})</span>
-                </button>
-                <button
-                  onClick={() => setQualitySubTab('test-cases')}
-                  className={`btn btn-sm ${qualitySubTab === 'test-cases' ? 'btn-primary' : 'btn-ghost'}`}
-                >
-                  <CheckSquare size={14} />
-                  <span>Test Cases ({projectTestCases.length})</span>
-                </button>
-              </div>
-
-              {qualitySubTab === 'bugs' && (
-                <button onClick={() => setQuickCreateOpen(true)} className="btn btn-primary btn-sm" style={{ background: 'var(--status-danger)' }}>
-                  <Plus size={14} />
-                  <span>Report Bug</span>
-                </button>
-              )}
-            </div>
-
-            {/* Sub-view: Bugs */}
-            {qualitySubTab === 'bugs' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
-                {projectBugs.map((bug) => {
-                  const assignee = users.find((u) => u.id === bug.assigneeId);
-
-                  return (
-                    <div
-                      key={bug.id}
-                      onClick={() => setSelectedBugId(bug.id)}
-                      className="admark-card-interactive"
-                      style={{ padding: '1rem', borderRadius: '0.5rem', cursor: 'pointer', background: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2.5">
-                          <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 800, color: 'var(--status-danger)', fontSize: '0.85rem' }}>
-                            #{bug.bugNumber}
-                          </span>
-                          <span style={{ fontWeight: 700, fontSize: '0.9rem' }}>{bug.title}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className={`badge ${bug.severity === 'Critical' ? 'badge-critical' : 'badge-at-risk'}`}>
-                            {bug.severity}
-                          </span>
-                          <span className="badge badge-info">{bug.environment}</span>
-                          <span className={`badge ${bug.status === 'Fixed' || bug.status === 'Verified' ? 'badge-healthy' : 'badge-neutral'}`}>
-                            {bug.status}
-                          </span>
-                        </div>
-                      </div>
-
-                      <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginTop: '6px', lineHeight: 1.4 }}>
-                        {bug.description}
-                      </p>
-
-                      <div className="flex items-center justify-between" style={{ marginTop: '8px', fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                        <span>Assignee: <strong>{assignee?.name}</strong></span>
-                        <span>Device: {bug.browser || 'Chrome/Safari'}</span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-
-            {/* Sub-view: Test Runs */}
-            {qualitySubTab === 'test-runs' && (
-              <div className="grid grid-cols-2 gap-4">
-                {projectTestRuns.map((tr) => {
-                  const passRate = Math.round((tr.passed / tr.totalTests) * 100);
-
-                  return (
-                    <div key={tr.id} className="admark-card" style={{ padding: '1.25rem' }}>
-                      <div className="flex items-center justify-between">
-                        <h3 style={{ fontSize: '0.95rem', fontWeight: 700 }}>{tr.name}</h3>
-                        <span className="badge badge-healthy">{tr.status}</span>
-                      </div>
-                      <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-                        Executed by {tr.executedBy} on {tr.executedAt}
-                      </div>
-
-                      <div className="flex items-center justify-between" style={{ margin: '0.75rem 0 0.25rem 0' }}>
-                        <span style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--status-healthy)' }}>
-                          {passRate}% Passing
-                        </span>
-                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                          {tr.passed} Pass / {tr.failed} Fail / {tr.blocked} Blocked
-                        </span>
-                      </div>
-
-                      <div className="progress-bar-track">
-                        <div className="progress-bar-fill" style={{ width: `${passRate}%`, backgroundColor: 'var(--status-healthy)' }} />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-
-            {/* Sub-view: Test Cases */}
-            {qualitySubTab === 'test-cases' && (
-              <div className="admark-card" style={{ overflow: 'hidden' }}>
-                <div style={{ padding: '0.875rem 1rem', borderBottom: '1px solid var(--border-subtle)', fontWeight: 700 }}>
-                  Test Cases Repository
-                </div>
-                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.8125rem' }}>
-                  <thead>
-                    <tr style={{ background: 'var(--bg-elevated)', borderBottom: '1px solid var(--border-subtle)', color: 'var(--text-muted)', fontSize: '0.72rem', textTransform: 'uppercase' }}>
-                      <th style={{ padding: '0.65rem 1rem' }}>Code</th>
-                      <th style={{ padding: '0.65rem 1rem' }}>Test Case Title</th>
-                      <th style={{ padding: '0.65rem 1rem' }}>Priority</th>
-                      <th style={{ padding: '0.65rem 1rem' }}>Result</th>
-                      <th style={{ padding: '0.65rem 1rem' }}>Last Run</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {projectTestCases.map((tc) => (
-                      <tr key={tc.id} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-                        <td style={{ padding: '0.65rem 1rem', fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--brand-crimson)' }}>
-                          {tc.code}
-                        </td>
-                        <td style={{ padding: '0.65rem 1rem', fontWeight: 600 }}>{tc.title}</td>
-                        <td style={{ padding: '0.65rem 1rem' }}>
-                          <span className="badge badge-neutral">{tc.priority}</span>
-                        </td>
-                        <td style={{ padding: '0.65rem 1rem' }}>
-                          <span className={`badge ${tc.status === 'Pass' ? 'badge-healthy' : 'badge-critical'}`}>
-                            {tc.status}
-                          </span>
-                        </td>
-                        <td style={{ padding: '0.65rem 1rem', color: 'var(--text-muted)' }}>{tc.lastRunDate}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        )}
 
         {/* ================= CLIENT REVIEW ================= */}
         {isClientReviewActive && (
+
           <div className="flex flex-col gap-4">
             <div className="flex items-center justify-between flex-wrap gap-3 pb-2 border-b border-[var(--border-subtle)]">
               <div>

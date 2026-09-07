@@ -61,8 +61,6 @@ export function AppContent() {
         return <AllTasksView initialMode="table" />;
       case 'board':
         return <AllTasksView initialMode="board" />;
-      case 'bugs':
-        return <ProjectDetailView currentTab="bugs" setCurrentTab={setProjectTab} />;
       case 'requirements':
         return <ProjectDetailView currentTab="requirements" setCurrentTab={setProjectTab} />;
       case 'change-requests':
@@ -72,8 +70,7 @@ export function AppContent() {
         return <ProjectDetailView currentTab="modules" setCurrentTab={setProjectTab} />;
       case 'sprints':
         return <ProjectDetailView currentTab="sprints" setCurrentTab={setProjectTab} />;
-      case 'testing':
-        return <ProjectDetailView currentTab="testing" setCurrentTab={setProjectTab} />;
+
       case 'releases':
       case 'documents':
         return <ProjectDetailView currentTab="overview" setCurrentTab={setProjectTab} />;
