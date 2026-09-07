@@ -426,6 +426,7 @@ export const INITIAL_MODULES: ProjectModule[] = [
     status: 'In Progress',
     targetDate: '2026-09-30',
     deliverables: ['Responsive UI', 'Brand Style Guide', 'Performance Optimization'],
+    completedDeliverables: ['Responsive UI'],
   },
   {
     id: 'mod-aa-2',
@@ -438,6 +439,7 @@ export const INITIAL_MODULES: ProjectModule[] = [
     status: 'Planned',
     targetDate: '2026-10-31',
     deliverables: ['Inquiry Forms', 'Email Notification Engine'],
+    completedDeliverables: [],
   },
   {
     id: 'mod-avi-1',

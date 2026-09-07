@@ -120,6 +120,7 @@ export interface ProjectModule {
   targetDate?: string;
   status?: 'Planned' | 'In Progress' | 'Completed' | 'Delayed';
   deliverables?: string[];
+  completedDeliverables?: string[];
 }
 
 export interface ProjectFeature {

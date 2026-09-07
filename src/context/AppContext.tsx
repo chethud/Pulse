@@ -130,7 +130,7 @@ interface AppContextType {
   addProject: (project: Omit<Project, 'id' | 'progress' | 'health'>) => void;
   updateProject: (projectId: string, updates: Partial<Project>) => void;
   deleteProject: (projectId: string) => void;
-  addModule: (module: Omit<ProjectModule, 'id' | 'progress'>) => void;
+  addModule: (module: Omit<ProjectModule, 'id'> & { progress?: number }) => void;
   updateModule: (moduleId: string, updates: Partial<ProjectModule>) => void;
   addMilestone: (milestone: Omit<Milestone, 'id' | 'number' | 'progress' | 'isClientApproved'>) => void;
   addClient: (client: Omit<Client, 'id' | 'lastActivity'>) => void;
@@ -152,7 +152,7 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // One-time load of live production clients and projects
-  const LIVE_DATA_TAG = 'pulse_pm_harshith_v6';
+  const LIVE_DATA_TAG = 'pulse_pm_harshith_v8';
   try {
     if (localStorage.getItem(LIVE_DATA_TAG) !== 'true') {
       localStorage.setItem('admark_clients', JSON.stringify(INITIAL_CLIENTS));
@@ -528,11 +528,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  const addModule = (m: Omit<ProjectModule, 'id' | 'progress'>) => {
+  const addModule = (m: Omit<ProjectModule, 'id'> & { progress?: number }) => {
     const newMod: ProjectModule = {
       ...m,
       id: `mod-${Date.now()}`,
-      progress: 0,
+      progress: m.progress ?? 0,
     };
     const updated = [...modules, newMod];
     setModules(updated);

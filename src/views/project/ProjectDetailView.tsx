@@ -97,6 +97,7 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
   const [newModuleLeadId, setNewModuleLeadId] = useState(users[0]?.id || '');
   const [newModuleTargetDate, setNewModuleTargetDate] = useState('2025-10-31');
   const [newModuleStatus, setNewModuleStatus] = useState<'Planned' | 'In Progress' | 'Completed' | 'Delayed'>('In Progress');
+  const [newModuleProgress, setNewModuleProgress] = useState<number>(0);
   const [newModuleDeliverables, setNewModuleDeliverables] = useState('');
 
   // Edit Module state
@@ -106,6 +107,7 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
   const [editModuleLeadId, setEditModuleLeadId] = useState('');
   const [editModuleTargetDate, setEditModuleTargetDate] = useState('');
   const [editModuleStatus, setEditModuleStatus] = useState<'Planned' | 'In Progress' | 'Completed' | 'Delayed'>('In Progress');
+  const [editModuleProgress, setEditModuleProgress] = useState<number>(0);
   const [editModuleDeliverables, setEditModuleDeliverables] = useState('');
 
   const [taskViewMode, setTaskViewMode] = useState<'board' | 'list' | 'gantt' | 'calendar'>('board');
@@ -1033,9 +1035,38 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                           </select>
                         </div>
                         <div className="flex items-center gap-1.5">
-                          <span className={`badge ${calculatedModProgress === 100 ? 'badge-healthy' : 'badge-neutral'}`}>
-                            {calculatedModProgress}% Done
-                          </span>
+                          {/* Interactive Percentage Selector */}
+                          <select
+                            value={calculatedModProgress}
+                            onChange={(e) => {
+                              const val = parseInt(e.target.value, 10);
+                              updateModule(mod.id, {
+                                progress: val,
+                                status: val === 100 ? 'Completed' : (mod.status === 'Completed' && val < 100 ? 'In Progress' : mod.status),
+                              });
+                            }}
+                            className="input-field"
+                            style={{
+                              height: '24px',
+                              padding: '0 6px',
+                              fontSize: '0.72rem',
+                              fontWeight: 700,
+                              borderRadius: '6px',
+                              cursor: 'pointer',
+                              width: 'auto',
+                              backgroundColor: calculatedModProgress === 100 ? 'rgba(16, 185, 129, 0.15)' : 'rgba(255, 255, 255, 0.08)',
+                              borderColor: calculatedModProgress === 100 ? 'var(--status-healthy)' : 'var(--border-subtle)',
+                              color: calculatedModProgress === 100 ? 'var(--status-healthy)' : 'var(--text-primary)',
+                            }}
+                            title="Click to change completion %"
+                          >
+                            {[0, 10, 20, 25, 30, 40, 50, 60, 70, 75, 80, 90, 100].map((pct) => (
+                              <option key={pct} value={pct}>
+                                {pct}% Done
+                              </option>
+                            ))}
+                          </select>
+
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
@@ -1045,10 +1076,11 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                               setEditModuleLeadId(mod.leadId);
                               setEditModuleTargetDate(mod.targetDate || '');
                               setEditModuleStatus(mod.status || 'In Progress');
+                              setEditModuleProgress(typeof mod.progress === 'number' ? mod.progress : 0);
                               setEditModuleDeliverables(mod.deliverables ? mod.deliverables.join('\n') : '');
                             }}
                             className="btn btn-secondary btn-sm"
-                            title="Edit Module & Target Date"
+                            title="Edit Module, Progress & Target Date"
                             style={{ padding: '0.2rem 0.4rem', border: 'none', background: 'transparent', cursor: 'pointer' }}
                           >
                             <Edit3 size={13} style={{ color: 'var(--text-secondary)' }} />
@@ -1075,12 +1107,28 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                         {mod.description}
                       </p>
 
-                      <div className="progress-bar-track" style={{ margin: '0.75rem 0 0.5rem 0' }}>
+                      {/* Clickable Progress Bar */}
+                      <div
+                        className="progress-bar-track"
+                        style={{ margin: '0.75rem 0 0.5rem 0', cursor: 'pointer', position: 'relative' }}
+                        title="Click anywhere on the bar to set percentage"
+                        onClick={(e) => {
+                          const rect = e.currentTarget.getBoundingClientRect();
+                          const clickX = e.clientX - rect.left;
+                          const pct = Math.min(100, Math.max(0, Math.round((clickX / rect.width) * 100)));
+                          const rounded = Math.round(pct / 5) * 5;
+                          updateModule(mod.id, {
+                            progress: rounded,
+                            status: rounded === 100 ? 'Completed' : (mod.status === 'Completed' && rounded < 100 ? 'In Progress' : mod.status),
+                          });
+                        }}
+                      >
                         <div
                           className="progress-bar-fill"
                           style={{
                             width: `${calculatedModProgress}%`,
                             backgroundColor: calculatedModProgress === 100 ? 'var(--status-healthy)' : 'var(--brand-crimson)',
+                            transition: 'width 0.2s ease',
                           }}
                         />
                       </div>
@@ -1097,18 +1145,60 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                         <span>Tasks: {modTasks.length} ({modCompleted} done)</span>
                       </div>
 
-                      {/* Deliverables checklist if defined */}
+                      {/* Deliverables checklist - Clickable to toggle parts as done */}
                       {mod.deliverables && mod.deliverables.length > 0 && (
                         <div style={{ marginTop: '0.5rem', background: 'var(--bg-app)', padding: '0.65rem 0.75rem', borderRadius: '0.4rem', border: '1px solid var(--border-subtle)', marginBottom: '0.65rem' }}>
-                          <div style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.35rem' }}>
-                            Deliverables Checklist
+                          <div className="flex items-center justify-between" style={{ marginBottom: '0.4rem' }}>
+                            <div style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                              Deliverables Checklist
+                            </div>
+                            <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>
+                              Click item to mark done / pending
+                            </span>
                           </div>
                           <div className="flex flex-wrap gap-1.5">
-                            {mod.deliverables.map((del, idx) => (
-                              <span key={idx} className="badge badge-neutral" style={{ padding: '0.2rem 0.45rem', fontSize: '0.7rem' }}>
-                                ✓ {del}
-                              </span>
-                            ))}
+                            {mod.deliverables.map((del, idx) => {
+                              const isDelDone = mod.completedDeliverables
+                                ? mod.completedDeliverables.includes(del)
+                                : calculatedModProgress === 100;
+                              return (
+                                <button
+                                  key={idx}
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    const currentDels = mod.completedDeliverables || (calculatedModProgress === 100 ? (mod.deliverables || []) : []);
+                                    const nextDels = isDelDone
+                                      ? currentDels.filter((d) => d !== del)
+                                      : [...currentDels, del];
+                                    const total = mod.deliverables?.length || 1;
+                                    const nextProgress = Math.round((nextDels.length / total) * 100);
+                                    updateModule(mod.id, {
+                                      completedDeliverables: nextDels,
+                                      progress: nextProgress,
+                                      status: nextProgress === 100 ? 'Completed' : (mod.status === 'Completed' && nextProgress < 100 ? 'In Progress' : mod.status),
+                                    });
+                                  }}
+                                  className={`badge ${isDelDone ? 'badge-healthy' : 'badge-neutral'}`}
+                                  style={{
+                                    padding: '0.22rem 0.55rem',
+                                    fontSize: '0.72rem',
+                                    cursor: 'pointer',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '4px',
+                                    background: isDelDone ? 'rgba(16, 185, 129, 0.16)' : 'rgba(255, 255, 255, 0.05)',
+                                    borderColor: isDelDone ? 'var(--status-healthy)' : 'var(--border-subtle)',
+                                    color: isDelDone ? 'var(--status-healthy)' : 'var(--text-secondary)',
+                                  }}
+                                  title={isDelDone ? 'Completed! Click to mark pending' : 'Pending. Click to mark done'}
+                                >
+                                  <span>{isDelDone ? '✓' : '○'}</span>
+                                  <span>{del}</span>
+                                  {isDelDone && <span style={{ fontSize: '0.62rem', opacity: 0.85 }}>(Done)</span>}
+                                </button>
+                              );
+                            })}
                           </div>
                         </div>
                       )}
@@ -2433,12 +2523,14 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                     order: projectModules.length + 1,
                     targetDate: newModuleTargetDate || project.deadline,
                     status: newModuleStatus,
+                    progress: newModuleStatus === 'Completed' ? 100 : newModuleProgress,
                     deliverables: dels.length > 0 ? dels : undefined,
                   });
 
                   setNewModuleName('');
                   setNewModuleDesc('');
                   setNewModuleDeliverables('');
+                  setNewModuleProgress(0);
                   setShowAddModuleModal(false);
                 }}
                 className="flex flex-col gap-3"
@@ -2483,7 +2575,11 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                     </label>
                     <select
                       value={newModuleStatus}
-                      onChange={(e) => setNewModuleStatus(e.target.value as any)}
+                      onChange={(e) => {
+                        const val = e.target.value as any;
+                        setNewModuleStatus(val);
+                        if (val === 'Completed') setNewModuleProgress(100);
+                      }}
                       className="input-field"
                       style={{ marginTop: '4px' }}
                     >
@@ -2492,6 +2588,40 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                       <option value="Completed">Completed</option>
                       <option value="Delayed">Delayed</option>
                     </select>
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between">
+                    <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                      Initial Completion Progress
+                    </label>
+                    <span style={{ fontSize: '0.82rem', fontWeight: 700, color: newModuleProgress === 100 ? 'var(--status-healthy)' : 'var(--brand-crimson)' }}>
+                      {newModuleProgress}% Done
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3" style={{ marginTop: '6px' }}>
+                    <input
+                      type="range"
+                      min={0}
+                      max={100}
+                      step={5}
+                      value={newModuleProgress}
+                      onChange={(e) => setNewModuleProgress(parseInt(e.target.value, 10))}
+                      style={{ flex: 1, cursor: 'pointer', accentColor: newModuleProgress === 100 ? 'var(--status-healthy)' : 'var(--brand-crimson)' }}
+                    />
+                    <div className="flex items-center gap-1">
+                      <input
+                        type="number"
+                        min={0}
+                        max={100}
+                        value={newModuleProgress}
+                        onChange={(e) => setNewModuleProgress(Math.min(100, Math.max(0, parseInt(e.target.value, 10) || 0)))}
+                        className="input-field"
+                        style={{ width: '55px', textAlign: 'center', fontWeight: 700, padding: '0.2rem' }}
+                      />
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>%</span>
+                    </div>
                   </div>
                 </div>
 
@@ -2582,14 +2712,9 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                     description: editModuleDesc.trim(),
                     leadId: editModuleLeadId || editingModule.leadId,
                     targetDate: editModuleTargetDate || undefined,
-                    status: editModuleStatus,
+                    status: editModuleProgress === 100 ? 'Completed' : editModuleStatus,
                     deliverables: dels.length > 0 ? dels : undefined,
-                    progress:
-                      editModuleStatus === 'Completed'
-                        ? 100
-                        : editingModule.progress === 100
-                        ? 50
-                        : editingModule.progress,
+                    progress: editModuleStatus === 'Completed' ? 100 : editModuleProgress,
                   });
 
                   setEditingModule(null);
@@ -2635,7 +2760,11 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                     </label>
                     <select
                       value={editModuleStatus}
-                      onChange={(e) => setEditModuleStatus(e.target.value as any)}
+                      onChange={(e) => {
+                        const val = e.target.value as any;
+                        setEditModuleStatus(val);
+                        if (val === 'Completed') setEditModuleProgress(100);
+                      }}
                       className="input-field"
                       style={{ marginTop: '4px' }}
                     >
@@ -2644,6 +2773,48 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                       <option value="Delayed">Delayed</option>
                       <option value="Completed">Completed ✓</option>
                     </select>
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between">
+                    <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                      Module Completion Progress
+                    </label>
+                    <span style={{ fontSize: '0.82rem', fontWeight: 700, color: editModuleProgress === 100 ? 'var(--status-healthy)' : 'var(--brand-crimson)' }}>
+                      {editModuleProgress}% Done
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3" style={{ marginTop: '6px' }}>
+                    <input
+                      type="range"
+                      min={0}
+                      max={100}
+                      step={5}
+                      value={editModuleProgress}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value, 10);
+                        setEditModuleProgress(val);
+                        if (val === 100) setEditModuleStatus('Completed');
+                      }}
+                      style={{ flex: 1, cursor: 'pointer', accentColor: editModuleProgress === 100 ? 'var(--status-healthy)' : 'var(--brand-crimson)' }}
+                    />
+                    <div className="flex items-center gap-1">
+                      <input
+                        type="number"
+                        min={0}
+                        max={100}
+                        value={editModuleProgress}
+                        onChange={(e) => {
+                          const val = Math.min(100, Math.max(0, parseInt(e.target.value, 10) || 0));
+                          setEditModuleProgress(val);
+                          if (val === 100) setEditModuleStatus('Completed');
+                        }}
+                        className="input-field"
+                        style={{ width: '55px', textAlign: 'center', fontWeight: 700, padding: '0.2rem' }}
+                      />
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>%</span>
+                    </div>
                   </div>
                 </div>
 
