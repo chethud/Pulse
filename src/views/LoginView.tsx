@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { Mail, Lock, Eye, EyeOff, LogIn, Shield, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, LogIn, AlertCircle } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
 export const LoginView: React.FC = () => {
-  const { login, users } = useApp();
+  const { login } = useApp();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -28,11 +28,7 @@ export const LoginView: React.FC = () => {
     }, 300);
   };
 
-  const handleQuickSelect = (userEmail: string) => {
-    setEmail(userEmail);
-    setPassword('password123');
-    setErrorMessage('');
-  };
+
 
   return (
     <div
@@ -153,17 +149,12 @@ export const LoginView: React.FC = () => {
           </div>
 
           <div>
-            <div className="flex items-center justify-between">
-              <label
-                htmlFor="login-password"
-                style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}
-              >
-                Password
-              </label>
-              <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                Default: password123
-              </span>
-            </div>
+            <label
+              htmlFor="login-password"
+              style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}
+            >
+              Password
+            </label>
             <div style={{ position: 'relative', marginTop: '6px' }}>
               <Lock
                 size={15}
@@ -239,67 +230,7 @@ export const LoginView: React.FC = () => {
           </button>
         </form>
 
-        {/* Member Quick-Fill Roster */}
-        <div style={{ marginTop: '1.75rem', paddingTop: '1.25rem', borderTop: '1px solid var(--border-subtle)' }}>
-          <div
-            style={{
-              fontSize: '0.72rem',
-              fontWeight: 700,
-              color: 'var(--text-muted)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em',
-              marginBottom: '0.75rem',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-            }}
-          >
-            <Shield size={12} color="var(--brand-crimson)" />
-            <span>Select Member to Quick-Fill</span>
-          </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            {users.map((u) => {
-              const isSelected = email.toLowerCase() === u.email.toLowerCase();
-              return (
-                <button
-                  key={u.id}
-                  type="button"
-                  onClick={() => handleQuickSelect(u.email)}
-                  className="admark-card-interactive flex items-center justify-between"
-                  style={{
-                    padding: '0.5rem 0.75rem',
-                    borderRadius: '0.5rem',
-                    background: isSelected ? 'var(--bg-elevated)' : 'var(--bg-app)',
-                    border: isSelected ? '1px solid var(--brand-crimson)' : '1px solid var(--border-subtle)',
-                    cursor: 'pointer',
-                    textAlign: 'left',
-                  }}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <img
-                      src={u.avatar}
-                      alt={u.name}
-                      style={{ width: '22px', height: '22px', borderRadius: '50%', objectFit: 'cover' }}
-                    />
-                    <div>
-                      <span style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-                        {u.name}
-                      </span>
-                      <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginLeft: '6px' }}>
-                        ({u.title})
-                      </span>
-                    </div>
-                  </div>
-
-                  <span style={{ fontSize: '0.72rem', color: isSelected ? 'var(--brand-crimson)' : 'var(--text-secondary)' }}>
-                    {isSelected ? 'Selected' : 'Use Account'}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
       </div>
     </div>
   );
