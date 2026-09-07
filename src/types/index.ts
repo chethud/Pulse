@@ -111,6 +111,22 @@ export interface Project {
   progress: number; // calculated dynamically
   pinned?: boolean;
   maintenanceNotes?: string;
+  uptimeSla?: string;
+  slaTarget?: string;
+  maintenanceTasks?: MaintenanceTask[];
+}
+
+export interface MaintenanceTask {
+  id: string;
+  projectId: string;
+  code: string;
+  title: string;
+  priority: 'Low' | 'Medium' | 'High' | 'Urgent';
+  status: 'In Progress' | 'Ready' | 'Done' | 'Scheduled' | 'On Hold';
+  assigneeName: string;
+  assigneeId?: string;
+  dueDate?: string;
+  notes?: string;
 }
 
 export interface ProjectModule {

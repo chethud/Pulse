@@ -37,7 +37,7 @@ import {
   Server,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
-import { TaskStatus, TaskPriority, ChangeRequestStatus } from '../../types';
+import { TaskStatus, TaskPriority, ChangeRequestStatus, MaintenanceTask } from '../../types';
 
 interface ProjectDetailViewProps {
   currentTab: string;
@@ -128,6 +128,30 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
   const [newReviewDesc, setNewReviewDesc] = useState('');
   const [newReviewFeedback, setNewReviewFeedback] = useState('');
   const [newReviewStatus, setNewReviewStatus] = useState<'Passed' | 'Needs Change' | 'Pending'>('Pending');
+
+  // Maintenance task management state
+  const [showNewMaintenanceModal, setShowNewMaintenanceModal] = useState(false);
+  const [newMntTitle, setNewMntTitle] = useState('');
+  const [newMntAssignee, setNewMntAssignee] = useState('Harshith');
+  const [newMntPriority, setNewMntPriority] = useState<'Low' | 'Medium' | 'High' | 'Urgent'>('Medium');
+  const [newMntStatus, setNewMntStatus] = useState<'In Progress' | 'Ready' | 'Done' | 'Scheduled' | 'On Hold'>('In Progress');
+  const [newMntDueDate, setNewMntDueDate] = useState('');
+  const [newMntNotes, setNewMntNotes] = useState('');
+
+  // Edit maintenance task state
+  const [editingMaintenanceTask, setEditingMaintenanceTask] = useState<MaintenanceTask | null>(null);
+  const [editMntTitle, setEditMntTitle] = useState('');
+  const [editMntAssignee, setEditMntAssignee] = useState('');
+  const [editMntPriority, setEditMntPriority] = useState<'Low' | 'Medium' | 'High' | 'Urgent'>('Medium');
+  const [editMntStatus, setEditMntStatus] = useState<'In Progress' | 'Ready' | 'Done' | 'Scheduled' | 'On Hold'>('In Progress');
+  const [editMntDueDate, setEditMntDueDate] = useState('');
+  const [editMntNotes, setEditMntNotes] = useState('');
+
+  // SLA & Maintenance Notes modal state
+  const [showEditSlaModal, setShowEditSlaModal] = useState(false);
+  const [editUptimeSla, setEditUptimeSla] = useState('99.98%');
+  const [editSlaTarget, setEditSlaTarget] = useState('Resolved within 4h SLA');
+  const [editMaintenanceNotes, setEditMaintenanceNotes] = useState('');
 
   useEffect(() => {
     if (currentTab === 'what-left') setTaskScopeFilter('remaining');
@@ -254,6 +278,81 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
     { id: 'Client Review', label: 'Client Review', color: '#ec4899' },
     { id: 'Done', label: 'Done', color: '#10b981' },
   ];
+
+  // Maintenance task management logic
+  const defaultMaintenanceTasks: MaintenanceTask[] = [
+    {
+      id: `mnt-${project.id}-1`,
+      projectId: project.id,
+      code: 'MNT-101',
+      title: 'Payment gateway SSL certificate renewal (Annual)',
+      priority: 'High',
+      status: 'In Progress',
+      assigneeName: 'Vikram Patel',
+      dueDate: '2026-10-15',
+      notes: 'Renew production Wildcard SSL certificates on load balancers.',
+    },
+    {
+      id: `mnt-${project.id}-2`,
+      projectId: project.id,
+      code: 'MNT-102',
+      title: 'PostgreSQL database index re-indexing & vacuum optimization',
+      priority: 'Medium',
+      status: 'Ready',
+      assigneeName: 'Rahul Verma',
+      dueDate: '2026-10-25',
+      notes: 'Scheduled monthly autovacuum analyze and table bloat check.',
+    },
+    {
+      id: `mnt-${project.id}-3`,
+      projectId: project.id,
+      code: 'MNT-103',
+      title: 'Mobile push notification token cleanup cron job',
+      priority: 'Low',
+      status: 'Done',
+      assigneeName: 'Aisha Khan',
+      dueDate: '2026-09-30',
+      notes: 'Prune stale device FCM/APNS tokens older than 90 days.',
+    },
+  ];
+
+  const currentMaintenanceTasks: MaintenanceTask[] =
+    project.maintenanceTasks && project.maintenanceTasks.length > 0
+      ? project.maintenanceTasks
+      : defaultMaintenanceTasks;
+
+  const handleUpdateMaintenanceTask = (updatedTask: MaintenanceTask) => {
+    const nextTasks = currentMaintenanceTasks.map((t) => (t.id === updatedTask.id ? updatedTask : t));
+    updateProject(project.id, { maintenanceTasks: nextTasks });
+    setEditingMaintenanceTask(null);
+  };
+
+  const handleCreateMaintenanceTask = (taskData: Omit<MaintenanceTask, 'id' | 'code' | 'projectId'>) => {
+    const code = `MNT-${100 + currentMaintenanceTasks.length + 1}`;
+    const newTask: MaintenanceTask = {
+      ...taskData,
+      id: `mnt-${project.id}-${Date.now()}`,
+      projectId: project.id,
+      code,
+    };
+    updateProject(project.id, { maintenanceTasks: [...currentMaintenanceTasks, newTask] });
+    setShowNewMaintenanceModal(false);
+  };
+
+  const handleDeleteMaintenanceTask = (taskId: string) => {
+    const nextTasks = currentMaintenanceTasks.filter((t) => t.id !== taskId);
+    updateProject(project.id, { maintenanceTasks: nextTasks });
+  };
+
+  const handleSaveSlaSettings = (e: React.FormEvent) => {
+    e.preventDefault();
+    updateProject(project.id, {
+      uptimeSla: editUptimeSla.trim() || '99.98%',
+      slaTarget: editSlaTarget.trim() || 'Resolved within 4h SLA',
+      maintenanceNotes: editMaintenanceNotes.trim(),
+    });
+    setShowEditSlaModal(false);
+  };
 
   const isTasksActive = currentTab === 'tasks' || currentTab === 'board' || currentTab === 'what-left' || currentTab === 'blockers';
   const isQualityActive = currentTab === 'quality' || currentTab === 'bugs' || currentTab === 'testing';
@@ -1981,83 +2080,303 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
         {/* ================= TAB 17: MAINTENANCE WORKSPACE ================= */}
         {currentTab === 'maintenance' && (
           <div className="flex flex-col gap-4">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between flex-wrap gap-3">
               <div>
                 <h2 style={{ fontSize: '1.25rem', fontWeight: 800 }}>Post-Launch Maintenance & Support Workspace</h2>
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
                   Ongoing production stability, maintenance tickets, routine patch cycles, and SLA monitoring
                 </div>
               </div>
-              <button
-                onClick={() => {
-                  alert('Project marked in Maintenance status.');
-                }}
-                className="btn btn-secondary btn-sm"
-              >
-                Set Project Status: Maintenance
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowEditSlaModal(true);
+                    setEditUptimeSla(project.uptimeSla || '99.98%');
+                    setEditSlaTarget(project.slaTarget || 'Resolved within 4h SLA');
+                    setEditMaintenanceNotes(project.maintenanceNotes || '');
+                  }}
+                  className="btn btn-secondary btn-sm"
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}
+                >
+                  <Edit3 size={13} />
+                  <span>Edit SLA & Notes</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const nextStatus = project.status === 'Maintenance' ? 'Active' : 'Maintenance';
+                    updateProject(project.id, { status: nextStatus });
+                  }}
+                  className="btn btn-secondary btn-sm"
+                  style={{
+                    borderColor: project.status === 'Maintenance' ? 'var(--status-healthy)' : undefined,
+                    color: project.status === 'Maintenance' ? 'var(--status-healthy)' : undefined,
+                    fontWeight: 600,
+                  }}
+                >
+                  {project.status === 'Maintenance' ? '✓ Status: In Maintenance (Click to Revert)' : 'Set Project Status: Maintenance'}
+                </button>
+              </div>
             </div>
 
+            {/* KPI Cards */}
             <div className="grid grid-cols-3 gap-3">
               <div className="admark-card" style={{ padding: '1rem' }}>
                 <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>
                   Open Maintenance Tasks
                 </div>
                 <div style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '4px' }}>
-                  12
+                  {currentMaintenanceTasks.filter((t) => t.status !== 'Done').length}
                 </div>
-                <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Routine optimizations & updates</div>
+                <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                  {currentMaintenanceTasks.filter((t) => t.status === 'In Progress').length} in progress • {currentMaintenanceTasks.filter((t) => t.status === 'Done').length} completed
+                </div>
               </div>
 
               <div className="admark-card" style={{ padding: '1rem' }}>
                 <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>
                   Support Defect Backlog
                 </div>
-                <div style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--status-healthy)', marginTop: '4px' }}>
-                  3
+                <div style={{ fontSize: '1.75rem', fontWeight: 800, color: projectBugs.filter((b) => b.status !== 'Verified' && b.status !== 'Fixed').length > 0 ? 'var(--status-warning)' : 'var(--status-healthy)', marginTop: '4px' }}>
+                  {projectBugs.filter((b) => b.status !== 'Verified' && b.status !== 'Fixed').length}
                 </div>
-                <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Resolved within 4h SLA</div>
+                <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{project.slaTarget || 'Resolved within 4h SLA'}</div>
               </div>
 
               <div className="admark-card" style={{ padding: '1rem' }}>
-                <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>
-                  Uptime & SLA
+                <div className="flex items-center justify-between">
+                  <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>
+                    Uptime & SLA
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowEditSlaModal(true);
+                      setEditUptimeSla(project.uptimeSla || '99.98%');
+                      setEditSlaTarget(project.slaTarget || 'Resolved within 4h SLA');
+                      setEditMaintenanceNotes(project.maintenanceNotes || '');
+                    }}
+                    className="btn btn-ghost btn-icon btn-sm"
+                    title="Edit Uptime & SLA Target"
+                    style={{ height: '20px', width: '20px', padding: 0 }}
+                  >
+                    <Edit3 size={11} />
+                  </button>
                 </div>
                 <div style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--status-healthy)', marginTop: '4px' }}>
-                  99.98%
+                  {project.uptimeSla || '99.98%'}
                 </div>
                 <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Continuous production monitoring</div>
               </div>
             </div>
 
+            {/* Maintenance Scope & SLA Notes Banner (if configured) */}
+            {project.maintenanceNotes && (
+              <div
+                className="admark-card"
+                style={{
+                  padding: '0.85rem 1rem',
+                  background: 'rgba(56, 189, 248, 0.04)',
+                  borderColor: 'rgba(56, 189, 248, 0.25)',
+                  fontSize: '0.8125rem',
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  justifyContent: 'space-between',
+                  gap: '1rem',
+                }}
+              >
+                <div>
+                  <div style={{ fontWeight: 700, color: '#38bdf8', marginBottom: '3px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    Maintenance Policy & Operational Notes
+                  </div>
+                  <div style={{ color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                    {project.maintenanceNotes}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowEditSlaModal(true);
+                    setEditMaintenanceNotes(project.maintenanceNotes || '');
+                  }}
+                  className="btn btn-ghost btn-sm"
+                  style={{ fontSize: '0.72rem', color: '#38bdf8' }}
+                >
+                  <Edit3 size={12} />
+                  <span>Edit</span>
+                </button>
+              </div>
+            )}
+
+            {/* Active Maintenance Tasks List */}
             <div className="admark-card" style={{ padding: '1.25rem' }}>
               <div className="flex items-center justify-between" style={{ marginBottom: '0.75rem' }}>
-                <h3 style={{ fontSize: '0.95rem', fontWeight: 700 }}>Active Maintenance & Patch Tasks</h3>
-                <button onClick={() => setQuickCreateOpen(true)} className="btn btn-primary btn-sm">
+                <div>
+                  <h3 style={{ fontSize: '0.95rem', fontWeight: 700 }}>Active Maintenance & Patch Tasks</h3>
+                  <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                    Click on any task to edit details, or change status directly from the dropdown.
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setNewMntTitle('');
+                    setNewMntAssignee(users[0]?.name || 'Harshith');
+                    setNewMntPriority('Medium');
+                    setNewMntStatus('In Progress');
+                    setNewMntDueDate('');
+                    setNewMntNotes('');
+                    setShowNewMaintenanceModal(true);
+                  }}
+                  className="btn btn-primary btn-sm"
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}
+                >
                   <Plus size={14} />
                   <span>New Maintenance Task</span>
                 </button>
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                {[
-                  { title: 'Payment gateway SSL certificate renewal (Annual)', priority: 'High', status: 'In Progress', assignee: 'Vikram Patel' },
-                  { title: 'PostgreSQL database index re-indexing & vacuum optimization', priority: 'Medium', status: 'Ready', assignee: 'Rahul Verma' },
-                  { title: 'Mobile push notification token cleanup cron job', priority: 'Low', status: 'Done', assignee: 'Aisha Khan' },
-                ].map((item, idx) => (
-                  <div key={idx} className="flex items-center justify-between" style={{ padding: '0.65rem 0.85rem', background: 'var(--bg-app)', borderRadius: '4px', fontSize: '0.8125rem' }}>
-                    <div className="flex items-center gap-2">
-                      <span className="badge badge-neutral">MNT-{idx + 101}</span>
-                      <span style={{ fontWeight: 600 }}>{item.title}</span>
+                {currentMaintenanceTasks.map((item, idx) => {
+                  return (
+                    <div
+                      key={item.id || idx}
+                      className="flex items-center justify-between"
+                      style={{
+                        padding: '0.65rem 0.85rem',
+                        background: 'var(--bg-app)',
+                        borderRadius: '6px',
+                        fontSize: '0.8125rem',
+                        border: '1px solid var(--border-subtle)',
+                        transition: 'border-color 0.15s ease',
+                      }}
+                    >
+                      <div className="flex items-center gap-2.5" style={{ flex: 1, minWidth: 0 }}>
+                        <span className="badge badge-neutral" style={{ fontFamily: 'var(--font-mono)', fontSize: '0.7rem' }}>
+                          {item.code || `MNT-${idx + 101}`}
+                        </span>
+                        <span style={{ fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {item.title}
+                        </span>
+                        {item.priority && (
+                          <span
+                            className="badge"
+                            style={{
+                              fontSize: '0.65rem',
+                              padding: '1px 5px',
+                              background:
+                                item.priority === 'Urgent'
+                                  ? 'rgba(239, 68, 68, 0.15)'
+                                  : item.priority === 'High'
+                                  ? 'rgba(249, 115, 22, 0.15)'
+                                  : item.priority === 'Medium'
+                                  ? 'rgba(234, 179, 8, 0.15)'
+                                  : 'rgba(148, 163, 184, 0.15)',
+                              color:
+                                item.priority === 'Urgent'
+                                  ? '#ef4444'
+                                  : item.priority === 'High'
+                                  ? '#f97316'
+                                  : item.priority === 'Medium'
+                                  ? '#eab308'
+                                  : '#94a3b8',
+                              border: 'none',
+                            }}
+                          >
+                            {item.priority}
+                          </span>
+                        )}
+                        {item.dueDate && (
+                          <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                            Due: {item.dueDate}
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-2.5">
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 500 }}>
+                          {item.assigneeName || 'Unassigned'}
+                        </span>
+
+                        {/* Interactive Status Selector */}
+                        <select
+                          value={item.status}
+                          onChange={(e) => {
+                            const nextStatus = e.target.value as any;
+                            handleUpdateMaintenanceTask({ ...item, status: nextStatus });
+                          }}
+                          className="input-field"
+                          style={{
+                            fontSize: '0.72rem',
+                            padding: '2px 6px',
+                            height: '24px',
+                            fontWeight: 600,
+                            borderRadius: '4px',
+                            background:
+                              item.status === 'Done'
+                                ? 'rgba(16, 185, 129, 0.14)'
+                                : item.status === 'In Progress'
+                                ? 'rgba(56, 189, 248, 0.14)'
+                                : 'rgba(255, 255, 255, 0.05)',
+                            color:
+                              item.status === 'Done'
+                                ? '#34d399'
+                                : item.status === 'In Progress'
+                                ? '#38bdf8'
+                                : 'var(--text-secondary)',
+                            borderColor:
+                              item.status === 'Done'
+                                ? 'rgba(16, 185, 129, 0.4)'
+                                : item.status === 'In Progress'
+                                ? 'rgba(56, 189, 248, 0.4)'
+                                : 'var(--border-subtle)',
+                          }}
+                        >
+                          <option value="In Progress">In Progress</option>
+                          <option value="Ready">Ready</option>
+                          <option value="Done">Done</option>
+                          <option value="Scheduled">Scheduled</option>
+                          <option value="On Hold">On Hold</option>
+                        </select>
+
+                        {/* Edit Button */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingMaintenanceTask(item);
+                            setEditMntTitle(item.title);
+                            setEditMntAssignee(item.assigneeName);
+                            setEditMntPriority(item.priority || 'Medium');
+                            setEditMntStatus(item.status);
+                            setEditMntDueDate(item.dueDate || '');
+                            setEditMntNotes(item.notes || '');
+                          }}
+                          className="btn btn-ghost btn-icon btn-sm"
+                          title="Edit Task Details"
+                          style={{ height: '24px', width: '24px', padding: 0 }}
+                        >
+                          <Edit3 size={12} />
+                        </button>
+
+                        {/* Delete Button */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (window.confirm(`Delete maintenance task "${item.title}"?`)) {
+                              handleDeleteMaintenanceTask(item.id);
+                            }
+                          }}
+                          className="btn btn-ghost btn-icon btn-sm"
+                          title="Delete Task"
+                          style={{ height: '24px', width: '24px', padding: 0, color: 'var(--status-critical)' }}
+                        >
+                          <Trash2 size={12} />
+                        </button>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{item.assignee}</span>
-                      <span className={`badge ${item.status === 'Done' ? 'badge-healthy' : 'badge-neutral'}`}>
-                        {item.status}
-                      </span>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -3183,6 +3502,362 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                   Close
                 </button>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Create New Maintenance Task Modal */}
+        {showNewMaintenanceModal && (
+          <div className="modal-backdrop animate-fade-in" onClick={() => setShowNewMaintenanceModal(false)}>
+            <div
+              className="admark-card"
+              style={{ width: '100%', maxWidth: '520px', padding: '1.5rem', borderRadius: '0.75rem' }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between" style={{ marginBottom: '1rem' }}>
+                <div className="flex items-center gap-2">
+                  <Plus size={18} style={{ color: 'var(--brand-crimson)' }} />
+                  <h2 style={{ fontSize: '1.1rem', fontWeight: 700 }}>New Maintenance & Patch Task</h2>
+                </div>
+                <button onClick={() => setShowNewMaintenanceModal(false)} className="btn btn-ghost btn-icon">
+                  <X size={16} />
+                </button>
+              </div>
+
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (!newMntTitle.trim()) return;
+                  handleCreateMaintenanceTask({
+                    title: newMntTitle.trim(),
+                    assigneeName: newMntAssignee.trim() || 'Harshith',
+                    priority: newMntPriority,
+                    status: newMntStatus,
+                    dueDate: newMntDueDate || undefined,
+                    notes: newMntNotes.trim() || undefined,
+                  });
+                }}
+                className="flex flex-col gap-3"
+              >
+                <div>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                    Task Title *
+                  </label>
+                  <input
+                    required
+                    type="text"
+                    value={newMntTitle}
+                    onChange={(e) => setNewMntTitle(e.target.value)}
+                    placeholder="e.g. SSL certificate renewal, Redis cache purge, DB re-index"
+                    className="input-field"
+                    style={{ marginTop: '4px' }}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                      Assignee
+                    </label>
+                    <input
+                      type="text"
+                      value={newMntAssignee}
+                      onChange={(e) => setNewMntAssignee(e.target.value)}
+                      placeholder="Assignee name"
+                      className="input-field"
+                      style={{ marginTop: '4px' }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                      Due Date
+                    </label>
+                    <input
+                      type="date"
+                      value={newMntDueDate}
+                      onChange={(e) => setNewMntDueDate(e.target.value)}
+                      className="input-field"
+                      style={{ marginTop: '4px' }}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                      Priority
+                    </label>
+                    <select
+                      value={newMntPriority}
+                      onChange={(e) => setNewMntPriority(e.target.value as any)}
+                      className="input-field"
+                      style={{ marginTop: '4px' }}
+                    >
+                      <option value="Low">Low</option>
+                      <option value="Medium">Medium</option>
+                      <option value="High">High</option>
+                      <option value="Urgent">Urgent</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                      Initial Status
+                    </label>
+                    <select
+                      value={newMntStatus}
+                      onChange={(e) => setNewMntStatus(e.target.value as any)}
+                      className="input-field"
+                      style={{ marginTop: '4px' }}
+                    >
+                      <option value="In Progress">In Progress</option>
+                      <option value="Ready">Ready</option>
+                      <option value="Scheduled">Scheduled</option>
+                      <option value="On Hold">On Hold</option>
+                      <option value="Done">Done</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                    Task Notes & SOP Checklist
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={newMntNotes}
+                    onChange={(e) => setNewMntNotes(e.target.value)}
+                    placeholder="Standard operating procedure, rollout instructions, or impact details..."
+                    className="input-field"
+                    style={{ marginTop: '4px', resize: 'vertical' }}
+                  />
+                </div>
+
+                <div className="flex justify-end gap-2" style={{ marginTop: '0.75rem' }}>
+                  <button type="button" onClick={() => setShowNewMaintenanceModal(false)} className="btn btn-secondary">
+                    Cancel
+                  </button>
+                  <button type="submit" className="btn btn-primary">
+                    Create Maintenance Task
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Edit Maintenance Task Modal */}
+        {editingMaintenanceTask && (
+          <div className="modal-backdrop animate-fade-in" onClick={() => setEditingMaintenanceTask(null)}>
+            <div
+              className="admark-card"
+              style={{ width: '100%', maxWidth: '520px', padding: '1.5rem', borderRadius: '0.75rem' }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between" style={{ marginBottom: '1rem' }}>
+                <div className="flex items-center gap-2">
+                  <Edit3 size={18} style={{ color: 'var(--brand-crimson)' }} />
+                  <h2 style={{ fontSize: '1.1rem', fontWeight: 700 }}>
+                    Edit Maintenance Task ({editingMaintenanceTask.code})
+                  </h2>
+                </div>
+                <button onClick={() => setEditingMaintenanceTask(null)} className="btn btn-ghost btn-icon">
+                  <X size={16} />
+                </button>
+              </div>
+
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (!editMntTitle.trim()) return;
+                  handleUpdateMaintenanceTask({
+                    ...editingMaintenanceTask,
+                    title: editMntTitle.trim(),
+                    assigneeName: editMntAssignee.trim() || 'Harshith',
+                    priority: editMntPriority,
+                    status: editMntStatus,
+                    dueDate: editMntDueDate || undefined,
+                    notes: editMntNotes.trim() || undefined,
+                  });
+                }}
+                className="flex flex-col gap-3"
+              >
+                <div>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                    Task Title *
+                  </label>
+                  <input
+                    required
+                    type="text"
+                    value={editMntTitle}
+                    onChange={(e) => setEditMntTitle(e.target.value)}
+                    className="input-field"
+                    style={{ marginTop: '4px' }}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                      Assignee
+                    </label>
+                    <input
+                      type="text"
+                      value={editMntAssignee}
+                      onChange={(e) => setEditMntAssignee(e.target.value)}
+                      className="input-field"
+                      style={{ marginTop: '4px' }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                      Due Date
+                    </label>
+                    <input
+                      type="date"
+                      value={editMntDueDate}
+                      onChange={(e) => setEditMntDueDate(e.target.value)}
+                      className="input-field"
+                      style={{ marginTop: '4px' }}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                      Priority
+                    </label>
+                    <select
+                      value={editMntPriority}
+                      onChange={(e) => setEditMntPriority(e.target.value as any)}
+                      className="input-field"
+                      style={{ marginTop: '4px' }}
+                    >
+                      <option value="Low">Low</option>
+                      <option value="Medium">Medium</option>
+                      <option value="High">High</option>
+                      <option value="Urgent">Urgent</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                      Task Status
+                    </label>
+                    <select
+                      value={editMntStatus}
+                      onChange={(e) => setEditMntStatus(e.target.value as any)}
+                      className="input-field"
+                      style={{ marginTop: '4px', fontWeight: 600 }}
+                    >
+                      <option value="In Progress">In Progress</option>
+                      <option value="Ready">Ready</option>
+                      <option value="Scheduled">Scheduled</option>
+                      <option value="On Hold">On Hold</option>
+                      <option value="Done">Done ✓</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                    Task Notes & Implementation Details
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={editMntNotes}
+                    onChange={(e) => setEditMntNotes(e.target.value)}
+                    className="input-field"
+                    style={{ marginTop: '4px', resize: 'vertical' }}
+                  />
+                </div>
+
+                <div className="flex justify-end gap-2" style={{ marginTop: '0.75rem' }}>
+                  <button type="button" onClick={() => setEditingMaintenanceTask(null)} className="btn btn-secondary">
+                    Cancel
+                  </button>
+                  <button type="submit" className="btn btn-primary">
+                    Update Task
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Edit SLA & Maintenance Policy Modal */}
+        {showEditSlaModal && (
+          <div className="modal-backdrop animate-fade-in" onClick={() => setShowEditSlaModal(false)}>
+            <div
+              className="admark-card"
+              style={{ width: '100%', maxWidth: '480px', padding: '1.5rem', borderRadius: '0.75rem' }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between" style={{ marginBottom: '1rem' }}>
+                <div className="flex items-center gap-2">
+                  <SettingsIcon size={18} style={{ color: 'var(--brand-crimson)' }} />
+                  <h2 style={{ fontSize: '1.1rem', fontWeight: 700 }}>Edit Maintenance SLA & Policy</h2>
+                </div>
+                <button onClick={() => setShowEditSlaModal(false)} className="btn btn-ghost btn-icon">
+                  <X size={16} />
+                </button>
+              </div>
+
+              <form onSubmit={handleSaveSlaSettings} className="flex flex-col gap-3">
+                <div>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                    Target Uptime SLA Percentage
+                  </label>
+                  <input
+                    type="text"
+                    value={editUptimeSla}
+                    onChange={(e) => setEditUptimeSla(e.target.value)}
+                    placeholder="e.g. 99.98%"
+                    className="input-field"
+                    style={{ marginTop: '4px' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                    Support Resolution SLA Window
+                  </label>
+                  <input
+                    type="text"
+                    value={editSlaTarget}
+                    onChange={(e) => setEditSlaTarget(e.target.value)}
+                    placeholder="e.g. Resolved within 4h SLA"
+                    className="input-field"
+                    style={{ marginTop: '4px' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                    Maintenance Policy & Notes
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={editMaintenanceNotes}
+                    onChange={(e) => setEditMaintenanceNotes(e.target.value)}
+                    placeholder="e.g. Weekly Sunday patch window at 02:00 UTC, primary support contact, etc."
+                    className="input-field"
+                    style={{ marginTop: '4px', resize: 'vertical' }}
+                  />
+                </div>
+
+                <div className="flex justify-end gap-2" style={{ marginTop: '0.75rem' }}>
+                  <button type="button" onClick={() => setShowEditSlaModal(false)} className="btn btn-secondary">
+                    Cancel
+                  </button>
+                  <button type="submit" className="btn btn-primary">
+                    Save SLA Settings
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         )}
