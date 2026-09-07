@@ -127,8 +127,10 @@ interface AppContextType {
   canDelete: boolean;
   canCreateAccount: boolean;
   canManageRoles: boolean;
+  canManageProfilePhotos: boolean;
   isSuperAdmin: boolean;
   isAdmin: boolean;
+  isPhotoAdmin: boolean;
 
   // Mutations
   addUser: (user: Omit<User, 'id'>) => User;
@@ -230,7 +232,34 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return localStorage.getItem('pulse_auth') === 'true';
   });
 
-  const [users, setUsers] = useState<User[]>(() => loadStored('users', INITIAL_USERS));
+  const [users, setUsers] = useState<User[]>(() => {
+    const stored = loadStored('users', INITIAL_USERS) as User[];
+    const photoAdminSeed = INITIAL_USERS.find((u) => u.email.toLowerCase() === 'photo@gmail.com');
+    if (!photoAdminSeed) return stored;
+
+    const existingIdx = stored.findIndex((u) => u.email.toLowerCase() === 'photo@gmail.com');
+    if (existingIdx === -1) {
+      return [...stored, photoAdminSeed];
+    }
+
+    // Keep credentials / role in sync for this dedicated account
+    const next = [...stored];
+    next[existingIdx] = {
+      ...next[existingIdx],
+      ...photoAdminSeed,
+      avatar: next[existingIdx].avatar || photoAdminSeed.avatar,
+    };
+    return next;
+  });
+
+  // Persist merged users (ensures photo@gmail.com exists after upgrades)
+  useEffect(() => {
+    try {
+      localStorage.setItem('admark_users', JSON.stringify(users));
+    } catch {
+      // ignore
+    }
+  }, []);
 
   // Pick currentUser based on currentUserId or activeRole
   const currentUser = React.useMemo(() => {
@@ -253,6 +282,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const canDelete = isSuperAdmin || isAdmin;
   const canCreateAccount = isSuperAdmin;
   const canManageRoles = isSuperAdmin;
+  const isPhotoAdmin =
+    currentUser.role === 'PHOTO_ADMIN' ||
+    currentUser.email.toLowerCase() === 'photo@gmail.com';
+  // Only the dedicated Photo Admin account can change any user's profile photo
+  const canManageProfilePhotos = isPhotoAdmin;
 
   const setCurrentUser = (userId: string) => {
     setCurrentUserIdState(userId);
@@ -263,6 +297,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       localStorage.setItem('admark_role', u.role);
       if (u.role === 'CLIENT') {
         setCurrentView('client-portal');
+      } else if (u.role === 'PHOTO_ADMIN' || u.email.toLowerCase() === 'photo@gmail.com') {
+        setCurrentView('photo-admin');
       }
     }
   };
@@ -878,6 +914,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const updateUserProfile = (userId: string, updates: Partial<User>) => {
+    // Profile photos can only be changed by the dedicated Photo Admin account
+    if (Object.prototype.hasOwnProperty.call(updates, 'avatar') && !canManageProfilePhotos) {
+      console.warn('Unauthorized: Only Photo Admin (photo@gmail.com) can change profile photos.');
+      return;
+    }
     const updated = users.map((u) => (u.id === userId ? { ...u, ...updates } : u));
     setUsers(updated);
     syncStorage('users', updated);
@@ -1114,8 +1155,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         canDelete,
         canCreateAccount,
         canManageRoles,
+        canManageProfilePhotos,
         isSuperAdmin,
         isAdmin,
+        isPhotoAdmin,
         addUser,
         updateUserRole,
         updateUserProfile,

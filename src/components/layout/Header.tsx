@@ -22,7 +22,6 @@ import {
 import { useApp } from '../../context/AppContext';
 import { UserRole } from '../../types';
 import { SUPABASE_SCHEMA_SQL } from '../../lib/schemaSql';
-import { EditProfilePhotoModal } from '../modals/EditProfilePhotoModal';
 
 export const Header: React.FC = () => {
   const {
@@ -45,6 +44,8 @@ export const Header: React.FC = () => {
     resetToSeedData,
     supabaseSyncStatus,
     retrySupabaseSync,
+    canManageProfilePhotos,
+    isPhotoAdmin,
   } = useApp();
 
   const [notifOpen, setNotifOpen] = useState(false);
@@ -53,8 +54,6 @@ export const Header: React.FC = () => {
   const [copiedSql, setCopiedSql] = useState(false);
   const [isRetrying, setIsRetrying] = useState(false);
 
-
-  const [showProfilePhotoModal, setShowProfilePhotoModal] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
@@ -240,14 +239,16 @@ export const Header: React.FC = () => {
         </div>
 
         {/* Primary CTA: + Create */}
-        <button
-          onClick={() => setQuickCreateOpen(true)}
-          className="btn btn-primary btn-sm"
-          style={{ gap: '0.3rem' }}
-        >
-          <Plus size={14} />
-          <span>Create</span>
-        </button>
+        {!isPhotoAdmin && (
+          <button
+            onClick={() => setQuickCreateOpen(true)}
+            className="btn btn-primary btn-sm"
+            style={{ gap: '0.3rem' }}
+          >
+            <Plus size={14} />
+            <span>Create</span>
+          </button>
+        )}
 
         {/* Notifications */}
         <div style={{ position: 'relative' }} ref={notifRef}>
@@ -425,39 +426,45 @@ export const Header: React.FC = () => {
 
               {/* Standard Links */}
               <div style={{ padding: '0.25rem 0', borderBottom: '1px solid var(--border-subtle)' }}>
-                <button
-                  onClick={() => {
-                    setCurrentView('my-work');
-                    setUserMenuOpen(false);
-                  }}
-                  className="btn btn-ghost btn-sm"
-                  style={{ width: '100%', justifyContent: 'flex-start', padding: '0.4rem 0.65rem' }}
-                >
-                  <User size={13} />
-                  <span>My Work</span>
-                </button>
-                <button
-                  onClick={() => {
-                    setCurrentView('settings');
-                    setUserMenuOpen(false);
-                  }}
-                  className="btn btn-ghost btn-sm"
-                  style={{ width: '100%', justifyContent: 'flex-start', padding: '0.4rem 0.65rem' }}
-                >
-                  <Settings size={13} />
-                  <span>Preferences</span>
-                </button>
-                <button
-                  onClick={() => {
-                    setShowProfilePhotoModal(true);
-                    setUserMenuOpen(false);
-                  }}
-                  className="btn btn-ghost btn-sm"
-                  style={{ width: '100%', justifyContent: 'flex-start', padding: '0.4rem 0.65rem' }}
-                >
-                  <Camera size={13} style={{ color: 'var(--brand-crimson)' }} />
-                  <span>Change Profile Photo</span>
-                </button>
+                {!isPhotoAdmin && (
+                  <>
+                    <button
+                      onClick={() => {
+                        setCurrentView('my-work');
+                        setUserMenuOpen(false);
+                      }}
+                      className="btn btn-ghost btn-sm"
+                      style={{ width: '100%', justifyContent: 'flex-start', padding: '0.4rem 0.65rem' }}
+                    >
+                      <User size={13} />
+                      <span>My Work</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        setCurrentView('settings');
+                        setUserMenuOpen(false);
+                      }}
+                      className="btn btn-ghost btn-sm"
+                      style={{ width: '100%', justifyContent: 'flex-start', padding: '0.4rem 0.65rem' }}
+                    >
+                      <Settings size={13} />
+                      <span>Preferences</span>
+                    </button>
+                  </>
+                )}
+                {canManageProfilePhotos && (
+                  <button
+                    onClick={() => {
+                      setCurrentView('photo-admin');
+                      setUserMenuOpen(false);
+                    }}
+                    className="btn btn-ghost btn-sm"
+                    style={{ width: '100%', justifyContent: 'flex-start', padding: '0.4rem 0.65rem' }}
+                  >
+                    <Camera size={13} style={{ color: 'var(--brand-crimson)' }} />
+                    <span>Manage Profile Photos</span>
+                  </button>
+                )}
               </div>
 
               {/* Sign Out */}
@@ -599,11 +606,6 @@ export const Header: React.FC = () => {
           </div>
         </div>
       )}
-      {/* Edit Profile Photo Modal */}
-      <EditProfilePhotoModal
-        isOpen={showProfilePhotoModal}
-        onClose={() => setShowProfilePhotoModal(false)}
-      />
     </header>
 
   );

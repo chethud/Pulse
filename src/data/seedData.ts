@@ -76,6 +76,17 @@ export const INITIAL_USERS: User[] = [
     capacityHoursPerWeek: 40,
     password: 'password123',
   },
+  {
+    id: 'user-photo-admin',
+    name: 'Photo Admin',
+    email: 'photo@gmail.com',
+    role: 'PHOTO_ADMIN',
+    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&auto=format&fit=crop&q=80',
+    title: 'Profile Photo Manager',
+    department: 'Operations',
+    capacityHoursPerWeek: 40,
+    password: 'Photo@123',
+  },
 ];
 
 export const INITIAL_CLIENTS: Client[] = [

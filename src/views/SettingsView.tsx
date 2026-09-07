@@ -30,6 +30,7 @@ export const SettingsView: React.FC = () => {
     deleteUser,
     canCreateAccount,
     canManageRoles,
+    canManageProfilePhotos,
     isSuperAdmin,
   } = useApp();
 
@@ -39,6 +40,7 @@ export const SettingsView: React.FC = () => {
   const [showPasswords, setShowPasswords] = useState<Record<string, boolean>>({});
 
   const handleOpenPhotoModal = (user?: User) => {
+    if (!canManageProfilePhotos) return;
     setPhotoTargetUser(user || currentUser);
     setPhotoModalOpen(true);
   };
@@ -86,11 +88,11 @@ export const SettingsView: React.FC = () => {
           <div
             style={{
               position: 'relative',
-              cursor: 'pointer',
+              cursor: canManageProfilePhotos ? 'pointer' : 'default',
               display: 'inline-block',
             }}
             onClick={() => handleOpenPhotoModal(currentUser)}
-            title="Click to change your profile photo"
+            title={canManageProfilePhotos ? 'Click to change your profile photo' : undefined}
           >
             <img
               src={currentUser.avatar}
@@ -104,25 +106,27 @@ export const SettingsView: React.FC = () => {
                 boxShadow: '0 4px 14px rgba(230, 57, 70, 0.25)',
               }}
             />
-            <div
-              style={{
-                position: 'absolute',
-                bottom: 0,
-                right: 0,
-                backgroundColor: 'var(--brand-crimson)',
-                color: '#fff',
-                width: '24px',
-                height: '24px',
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                border: '2px solid var(--bg-card)',
-                boxShadow: '0 2px 5px rgba(0,0,0,0.3)',
-              }}
-            >
-              <Camera size={12} />
-            </div>
+            {canManageProfilePhotos && (
+              <div
+                style={{
+                  position: 'absolute',
+                  bottom: 0,
+                  right: 0,
+                  backgroundColor: 'var(--brand-crimson)',
+                  color: '#fff',
+                  width: '24px',
+                  height: '24px',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  border: '2px solid var(--bg-card)',
+                  boxShadow: '0 2px 5px rgba(0,0,0,0.3)',
+                }}
+              >
+                <Camera size={12} />
+              </div>
+            )}
           </div>
 
           <div>
@@ -146,27 +150,26 @@ export const SettingsView: React.FC = () => {
             <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
               {currentUser.title} • {currentUser.department} • <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem' }}>{currentUser.email}</span>
             </div>
-            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '4px' }}>
-              Your profile photo is displayed across deliverables, assigned projects, task avatars, and time logs. Changes sync locally and to the cloud database.
-            </div>
           </div>
         </div>
 
-        <button
-          onClick={() => handleOpenPhotoModal(currentUser)}
-          className="btn btn-secondary"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            fontSize: '0.8125rem',
-            padding: '0.55rem 1rem',
-            fontWeight: 600,
-          }}
-        >
-          <Camera size={15} style={{ color: 'var(--brand-crimson)' }} />
-          <span>Change Profile Photo</span>
-        </button>
+        {canManageProfilePhotos && (
+          <button
+            onClick={() => handleOpenPhotoModal(currentUser)}
+            className="btn btn-secondary"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              fontSize: '0.8125rem',
+              padding: '0.55rem 1rem',
+              fontWeight: 600,
+            }}
+          >
+            <Camera size={15} style={{ color: 'var(--brand-crimson)' }} />
+            <span>Change Profile Photo</span>
+          </button>
+        )}
       </div>
 
       {/* Role-Based Access Control & User Provisioning Section */}
@@ -316,9 +319,16 @@ export const SettingsView: React.FC = () => {
                     <td style={{ padding: '0.65rem 0.85rem' }}>
                       <div className="flex items-center gap-2.5">
                         <div
-                          style={{ position: 'relative', cursor: 'pointer' }}
+                          style={{
+                            position: 'relative',
+                            cursor: canManageProfilePhotos ? 'pointer' : 'default',
+                          }}
                           onClick={() => handleOpenPhotoModal(u)}
-                          title={`Click to change photo for ${u.name}`}
+                          title={
+                            canManageProfilePhotos
+                              ? `Click to change photo for ${u.name}`
+                              : undefined
+                          }
                         >
                           <img
                             src={u.avatar}
@@ -331,24 +341,26 @@ export const SettingsView: React.FC = () => {
                               border: isCurrent ? '1.5px solid var(--brand-crimson)' : '1px solid var(--border-subtle)',
                             }}
                           />
-                          <div
-                            style={{
-                              position: 'absolute',
-                              bottom: -2,
-                              right: -2,
-                              width: '13px',
-                              height: '13px',
-                              borderRadius: '50%',
-                              backgroundColor: 'var(--brand-crimson)',
-                              color: '#fff',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              border: '1px solid var(--bg-card)',
-                            }}
-                          >
-                            <Camera size={7} />
-                          </div>
+                          {canManageProfilePhotos && (
+                            <div
+                              style={{
+                                position: 'absolute',
+                                bottom: -2,
+                                right: -2,
+                                width: '13px',
+                                height: '13px',
+                                borderRadius: '50%',
+                                backgroundColor: 'var(--brand-crimson)',
+                                color: '#fff',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                border: '1px solid var(--bg-card)',
+                              }}
+                            >
+                              <Camera size={7} />
+                            </div>
+                          )}
                         </div>
                         <div>
                           <div style={{ fontWeight: 700, color: 'var(--text-primary)' }}>
@@ -580,11 +592,13 @@ export const SettingsView: React.FC = () => {
       <CreateAccountModal isOpen={createModalOpen} onClose={() => setCreateModalOpen(false)} />
 
       {/* Profile Photo Edit Modal */}
-      <EditProfilePhotoModal
-        isOpen={photoModalOpen}
-        onClose={() => setPhotoModalOpen(false)}
-        targetUser={photoTargetUser}
-      />
+      {canManageProfilePhotos && (
+        <EditProfilePhotoModal
+          isOpen={photoModalOpen}
+          onClose={() => setPhotoModalOpen(false)}
+          targetUser={photoTargetUser}
+        />
+      )}
     </div>
   );
 };

@@ -34,6 +34,7 @@ import {
   Database,
   Server,
   Code2,
+  UserCheck,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { TaskStatus, TaskPriority, ChangeRequestStatus, MaintenanceTask } from '../../types';
@@ -155,23 +156,18 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
   const project = projects.find((p) => p.id === selectedProjectId) || projects[0];
   const client = clients.find((c) => c.id === project.clientId);
 
-  // Strictly filter to Dev / Engineering team members only (exclude Leadership: CEO, COO, CFO)
-  const devUsers = users.filter(
-    (u) =>
-      u.department === 'Engineering' ||
-      (u.department !== 'Leadership' && !['CEO', 'COO', 'CFO'].includes(u.title || '') && u.role !== 'SUPERADMIN' && u.role !== 'ADMIN')
-  );
+  // Allow assigning any person across the organization / team
+  const assignableUsers = users;
 
-  // Fallback to engineering team member if previously assigned to a leadership account
-  const leadDev =
-    devUsers.find((u) => u.id === project.projectManagerId) ||
-    devUsers.find((u) => project.teamMemberIds?.includes(u.id)) ||
-    devUsers[0];
+  const leadPerson =
+    assignableUsers.find((u) => u.id === project.projectManagerId) ||
+    assignableUsers.find((u) => project.teamMemberIds?.includes(u.id)) ||
+    assignableUsers[0];
 
   // Project settings form state
-  const [settingsLeadDevId, setSettingsLeadDevId] = useState(leadDev?.id || devUsers[0]?.id || '');
+  const [settingsLeadDevId, setSettingsLeadDevId] = useState(leadPerson?.id || assignableUsers[0]?.id || '');
   const [settingsTeamMemberIds, setSettingsTeamMemberIds] = useState<string[]>(
-    project.teamMemberIds?.filter((id) => devUsers.some((d) => d.id === id)) || []
+    project.teamMemberIds || []
   );
   const [settingsLiveUrl, setSettingsLiveUrl] = useState(project.liveUrl || project.productionUrl || project.stagingUrl || '');
   const [settingsStagingUrl, setSettingsStagingUrl] = useState(project.stagingUrl || '');
@@ -192,14 +188,12 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
   const [settingsSavedNotice, setSettingsSavedNotice] = useState(false);
 
   useEffect(() => {
-    const activeDev =
-      devUsers.find((u) => u.id === project.projectManagerId) ||
-      devUsers.find((u) => project.teamMemberIds?.includes(u.id)) ||
-      devUsers[0];
-    setSettingsLeadDevId(activeDev?.id || devUsers[0]?.id || '');
-    setSettingsTeamMemberIds(
-      project.teamMemberIds?.filter((id) => devUsers.some((d) => d.id === id)) || []
-    );
+    const activePerson =
+      assignableUsers.find((u) => u.id === project.projectManagerId) ||
+      assignableUsers.find((u) => project.teamMemberIds?.includes(u.id)) ||
+      assignableUsers[0];
+    setSettingsLeadDevId(activePerson?.id || assignableUsers[0]?.id || '');
+    setSettingsTeamMemberIds(project.teamMemberIds || []);
     setSettingsLiveUrl(project.liveUrl || project.productionUrl || project.stagingUrl || '');
     setSettingsStagingUrl(project.stagingUrl || '');
     setSettingsRepoUrl(project.repositoryUrl || '');
@@ -449,7 +443,7 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                 <span>{project.health.overall}</span>
               </span>
               <span>•</span>
-              <span>Lead Dev: <strong style={{ color: 'var(--text-secondary)' }}>{leadDev?.name || 'Unassigned'}</strong></span>
+              <span>Lead: <strong style={{ color: 'var(--text-secondary)' }}>{leadPerson?.name || 'Unassigned'}</strong></span>
               <span>•</span>
               <span>Due: {project.deadline}</span>
             </div>
@@ -658,12 +652,12 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
               }}
             >
               <div className="flex items-center gap-4 flex-wrap">
-                {/* Lead Developer Avatar and Info */}
+                {/* Lead / Assigned Person Avatar and Info */}
                 <div className="flex items-center gap-3">
                   <div style={{ position: 'relative' }}>
                     <img
-                      src={leadDev?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'}
-                      alt={leadDev?.name}
+                      src={leadPerson?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'}
+                      alt={leadPerson?.name}
                       style={{
                         width: '40px',
                         height: '40px',
@@ -689,7 +683,7 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                   <div>
                     <div className="flex items-center gap-2">
                       <span style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                        {leadDev?.name || 'Unassigned Developer'}
+                        {leadPerson?.name || 'Unassigned'}
                       </span>
                       <span
                         className="badge"
@@ -703,18 +697,18 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                           textTransform: 'uppercase',
                         }}
                       >
-                        Assigned Developer
+                        Assigned Lead
                       </span>
                     </div>
                     <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
-                      <span>{leadDev?.title || 'Engineer'}</span>
-                      {leadDev?.department && <span> • {leadDev.department}</span>}
-                      {leadDev?.email && <span style={{ color: 'var(--text-muted)' }}> ({leadDev.email})</span>}
+                      <span>{leadPerson?.title || 'Team Member'}</span>
+                      {leadPerson?.department && <span> • {leadPerson.department}</span>}
+                      {leadPerson?.email && <span style={{ color: 'var(--text-muted)' }}> ({leadPerson.email})</span>}
                     </div>
                   </div>
                 </div>
 
-                {/* Supporting Development Team Members */}
+                {/* Supporting Team Members */}
                 {project.teamMemberIds && project.teamMemberIds.length > 0 && (
                   <div
                     style={{
@@ -726,11 +720,11 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                     }}
                   >
                     <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                      Team Devs:
+                      Team Members:
                     </span>
                     <div className="flex items-center gap-1.5 flex-wrap">
-                      {devUsers
-                        .filter((u) => project.teamMemberIds?.includes(u.id) && u.id !== leadDev?.id)
+                      {assignableUsers
+                        .filter((u) => project.teamMemberIds?.includes(u.id) && u.id !== leadPerson?.id)
                         .map((u) => (
                           <div
                             key={u.id}
@@ -743,7 +737,7 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                               fontSize: '0.72rem',
                               color: 'var(--text-secondary)',
                             }}
-                            title={`${u.name} (${u.title || 'Developer'})`}
+                            title={`${u.name} (${u.title || 'Team Member'})`}
                           >
                             <img
                               src={u.avatar}
@@ -764,7 +758,7 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                   Project Assignment
                 </div>
                 <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                  Engineering & Development
+                  Assigned Team & Delivery
                 </div>
               </div>
             </div>
@@ -2450,19 +2444,19 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                 </div>
               </div>
 
-              {/* Development Assignment */}
+              {/* Project Assignment */}
               <div className="admark-card" style={{ padding: '1.25rem' }}>
                 <div className="flex items-center gap-2" style={{ marginBottom: '0.75rem' }}>
-                  <Code2 size={16} style={{ color: 'var(--brand-crimson)' }} />
-                  <h3 style={{ fontSize: '0.95rem', fontWeight: 700 }}>Development Assignment</h3>
-                  <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>— Assign project for development execution (not manager)</span>
+                  <UserCheck size={16} style={{ color: 'var(--brand-crimson)' }} />
+                  <h3 style={{ fontSize: '0.95rem', fontWeight: 700 }}>Project Assignment</h3>
+                  <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>— Assign any person responsible for delivery and execution</span>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                      <Code2 size={13} style={{ color: 'var(--brand-crimson)' }} />
-                      <span>Assigned for Development (Lead Developer) *</span>
+                      <UserCheck size={13} style={{ color: 'var(--brand-crimson)' }} />
+                      <span>Assigned Lead / Person Responsible *</span>
                     </label>
                     <select
                       value={settingsLeadDevId}
@@ -2470,23 +2464,23 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                       className="input-field"
                       style={{ marginTop: '4px', fontWeight: 600 }}
                     >
-                      {devUsers.map((u) => (
+                      {assignableUsers.map((u) => (
                         <option key={u.id} value={u.id}>
-                          {u.name} — {u.title} ({u.department})
+                          {u.name} — {u.title} ({u.department || 'Team'})
                         </option>
                       ))}
                     </select>
                     <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginTop: '3px' }}>
-                      Assigned developer responsible for technical implementation, architecture, and code delivery.
+                      Assigned person responsible for delivery, execution, and project leadership.
                     </div>
                   </div>
 
                   <div>
                     <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                      Supporting Developers / Team Members
+                      Supporting Team Members
                     </label>
                     <div style={{ marginTop: '6px', display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                      {devUsers.map((u) => {
+                      {assignableUsers.map((u) => {
                         const isSelected = settingsTeamMemberIds.includes(u.id);
                         return (
                           <button

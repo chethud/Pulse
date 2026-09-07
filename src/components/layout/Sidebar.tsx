@@ -14,6 +14,7 @@ import {
   ChevronLeft,
   ChevronRight,
   UserCheck,
+  Camera,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 
@@ -33,11 +34,96 @@ export const Sidebar: React.FC<SidebarProps> = ({ projectTab = 'overview', setPr
     tasks,
     bugs,
     currentUser,
+    isPhotoAdmin,
   } = useApp();
 
   const [collapsed, setCollapsed] = React.useState(false);
 
   const selectedProject = projects.find((p) => p.id === selectedProjectId);
+
+  // Photo Admin: restricted sidebar — profile photos only
+  if (isPhotoAdmin || activeRole === 'PHOTO_ADMIN') {
+    return (
+      <aside
+        style={{
+          width: collapsed ? '60px' : '230px',
+          backgroundColor: 'var(--bg-sidebar)',
+          borderRight: '1px solid var(--border-subtle)',
+          display: 'flex',
+          flexDirection: 'column',
+          transition: 'width 0.15s ease',
+          height: '100vh',
+          position: 'sticky',
+          top: 0,
+          zIndex: 40,
+          flexShrink: 0,
+        }}
+      >
+        <div style={{ padding: '0.85rem 1rem', borderBottom: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'center', height: '52px' }}>
+          <div className="flex items-center gap-2.5">
+            <img
+              src="/admark-logo.png"
+              alt="Admark Digitals"
+              style={{ height: '24px', width: 'auto', objectFit: 'contain' }}
+            />
+            {!collapsed && (
+              <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                Photo Admin
+              </span>
+            )}
+          </div>
+        </div>
+
+        <nav style={{ flex: 1, padding: '0.5rem 0.4rem', display: 'flex', flexDirection: 'column', gap: '2px', overflowY: 'auto' }}>
+          <button
+            onClick={() => setCurrentView('photo-admin')}
+            className={`sidebar-btn ${(currentView === 'photo-admin' || !currentView) ? 'active' : ''}`}
+            title={collapsed ? 'Profile Photos' : undefined}
+          >
+            <div
+              style={{
+                position: 'absolute',
+                left: 0,
+                top: '18%',
+                bottom: '18%',
+                width: '3px',
+                backgroundColor: 'var(--brand-crimson)',
+                borderRadius: '0 2px 2px 0',
+              }}
+            />
+            <div className="sidebar-icon-wrap">
+              <Camera size={15} />
+            </div>
+            {!collapsed && (
+              <span style={{ fontSize: '0.8125rem', fontWeight: 600, letterSpacing: '-0.01em' }}>
+                Profile Photos
+              </span>
+            )}
+          </button>
+        </nav>
+
+        <div style={{ padding: '0.75rem', borderTop: '1px solid var(--border-subtle)' }}>
+          <div className="flex items-center gap-2">
+            <img
+              src={currentUser.avatar}
+              alt={currentUser.name}
+              style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover' }}
+            />
+            {!collapsed && (
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-primary)' }} className="truncate">
+                  {currentUser.name}
+                </div>
+                <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }} className="truncate">
+                  {currentUser.title}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </aside>
+    );
+  }
 
   // Client Portal sidebar view
   if (activeRole === 'CLIENT') {

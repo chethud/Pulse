@@ -11,6 +11,23 @@ import {
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
+function formatDeadline(dateStr: string): string {
+  const d = new Date(dateStr);
+  if (Number.isNaN(d.getTime())) return dateStr;
+  return d.toLocaleDateString('en-CA'); // YYYY-MM-DD
+}
+
+/** True when submission/deadline is within 15 days (or already past). */
+function isDeadlineWithin15Days(dateStr: string): boolean {
+  const deadline = new Date(dateStr);
+  if (Number.isNaN(deadline.getTime())) return false;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  deadline.setHours(0, 0, 0, 0);
+  const diffDays = Math.ceil((deadline.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+  return diffDays <= 15;
+}
+
 export const ProjectsListView: React.FC = () => {
   const {
     projects,
@@ -136,11 +153,12 @@ export const ProjectsListView: React.FC = () => {
         <table className="admark-table">
           <thead>
             <tr>
-              <th style={{ width: '30%' }}>Project</th>
-              <th style={{ width: '18%' }}>Client</th>
-              <th style={{ width: '16%' }}>Assigned Developer</th>
-              <th style={{ width: '14%' }}>Progress</th>
+              <th style={{ width: '26%' }}>Project</th>
+              <th style={{ width: '16%' }}>Client</th>
+              <th style={{ width: '14%' }}>Assigned Developer</th>
+              <th style={{ width: '12%' }}>Progress</th>
               <th style={{ width: '10%' }}>Health</th>
+              <th style={{ width: '10%', textAlign: 'right' }}>Deadline</th>
               <th style={{ width: '12%', textAlign: 'center' }}>Actions</th>
             </tr>
           </thead>
@@ -156,6 +174,8 @@ export const ProjectsListView: React.FC = () => {
                 devUsers.find((u) => u.id === proj.projectManagerId) ||
                 devUsers.find((u) => proj.teamMemberIds?.includes(u.id)) ||
                 devUsers[0];
+              const deadlineUrgent =
+                proj.status !== 'Completed' && isDeadlineWithin15Days(proj.deadline);
 
               return (
                 <tr
@@ -239,6 +259,18 @@ export const ProjectsListView: React.FC = () => {
                       />
                       <span>{proj.health.overall}</span>
                     </span>
+                  </td>
+
+                  <td
+                    style={{
+                      textAlign: 'right',
+                      fontSize: '0.78rem',
+                      color: deadlineUrgent ? 'var(--status-danger)' : 'var(--text-secondary)',
+                      fontWeight: deadlineUrgent ? 700 : 500,
+                    }}
+                    title={deadlineUrgent ? 'Submission deadline within 15 days' : undefined}
+                  >
+                    {formatDeadline(proj.deadline)}
                   </td>
 
                   <td style={{ textAlign: 'center' }}>

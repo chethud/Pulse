@@ -67,7 +67,7 @@ export const EditProfilePhotoModal: React.FC<EditProfilePhotoModalProps> = ({
   onClose,
   targetUser,
 }) => {
-  const { currentUser, updateUserProfile } = useApp();
+  const { currentUser, updateUserProfile, canManageProfilePhotos } = useApp();
   const user = targetUser || currentUser;
 
   const [avatarPreview, setAvatarPreview] = useState(user.avatar || '');
@@ -79,6 +79,28 @@ export const EditProfilePhotoModal: React.FC<EditProfilePhotoModalProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (!isOpen) return null;
+
+  if (!canManageProfilePhotos) {
+    return (
+      <div className="modal-backdrop animate-fade-in" onClick={onClose}>
+        <div
+          className="admark-card"
+          style={{ width: '100%', maxWidth: '420px', padding: '1.5rem' }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <h2 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: '0.5rem' }}>Photo change restricted</h2>
+          <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+            Only the Photo Admin account (<strong>photo@gmail.com</strong>) can update profile photos for team members.
+          </p>
+          <div className="flex justify-end" style={{ marginTop: '1rem' }}>
+            <button onClick={onClose} className="btn btn-secondary">
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // Handle local file selection from device
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {

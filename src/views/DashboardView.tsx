@@ -1,13 +1,26 @@
 import React from 'react';
 import {
-  FolderKanban,
-  Clock,
   ChevronRight,
   Plus,
-  ArrowRight,
-  CheckCircle2,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+
+function formatDeadline(dateStr: string): string {
+  const d = new Date(dateStr);
+  if (Number.isNaN(d.getTime())) return dateStr;
+  return d.toLocaleDateString('en-CA'); // YYYY-MM-DD
+}
+
+/** True when submission/deadline is within 15 days (or already past). */
+function isDeadlineWithin15Days(dateStr: string): boolean {
+  const deadline = new Date(dateStr);
+  if (Number.isNaN(deadline.getTime())) return false;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  deadline.setHours(0, 0, 0, 0);
+  const diffDays = Math.ceil((deadline.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+  return diffDays <= 15;
+}
 
 export const DashboardView: React.FC = () => {
   const {
@@ -15,10 +28,8 @@ export const DashboardView: React.FC = () => {
     tasks,
     modules,
     clients,
-    activities,
     users,
     setSelectedProjectId,
-    setSelectedTaskId,
     setCurrentView,
     setQuickCreateOpen,
   } = useApp();
@@ -121,217 +132,137 @@ export const DashboardView: React.FC = () => {
         </div>
       </div>
 
-      {/* Main Grid: Left Section (Project Overview Table) + Right Section (Upcoming Deadlines & Workload) */}
-      <div className="grid grid-cols-12 gap-5 items-start">
-        {/* Left Column (8 cols): Clean Project Overview Table */}
-        <div style={{ gridColumn: 'span 8', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-          <div className="flex items-center justify-between" style={{ padding: '0 0.25rem' }}>
-            <div style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              Project Overview
-            </div>
-            <button
-              onClick={() => setCurrentView('projects')}
-              className="btn btn-ghost btn-sm"
-              style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}
-            >
-              <span>View all</span>
-              <ChevronRight size={13} />
-            </button>
+      {/* Project Overview (full width) */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+        <div className="flex items-center justify-between" style={{ padding: '0 0.25rem' }}>
+          <div style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            Project Overview
           </div>
-
-          <div className="admark-card" style={{ overflow: 'hidden' }}>
-            <table className="admark-table">
-              <thead>
-                <tr>
-                  <th style={{ width: '38%' }}>Project</th>
-                  <th style={{ width: '18%' }}>Client</th>
-                  <th style={{ width: '18%' }}>Progress</th>
-                  <th style={{ width: '14%' }}>Health</th>
-                  <th style={{ width: '12%', textAlign: 'right' }}>Due</th>
-                </tr>
-              </thead>
-              <tbody>
-                {projects.map((proj) => {
-                  const client = clients.find((c) => c.id === proj.clientId);
-                  const pm = users.find((u) => u.id === proj.projectManagerId);
-
-                  return (
-                    <tr
-                      key={proj.id}
-                      onClick={() => {
-                        setSelectedProjectId(proj.id);
-                        setCurrentView('projects');
-                      }}
-                      style={{ cursor: 'pointer' }}
-                    >
-                      {/* Project Icon / Code & Name */}
-                      <td>
-                        <div className="flex items-center gap-2">
-                          <span
-                            style={{
-                              fontFamily: 'var(--font-mono)',
-                              fontSize: '0.7rem',
-                              fontWeight: 600,
-                              color: 'var(--text-muted)',
-                              padding: '1px 4px',
-                              background: 'var(--bg-elevated)',
-                              borderRadius: '3px',
-                            }}
-                          >
-                            {proj.code}
-                          </span>
-                          <div>
-                            <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.8125rem' }}>
-                              {proj.name}
-                            </div>
-                            <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>
-                              PM: {pm?.name || 'Unassigned'}
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-
-                      {/* Client */}
-                      <td style={{ color: 'var(--text-secondary)', fontSize: '0.78rem' }}>
-                        {client?.name || 'Enterprise'}
-                      </td>
-
-                      {/* Progress: Thin 4px Bar + % */}
-                      <td>
-                        <div className="flex items-center gap-2">
-                          <div className="progress-bar-track" style={{ flex: 1, height: '4px' }}>
-                            <div
-                              className="progress-bar-fill"
-                              style={{
-                                width: `${proj.progress}%`,
-                                backgroundColor:
-                                  proj.health.overall === 'Healthy'
-                                    ? 'var(--status-healthy)'
-                                    : proj.health.overall === 'At Risk'
-                                    ? 'var(--status-warning)'
-                                    : 'var(--status-danger)',
-                              }}
-                            />
-                          </div>
-                          <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-primary)', minWidth: '28px' }}>
-                            {proj.progress}%
-                          </span>
-                        </div>
-                      </td>
-
-                      {/* 13. Health: Small Status Indicator Dot */}
-                      <td>
-                        <span className="status-indicator">
-                          <span
-                            className={`status-dot ${
-                              proj.health.overall === 'Healthy'
-                                ? 'healthy'
-                                : proj.health.overall === 'At Risk'
-                                ? 'warning'
-                                : 'danger'
-                            }`}
-                          />
-                          <span>{proj.health.overall}</span>
-                        </span>
-                      </td>
-
-                      {/* Deadline */}
-                      <td style={{ textAlign: 'right', fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
-                        {proj.deadline.replace('2025-', '').replace('-', '/')}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+          <button
+            onClick={() => setCurrentView('projects')}
+            className="btn btn-ghost btn-sm"
+            style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}
+          >
+            <span>View all</span>
+            <ChevronRight size={13} />
+          </button>
         </div>
 
-        {/* Right Column (4 cols): Upcoming Deadlines & Team Workload */}
-        <div style={{ gridColumn: 'span 4', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-          {/* 14. Upcoming Deadlines (Clean list with date hierarchy) */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            <div style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', padding: '0 0.25rem' }}>
-              Upcoming Deadlines
-            </div>
+        <div className="admark-card" style={{ overflow: 'hidden' }}>
+          <table className="admark-table">
+            <thead>
+              <tr>
+                <th style={{ width: '34%' }}>Project</th>
+                <th style={{ width: '20%' }}>Client</th>
+                <th style={{ width: '18%' }}>Progress</th>
+                <th style={{ width: '14%' }}>Health</th>
+                <th style={{ width: '14%', textAlign: 'right' }}>Deadline</th>
+              </tr>
+            </thead>
+            <tbody>
+              {projects.map((proj) => {
+                const client = clients.find((c) => c.id === proj.clientId);
+                const pm = users.find((u) => u.id === proj.projectManagerId);
+                const deadlineUrgent =
+                  proj.status !== 'Completed' && isDeadlineWithin15Days(proj.deadline);
 
-            <div className="admark-card" style={{ padding: '0.5rem 0.75rem' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
-                {tasks.slice(0, 5).map((t) => {
-                  const proj = projects.find((p) => p.id === t.projectId);
-                  const assignee = users.find((u) => u.id === t.assigneeId);
-                  const formattedDate = t.dueDate.replace('2025-', '').replace('-', '/');
-
-                  return (
-                    <div
-                      key={t.id}
-                      onClick={() => setSelectedTaskId(t.id)}
-                      className="admark-card-interactive flex items-start justify-between"
-                      style={{
-                        padding: '0.4rem 0.5rem',
-                        borderRadius: 'var(--radius-sm)',
-                        cursor: 'pointer',
-                      }}
-                    >
-                      <div style={{ maxWidth: '75%' }}>
-                        <div style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-primary)' }} className="truncate">
-                          {t.title}
-                        </div>
-                        <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', marginTop: '1px' }}>
-                          {proj?.code} • {assignee?.name?.split(' ')[0] || 'Unassigned'}
-                        </div>
-                      </div>
-
-                      <div style={{ textAlign: 'right' }}>
-                        <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', fontWeight: 500 }}>
-                          {formattedDate}
-                        </div>
+                return (
+                  <tr
+                    key={proj.id}
+                    onClick={() => {
+                      setSelectedProjectId(proj.id);
+                      setCurrentView('projects');
+                    }}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    {/* Project Icon / Code & Name */}
+                    <td>
+                      <div className="flex items-center gap-2">
                         <span
                           style={{
-                            fontSize: '0.65rem',
+                            fontFamily: 'var(--font-mono)',
+                            fontSize: '0.7rem',
                             fontWeight: 600,
-                            color: t.priority === 'Urgent' ? 'var(--status-danger)' : t.priority === 'High' ? 'var(--status-warning)' : 'var(--text-muted)',
+                            color: 'var(--text-muted)',
+                            padding: '1px 4px',
+                            background: 'var(--bg-elevated)',
+                            borderRadius: '3px',
                           }}
                         >
-                          {t.priority}
+                          {proj.code}
                         </span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-
-          {/* 19. Recent Activity (Clean timeline with subtle dots) */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            <div style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', padding: '0 0.25rem' }}>
-              Recent Activity
-            </div>
-
-            <div className="admark-card" style={{ padding: '0.75rem 0.85rem' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-                {activities.slice(0, 6).map((act) => {
-                  const actor = users.find((u) => u.id === act.userId);
-                  return (
-                    <div key={act.id} className="flex items-start gap-2" style={{ fontSize: '0.75rem' }}>
-                      <span className="status-dot neutral" style={{ marginTop: '5px' }} />
-                      <div style={{ lineHeight: 1.35, flex: 1 }}>
-                        <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
-                          {actor?.name || 'Team member'}
-                        </span>{' '}
-                        <span style={{ color: 'var(--text-secondary)' }}>{act.action}</span>{' '}
-                        <span style={{ color: 'var(--text-primary)', fontWeight: 500 }}>{act.targetTitle}</span>
-                        <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-                          {act.timestamp}
+                        <div>
+                          <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.8125rem' }}>
+                            {proj.name}
+                          </div>
+                          <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>
+                            PM: {pm?.name || 'Unassigned'}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
+                    </td>
+
+                    {/* Client */}
+                    <td style={{ color: 'var(--text-secondary)', fontSize: '0.78rem' }}>
+                      {client?.name || 'Enterprise'}
+                    </td>
+
+                    {/* Progress: Thin 4px Bar + % */}
+                    <td>
+                      <div className="flex items-center gap-2">
+                        <div className="progress-bar-track" style={{ flex: 1, height: '4px' }}>
+                          <div
+                            className="progress-bar-fill"
+                            style={{
+                              width: `${proj.progress}%`,
+                              backgroundColor:
+                                proj.health.overall === 'Healthy'
+                                  ? 'var(--status-healthy)'
+                                  : proj.health.overall === 'At Risk'
+                                  ? 'var(--status-warning)'
+                                  : 'var(--status-danger)',
+                            }}
+                          />
+                        </div>
+                        <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-primary)', minWidth: '28px' }}>
+                          {proj.progress}%
+                        </span>
+                      </div>
+                    </td>
+
+                    {/* Health */}
+                    <td>
+                      <span className="status-indicator">
+                        <span
+                          className={`status-dot ${
+                            proj.health.overall === 'Healthy'
+                              ? 'healthy'
+                              : proj.health.overall === 'At Risk'
+                              ? 'warning'
+                              : 'danger'
+                          }`}
+                        />
+                        <span>{proj.health.overall}</span>
+                      </span>
+                    </td>
+
+                    {/* Deadline — red when due within 15 days */}
+                    <td
+                      style={{
+                        textAlign: 'right',
+                        fontSize: '0.78rem',
+                        color: deadlineUrgent ? 'var(--status-danger)' : 'var(--text-secondary)',
+                        fontWeight: deadlineUrgent ? 700 : 500,
+                      }}
+                      title={deadlineUrgent ? 'Submission deadline within 15 days' : undefined}
+                    >
+                      {formatDeadline(proj.deadline)}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>

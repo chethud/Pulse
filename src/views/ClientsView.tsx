@@ -1,15 +1,10 @@
 import React, { useState } from 'react';
 import {
-  Building2,
   Plus,
   Search,
   ExternalLink,
   Mail,
   Phone,
-  MapPin,
-  FileText,
-  UserCheck,
-  FolderKanban,
   X,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
@@ -44,6 +39,10 @@ export const ClientsView: React.FC = () => {
     }
     return true;
   });
+
+  const selectedProjects = selectedClient
+    ? projects.filter((p) => p.clientId === selectedClient.id)
+    : [];
 
   const handleCreateClient = (e: React.FormEvent) => {
     e.preventDefault();
@@ -91,8 +90,8 @@ export const ClientsView: React.FC = () => {
       }}
     >
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex items-center justify-between gap-4">
+        <div style={{ minWidth: 0 }}>
           <h1 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
             Clients
           </h1>
@@ -101,7 +100,7 @@ export const ClientsView: React.FC = () => {
           </p>
         </div>
 
-        <button onClick={() => setShowAddModal(true)} className="btn btn-primary btn-sm">
+        <button onClick={() => setShowAddModal(true)} className="btn btn-primary btn-sm" style={{ flexShrink: 0 }}>
           <Plus size={14} />
           <span>Add Client</span>
         </button>
@@ -122,7 +121,7 @@ export const ClientsView: React.FC = () => {
           ))}
         </div>
 
-        <div style={{ position: 'relative', width: '240px' }}>
+        <div style={{ position: 'relative', width: '240px', maxWidth: '100%' }}>
           <Search size={13} style={{ position: 'absolute', left: '8px', top: '8px', color: 'var(--text-muted)' }} />
           <input
             type="text"
@@ -135,18 +134,26 @@ export const ClientsView: React.FC = () => {
         </div>
       </div>
 
-      {/* Main Content: Split Master-Detail */}
-      <div className="grid grid-cols-12 gap-5 items-start">
-        {/* Client List (7 cols) */}
-        <div className="admark-card" style={{ gridColumn: 'span 7', overflow: 'hidden' }}>
-          <table className="admark-table">
+      {/* Main Content: aligned master-detail */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'minmax(0, 1.55fr) minmax(300px, 0.95fr)',
+          gap: '1.25rem',
+          alignItems: 'start',
+          width: '100%',
+        }}
+      >
+        {/* Client List */}
+        <div className="admark-card" style={{ minWidth: 0, overflow: 'hidden' }}>
+          <table className="admark-table" style={{ tableLayout: 'fixed', width: '100%' }}>
             <thead>
               <tr>
-                <th style={{ width: '38%' }}>Client</th>
-                <th style={{ width: '22%' }}>Industry</th>
-                <th style={{ width: '16%' }}>Projects</th>
-                <th style={{ width: '12%' }}>Status</th>
-                <th style={{ width: '12%', textAlign: 'right' }}>Activity</th>
+                <th style={{ width: '34%' }}>Client</th>
+                <th style={{ width: '24%' }}>Industry</th>
+                <th style={{ width: '14%' }}>Projects</th>
+                <th style={{ width: '14%' }}>Status</th>
+                <th style={{ width: '14%', textAlign: 'right' }}>Activity</th>
               </tr>
             </thead>
             <tbody>
@@ -163,17 +170,15 @@ export const ClientsView: React.FC = () => {
                       backgroundColor: isSelected ? 'var(--bg-elevated)' : undefined,
                     }}
                   >
-                    <td>
-                      <div>
-                        <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.8125rem' }}>
-                          {client.name}
-                        </div>
-                        <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>
-                          {client.location}
-                        </div>
+                    <td style={{ minWidth: 0 }}>
+                      <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.8125rem' }} className="truncate">
+                        {client.name}
+                      </div>
+                      <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }} className="truncate">
+                        {client.location}
                       </div>
                     </td>
-                    <td style={{ color: 'var(--text-secondary)', fontSize: '0.78rem' }}>
+                    <td style={{ color: 'var(--text-secondary)', fontSize: '0.78rem', minWidth: 0 }} className="truncate">
                       {client.industry}
                     </td>
                     <td>
@@ -187,7 +192,7 @@ export const ClientsView: React.FC = () => {
                         <span>{client.status}</span>
                       </span>
                     </td>
-                    <td style={{ textAlign: 'right', color: 'var(--text-muted)', fontSize: '0.75rem' }}>
+                    <td style={{ textAlign: 'right', color: 'var(--text-muted)', fontSize: '0.75rem', whiteSpace: 'nowrap' }}>
                       {client.lastActivity}
                     </td>
                   </tr>
@@ -197,11 +202,22 @@ export const ClientsView: React.FC = () => {
           </table>
         </div>
 
-        {/* Client Profile Card (5 cols) */}
+        {/* Client Profile Card */}
         {selectedClient ? (
-          <div className="admark-card" style={{ gridColumn: 'span 5', padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-            <div className="flex items-start justify-between">
-              <div className="flex items-center gap-3">
+          <div
+            className="admark-card"
+            style={{
+              minWidth: 0,
+              padding: '1.25rem',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '1.25rem',
+              position: 'sticky',
+              top: '1rem',
+            }}
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-start gap-3" style={{ minWidth: 0, flex: 1 }}>
                 <div
                   style={{
                     width: '44px',
@@ -215,29 +231,43 @@ export const ClientsView: React.FC = () => {
                     fontSize: '1.1rem',
                     fontWeight: 800,
                     color: 'var(--brand-crimson)',
+                    flexShrink: 0,
                   }}
                 >
                   {selectedClient.name.slice(0, 2).toUpperCase()}
                 </div>
-                <div>
-                  <h2 style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                <div style={{ minWidth: 0 }}>
+                  <h2
+                    style={{
+                      fontSize: '1.05rem',
+                      fontWeight: 700,
+                      color: 'var(--text-primary)',
+                      lineHeight: 1.3,
+                      wordBreak: 'break-word',
+                    }}
+                  >
                     {selectedClient.name}
                   </h2>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                    {selectedClient.industry} • {selectedClient.location}
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '4px', lineHeight: 1.4 }}>
+                    <div>{selectedClient.industry}</div>
+                    <div>{selectedClient.location}</div>
                     {selectedClient.contractDetails?.startDate && (
-                      <> • Partner since {selectedClient.contractDetails.startDate}</>
+                      <div style={{ color: 'var(--text-muted)' }}>
+                        Partner since {selectedClient.contractDetails.startDate}
+                      </div>
                     )}
                   </div>
                 </div>
               </div>
 
-              <span className="badge badge-healthy">{selectedClient.status}</span>
+              <span className="badge badge-healthy" style={{ flexShrink: 0 }}>
+                {selectedClient.status}
+              </span>
             </div>
 
             {/* Client Contacts */}
             <div>
-              <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.5rem' }}>
+              <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.5rem', letterSpacing: '0.04em' }}>
                 Client Contacts ({selectedClient.contacts.length})
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
@@ -249,21 +279,26 @@ export const ClientsView: React.FC = () => {
                       borderRadius: '0.375rem',
                       background: 'var(--bg-app)',
                       border: '1px solid var(--border-subtle)',
+                      minWidth: 0,
                     }}
                   >
-                    <div className="flex items-center justify-between">
-                      <span style={{ fontWeight: 600, fontSize: '0.8125rem' }}>{con.name}</span>
-                      {con.isPrimary && <span className="badge badge-purple">Primary</span>}
+                    <div className="flex items-center justify-between gap-2">
+                      <span style={{ fontWeight: 600, fontSize: '0.8125rem' }} className="truncate">
+                        {con.name}
+                      </span>
+                      {con.isPrimary && <span className="badge badge-purple" style={{ flexShrink: 0 }}>Primary</span>}
                     </div>
-                    <div style={{ fontSize: '0.72rem', color: 'var(--brand-crimson)', marginTop: '2px' }}>
+                    <div style={{ fontSize: '0.72rem', color: 'var(--brand-crimson)', marginTop: '2px' }} className="truncate">
                       {con.designation}
                     </div>
-                    <div className="flex items-center gap-3" style={{ marginTop: '4px', fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                      <span className="flex items-center gap-1">
-                        <Mail size={12} /> {con.email}
+                    <div style={{ marginTop: '6px', display: 'flex', flexDirection: 'column', gap: '3px', fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                      <span className="flex items-center gap-1.5" style={{ minWidth: 0 }}>
+                        <Mail size={12} style={{ flexShrink: 0 }} />
+                        <span className="truncate">{con.email}</span>
                       </span>
-                      <span className="flex items-center gap-1">
-                        <Phone size={12} /> {con.phone}
+                      <span className="flex items-center gap-1.5">
+                        <Phone size={12} style={{ flexShrink: 0 }} />
+                        <span>{con.phone}</span>
                       </span>
                     </div>
                   </div>
@@ -273,44 +308,65 @@ export const ClientsView: React.FC = () => {
 
             {/* Active Projects */}
             <div>
-              <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.5rem' }}>
+              <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.5rem', letterSpacing: '0.04em' }}>
                 Active Projects Under Delivery
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                {projects
-                  .filter((p) => p.clientId === selectedClient.id)
-                  .map((p) => (
+              {selectedProjects.length === 0 ? (
+                <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', padding: '0.5rem 0' }}>
+                  No projects linked to this client.
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  {selectedProjects.map((p) => (
                     <div
                       key={p.id}
                       onClick={() => {
                         setSelectedProjectId(p.id);
                         setCurrentView('projects');
                       }}
-                      className="admark-card-interactive flex items-center justify-between"
+                      className="admark-card-interactive flex items-center justify-between gap-2"
                       style={{
                         padding: '0.625rem 0.75rem',
                         borderRadius: '0.375rem',
                         background: 'var(--bg-app)',
+                        border: '1px solid var(--border-subtle)',
                         cursor: 'pointer',
+                        minWidth: 0,
                       }}
                     >
-                      <div>
-                        <div className="flex items-center gap-1.5">
-                          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.72rem', fontWeight: 700, color: 'var(--brand-crimson)' }}>
+                      <div style={{ minWidth: 0, flex: 1 }}>
+                        <div className="flex items-center gap-1.5" style={{ minWidth: 0 }}>
+                          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.72rem', fontWeight: 700, color: 'var(--brand-crimson)', flexShrink: 0 }}>
                             {p.code}
                           </span>
-                          <span style={{ fontSize: '0.8125rem', fontWeight: 600 }}>{p.name}</span>
+                          <span style={{ fontSize: '0.8125rem', fontWeight: 600 }} className="truncate">
+                            {p.name}
+                          </span>
                         </div>
-                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Progress: {p.progress}%</div>
+                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+                          Progress: {p.progress}%
+                        </div>
                       </div>
-                      <ExternalLink size={14} color="var(--text-muted)" />
+                      <ExternalLink size={14} color="var(--text-muted)" style={{ flexShrink: 0 }} />
                     </div>
                   ))}
-              </div>
+                </div>
+              )}
             </div>
           </div>
         ) : (
-          <div className="admark-card" style={{ gridColumn: 'span 5', padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+          <div
+            className="admark-card"
+            style={{
+              minWidth: 0,
+              padding: '2rem',
+              textAlign: 'center',
+              color: 'var(--text-muted)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
             Select a client from the table to view their account profile and contracts.
           </div>
         )}
@@ -367,7 +423,6 @@ export const ClientsView: React.FC = () => {
                   />
                 </div>
               </div>
-
 
               <div className="flex justify-end gap-2" style={{ marginTop: '0.5rem' }}>
                 <button type="button" onClick={() => setShowAddModal(false)} className="btn btn-secondary">

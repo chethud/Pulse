@@ -13,7 +13,8 @@ export type UserRole =
   | 'DESIGNER'
   | 'QA'
   | 'SALES_AM'
-  | 'CLIENT';
+  | 'CLIENT'
+  | 'PHOTO_ADMIN';
 
 export interface User {
   id: string;

@@ -13,6 +13,7 @@ import { TeamCapacityView } from './views/TeamCapacityView';
 import { ReportsView } from './views/ReportsView';
 import { SettingsView } from './views/SettingsView';
 import { AllTasksView } from './views/AllTasksView';
+import { PhotoAdminView } from './views/PhotoAdminView';
 import { TaskDetailDrawer } from './components/drawers/TaskDetailDrawer';
 import { CommandPalette } from './components/common/CommandPalette';
 import { QuickCreateModal } from './components/modals/QuickCreateModal';
@@ -25,6 +26,7 @@ export function AppContent() {
     activeRole,
     selectedProjectId,
     setSelectedProjectId,
+    isPhotoAdmin,
   } = useApp();
 
   const [projectTab, setProjectTab] = useState<string>('overview');
@@ -36,6 +38,11 @@ export function AppContent() {
 
   // Determine what view to render
   const renderView = () => {
+    // Photo Admin: restricted workspace — only profile photo management
+    if (isPhotoAdmin || currentView === 'photo-admin' || activeRole === 'PHOTO_ADMIN') {
+      return <PhotoAdminView />;
+    }
+
     // If activeRole is CLIENT or viewing client-portal
     if (activeRole === 'CLIENT' || currentView === 'client-portal' || currentView.startsWith('client-')) {
       return <ClientPortalView />;
