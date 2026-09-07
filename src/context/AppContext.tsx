@@ -288,6 +288,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [clients, setClients] = useState<Client[]>(() => loadStored('clients', INITIAL_CLIENTS));
   const [projects, setProjects] = useState<Project[]>(() => loadStored('projects', INITIAL_PROJECTS));
   const [modules, setModules] = useState<ProjectModule[]>(() => loadStored('modules', INITIAL_MODULES));
+
+  // Dynamically compute project progress from module percentages
+  const computedProjects = React.useMemo(() => {
+    return projects.map((p) => {
+      if (p.status === 'Completed') {
+        return { ...p, progress: 100 };
+      }
+      const projMods = modules.filter((m) => m.projectId === p.id);
+      if (projMods.length > 0) {
+        const totalModProgress = projMods.reduce((sum, m) => sum + (typeof m.progress === 'number' ? m.progress : 0), 0);
+        const avgProgress = Math.round(totalModProgress / projMods.length);
+        return { ...p, progress: avgProgress };
+      }
+      return p;
+    });
+  }, [projects, modules]);
+
   const [requirements, setRequirements] = useState<Requirement[]>(() => loadStored('requirements', INITIAL_REQUIREMENTS));
   const [tasks, setTasks] = useState<Task[]>(() => loadStored('tasks', INITIAL_TASKS));
   const [bugs, setBugs] = useState<Bug[]>(() => loadStored('bugs', INITIAL_BUGS));
@@ -839,7 +856,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         deleteModule,
         users,
         clients,
-        projects,
+        projects: computedProjects,
         modules,
         requirements,
         tasks,

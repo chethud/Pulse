@@ -533,6 +533,9 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                 <div style={{ fontSize: '1.35rem', fontWeight: 700, color: 'var(--text-primary)', marginTop: '2px' }}>
                   {project.progress}%
                 </div>
+                <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginTop: '1px' }}>
+                  {projectModules.length > 0 ? `Avg of ${projectModules.length} modules` : 'Delivery track'}
+                </div>
               </div>
 
               <div className="kpi-strip-item">
@@ -666,7 +669,7 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                     {projectModules.map((mod) => {
                       const modTasks = projectTasks.filter((t) => t.moduleId === mod.id);
                       const modCompleted = modTasks.filter((t) => t.status === 'Done').length;
-                      const modProgress = modTasks.length > 0 ? Math.round((modCompleted / modTasks.length) * 100) : mod.progress;
+                      const modProgress = typeof mod.progress === 'number' ? mod.progress : (modTasks.length > 0 ? Math.round((modCompleted / modTasks.length) * 100) : 0);
 
                       return (
                         <div key={mod.id}>
@@ -1156,7 +1159,7 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                   const lead = users.find((u) => u.id === mod.leadId);
                   const modTasks = projectTasks.filter((t) => t.moduleId === mod.id);
                   const modCompleted = modTasks.filter((t) => t.status === 'Done').length;
-                  const calculatedModProgress = modTasks.length > 0 ? Math.round((modCompleted / modTasks.length) * 100) : mod.progress;
+                  const calculatedModProgress = typeof mod.progress === 'number' ? mod.progress : (modTasks.length > 0 ? Math.round((modCompleted / modTasks.length) * 100) : 0);
 
                   const statusBadgeClass =
                     mod.status === 'Completed' || calculatedModProgress === 100
@@ -2619,6 +2622,11 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                       <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)', minWidth: '42px' }}>
                         {project.progress}%
                       </span>
+                    </div>
+                    <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '6px' }}>
+                      {projectModules.length > 0
+                        ? `Calculated dynamically from the average of ${projectModules.length} operational modules.`
+                        : 'Calculated from delivery progress.'}
                     </div>
                   </div>
                 </div>
