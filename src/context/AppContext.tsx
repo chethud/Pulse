@@ -107,7 +107,20 @@ interface AppContextType {
   startTimer: (taskId: string, taskTitle: string, projectId: string) => void;
   stopTimer: () => void;
 
+  // Role-Based Access Control & Permissions
+  canDelete: boolean;
+  canCreateAccount: boolean;
+  canManageRoles: boolean;
+  isSuperAdmin: boolean;
+  isAdmin: boolean;
+
   // Mutations
+  addUser: (user: Omit<User, 'id'>) => User;
+  updateUserRole: (userId: string, newRole: UserRole) => void;
+  deleteUser: (userId: string) => void;
+  deleteTask: (taskId: string) => void;
+  deleteBug: (bugId: string) => void;
+  deleteModule: (moduleId: string) => void;
   addTask: (task: Omit<Task, 'id' | 'taskNumber' | 'createdAt' | 'updatedAt'>) => void;
   updateTask: (taskId: string, updates: Partial<Task>) => void;
   updateTaskStatus: (taskId: string, newStatus: TaskStatus) => void;
@@ -138,12 +151,22 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  // Main state with localStorage sync
+  const loadStored = <T,>(key: string, defaultVal: T): T => {
+    try {
+      const item = localStorage.getItem(`admark_${key}`);
+      return item ? JSON.parse(item) : defaultVal;
+    } catch {
+      return defaultVal;
+    }
+  };
+
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
     return (localStorage.getItem('admark_theme') as 'dark' | 'light') || 'dark';
   });
 
   const [activeRole, setActiveRoleState] = useState<UserRole>(() => {
-    return (localStorage.getItem('admark_role') as UserRole) || 'SUPER_ADMIN';
+    return (localStorage.getItem('admark_role') as UserRole) || 'SUPERADMIN';
   });
 
   const [currentUserId, setCurrentUserIdState] = useState<string>(() => {
@@ -154,7 +177,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return localStorage.getItem('pulse_auth') === 'true';
   });
 
-  const [users] = useState<User[]>(INITIAL_USERS);
+  const [users, setUsers] = useState<User[]>(() => loadStored('users', INITIAL_USERS));
 
   // Pick currentUser based on currentUserId or activeRole
   const currentUser = React.useMemo(() => {
@@ -163,6 +186,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
     return users.find((u) => u.id === currentUserId) || users[0];
   }, [currentUserId, activeRole, users]);
+
+  // RBAC Permission Checks
+  const isSuperAdmin =
+    currentUser.role === 'SUPERADMIN' ||
+    currentUser.role === 'SUPER_ADMIN' ||
+    (currentUser.title === 'CEO' && currentUser.role !== 'ADMIN' && currentUser.role !== 'USER') ||
+    currentUser.name.toLowerCase().includes('jois');
+  const isAdmin =
+    !isSuperAdmin &&
+    (currentUser.role === 'ADMIN' ||
+      (currentUser.role !== 'USER' && (currentUser.title === 'COO' || currentUser.title === 'CFO')));
+  const canDelete = isSuperAdmin || isAdmin;
+  const canCreateAccount = isSuperAdmin;
+  const canManageRoles = isSuperAdmin;
 
   const setCurrentUser = (userId: string) => {
     setCurrentUserIdState(userId);
@@ -216,16 +253,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
   }, [theme]);
-
-  // Main state with localStorage sync
-  const loadStored = <T,>(key: string, defaultVal: T): T => {
-    try {
-      const item = localStorage.getItem(`admark_${key}`);
-      return item ? JSON.parse(item) : defaultVal;
-    } catch {
-      return defaultVal;
-    }
-  };
 
   const [clients, setClients] = useState<Client[]>(() => loadStored('clients', INITIAL_CLIENTS));
   const [projects, setProjects] = useState<Project[]>(() => loadStored('projects', INITIAL_PROJECTS));
@@ -487,6 +514,57 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     syncStorage('modules', updated);
   };
 
+  const deleteModule = (moduleId: string) => {
+    const updated = modules.filter((m) => m.id !== moduleId);
+    setModules(updated);
+    syncStorage('modules', updated);
+  };
+
+  const deleteTask = (taskId: string) => {
+    const updated = tasks.filter((t) => t.id !== taskId);
+    setTasks(updated);
+    syncStorage('tasks', updated);
+    if (selectedTaskId === taskId) {
+      setSelectedTaskId(null);
+    }
+  };
+
+  const deleteBug = (bugId: string) => {
+    const updated = bugs.filter((b) => b.id !== bugId);
+    setBugs(updated);
+    syncStorage('bugs', updated);
+    if (selectedBugId === bugId) {
+      setSelectedBugId(null);
+    }
+  };
+
+  const addUser = (newUser: Omit<User, 'id'>): User => {
+    const user: User = {
+      ...newUser,
+      id: `user-${Date.now()}`,
+      avatar:
+        newUser.avatar ||
+        'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+      capacityHoursPerWeek: newUser.capacityHoursPerWeek || 40,
+    };
+    const updated = [...users, user];
+    setUsers(updated);
+    syncStorage('users', updated);
+    return user;
+  };
+
+  const updateUserRole = (userId: string, newRole: UserRole) => {
+    const updated = users.map((u) => (u.id === userId ? { ...u, role: newRole } : u));
+    setUsers(updated);
+    syncStorage('users', updated);
+  };
+
+  const deleteUser = (userId: string) => {
+    const updated = users.filter((u) => u.id !== userId);
+    setUsers(updated);
+    syncStorage('users', updated);
+  };
+
   const addMilestone = (mil: Omit<Milestone, 'id' | 'number' | 'progress' | 'isClientApproved'>) => {
     const projMilestones = milestones.filter((m) => m.projectId === mil.projectId);
     const nextNum = projMilestones.length + 1;
@@ -673,6 +751,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const resetToSeedData = () => {
     localStorage.clear();
+    setUsers(INITIAL_USERS);
     setClients(INITIAL_CLIENTS);
     setProjects(INITIAL_PROJECTS);
     setModules(INITIAL_MODULES);
@@ -689,7 +768,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setNotifications(INITIAL_NOTIFICATIONS);
     setTestCases(INITIAL_TEST_CASES);
     setClientUAT(INITIAL_CLIENT_UAT);
-    setActiveRoleState('SUPER_ADMIN');
+    setActiveRoleState('SUPERADMIN');
     window.location.reload();
   };
 
@@ -705,6 +784,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setCurrentUser,
         activeRole,
         setActiveRole,
+        canDelete,
+        canCreateAccount,
+        canManageRoles,
+        isSuperAdmin,
+        isAdmin,
+        addUser,
+        updateUserRole,
+        deleteUser,
+        deleteTask,
+        deleteBug,
+        deleteModule,
         users,
         clients,
         projects,

@@ -17,13 +17,14 @@ export const ProjectsListView: React.FC = () => {
     users,
     bugs,
     currentUser,
+    canDelete,
+    isSuperAdmin,
     setSelectedProjectId,
     setQuickCreateOpen,
     deleteProject,
     logout,
   } = useApp();
 
-  const isCEO = currentUser.title === 'CEO' || currentUser.name.toLowerCase().includes('jois');
   const [projectToDelete, setProjectToDelete] = useState<any>(null);
   const [showCeoRequiredModal, setShowCeoRequiredModal] = useState(false);
 
@@ -66,14 +67,14 @@ export const ProjectsListView: React.FC = () => {
 
         <button
           onClick={() => {
-            if (isCEO) {
+            if (isSuperAdmin) {
               setQuickCreateOpen(true);
             } else {
               setShowCeoRequiredModal(true);
             }
           }}
           className="btn btn-primary btn-sm"
-          title={isCEO ? 'Create New Project' : 'Only CEO (T Jois) can create projects'}
+          title={isSuperAdmin ? 'Create New Project' : 'Only CEO (Super Admin) can create projects'}
         >
           <Plus size={14} />
           <span>Create Project</span>
@@ -260,22 +261,18 @@ export const ProjectsListView: React.FC = () => {
                         <span>Preview</span>
                       </button>
 
-                      <button
-                        onClick={() => {
-                          if (isCEO) {
-                            setProjectToDelete(proj);
-                          } else {
-                            setShowCeoRequiredModal(true);
-                          }
-                        }}
-                        className="btn btn-ghost btn-icon"
-                        style={{ height: '24px', width: '24px', padding: 0, color: 'var(--text-muted)' }}
-                        onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--status-danger)')}
-                        onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-muted)')}
-                        title={isCEO ? `Delete ${proj.code}` : 'Delete Project (CEO T Jois only)'}
-                      >
-                        <Trash2 size={13} />
-                      </button>
+                      {canDelete && (
+                        <button
+                          onClick={() => setProjectToDelete(proj)}
+                          className="btn btn-ghost btn-icon"
+                          style={{ height: '24px', width: '24px', padding: 0, color: 'var(--text-muted)' }}
+                          onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--status-danger)')}
+                          onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-muted)')}
+                          title={`Delete ${proj.code}`}
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>

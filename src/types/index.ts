@@ -1,6 +1,9 @@
 // Admark Digitals Project Management Platform Types
 
 export type UserRole =
+  | 'SUPERADMIN'
+  | 'ADMIN'
+  | 'USER'
   | 'SUPER_ADMIN'
   | 'PARTNER'
   | 'INTERN'

@@ -76,12 +76,14 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
     deleteProject,
     addModule,
     updateModule,
+    deleteModule,
+    canDelete,
+    isSuperAdmin,
     logout,
     setCurrentView,
     setSelectedProjectId,
   } = useApp();
 
-  const isCEO = currentUser.title === 'CEO' || currentUser.name.toLowerCase().includes('jois');
   const [showDeleteProjectModal, setShowDeleteProjectModal] = useState(false);
   const [showCeoRequiredModal, setShowCeoRequiredModal] = useState(false);
 
@@ -323,21 +325,17 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
               <ExternalLink size={13} />
               <span>Preview Live Site</span>
             </button>
-            <button
-              onClick={() => {
-                if (isCEO) {
-                  setShowDeleteProjectModal(true);
-                } else {
-                  setShowCeoRequiredModal(true);
-                }
-              }}
-              className="btn btn-ghost btn-sm"
-              style={{ color: 'var(--status-danger)' }}
-              title={isCEO ? 'Delete Project' : 'Delete Project (CEO T Jois only)'}
-            >
-              <Trash2 size={13} />
-              <span>Delete</span>
-            </button>
+            {canDelete && (
+              <button
+                onClick={() => setShowDeleteProjectModal(true)}
+                className="btn btn-ghost btn-sm"
+                style={{ color: 'var(--status-danger)' }}
+                title="Delete Project"
+              >
+                <Trash2 size={13} />
+                <span>Delete</span>
+              </button>
+            )}
           </div>
         </div>
 
@@ -874,18 +872,18 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
 
               <button
                 onClick={() => {
-                  if (isCEO) {
+                  if (isSuperAdmin) {
                     setShowAddModuleModal(true);
                   } else {
                     setShowCeoRequiredModal(true);
                   }
                 }}
                 className="btn btn-primary btn-sm"
-                title={isCEO ? 'Add New Module' : 'Only CEO (T Jois) is authorized to add modules'}
+                title={isSuperAdmin ? 'Add New Module' : 'Only CEO (Super Admin) is authorized to add modules'}
               >
                 <Plus size={14} />
                 <span>Add Module</span>
-                {!isCEO && <span style={{ fontSize: '0.65rem', opacity: 0.8, marginLeft: '2px' }}>(CEO only)</span>}
+                {!isSuperAdmin && <span style={{ fontSize: '0.65rem', opacity: 0.8, marginLeft: '2px' }}>(CEO only)</span>}
               </button>
             </div>
 
@@ -917,7 +915,7 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                 </p>
                 <button
                   onClick={() => {
-                    if (isCEO) {
+                    if (isSuperAdmin) {
                       setShowAddModuleModal(true);
                     } else {
                       setShowCeoRequiredModal(true);
@@ -928,7 +926,7 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                 >
                   <Plus size={14} />
                   <span>Add First Module</span>
-                  {!isCEO && <span style={{ fontSize: '0.65rem', opacity: 0.8, marginLeft: '2px' }}>(CEO only)</span>}
+                  {!isSuperAdmin && <span style={{ fontSize: '0.65rem', opacity: 0.8, marginLeft: '2px' }}>(CEO only)</span>}
                 </button>
               </div>
             ) : (
@@ -959,9 +957,26 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                             </span>
                           )}
                         </div>
-                        <span className={`badge ${calculatedModProgress === 100 ? 'badge-healthy' : 'badge-neutral'}`}>
-                          {calculatedModProgress}% Done
-                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <span className={`badge ${calculatedModProgress === 100 ? 'badge-healthy' : 'badge-neutral'}`}>
+                            {calculatedModProgress}% Done
+                          </span>
+                          {canDelete && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (window.confirm(`Delete module "${mod.name}"? This action cannot be undone.`)) {
+                                  deleteModule(mod.id);
+                                }
+                              }}
+                              className="btn btn-secondary btn-sm text-critical"
+                              title="Delete Module"
+                              style={{ padding: '0.2rem 0.4rem', border: 'none', background: 'transparent', cursor: 'pointer' }}
+                            >
+                              <Trash2 size={13} style={{ color: 'var(--status-critical)' }} />
+                            </button>
+                          )}
+                        </div>
                       </div>
 
                       <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginTop: '6px', lineHeight: 1.45 }}>

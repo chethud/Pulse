@@ -14,6 +14,7 @@ import {
   Lock,
   Eye,
   CheckSquare,
+  Trash2,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { TaskStatus, TaskPriority } from '../../types';
@@ -27,6 +28,8 @@ export const TaskDetailDrawer: React.FC = () => {
     users,
     updateTaskStatus,
     updateTask,
+    deleteTask,
+    canDelete,
     toggleSubtask,
     startTimer,
     currentUser,
@@ -145,6 +148,21 @@ export const TaskDetailDrawer: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-2">
+            {canDelete && (
+              <button
+                onClick={() => {
+                  if (window.confirm(`Delete task #${task.taskNumber} "${task.title}"? This cannot be undone.`)) {
+                    deleteTask(task.id);
+                    setSelectedTaskId(null);
+                  }
+                }}
+                className="btn btn-ghost btn-icon"
+                title="Delete Task (Admin/SuperAdmin)"
+                style={{ color: 'var(--status-critical)' }}
+              >
+                <Trash2 size={16} />
+              </button>
+            )}
             <button onClick={() => setSelectedTaskId(null)} className="btn btn-ghost btn-icon">
               <X size={17} />
             </button>

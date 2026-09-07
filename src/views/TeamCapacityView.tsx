@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import { Users2, Clock, CheckSquare, FolderKanban, X } from 'lucide-react';
+import { Users2, Clock, CheckSquare, FolderKanban, X, UserPlus } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { CreateAccountModal } from '../components/modals/CreateAccountModal';
 
 export const TeamCapacityView: React.FC = () => {
-  const { users, tasks, projects, timeLogs, setSelectedTaskId } = useApp();
+  const { users, tasks, projects, timeLogs, setSelectedTaskId, canCreateAccount } = useApp();
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [createModalOpen, setCreateModalOpen] = useState(false);
 
   const internalUsers = users.filter((u) => u.role !== 'CLIENT');
   const inspectUser = internalUsers.find((u) => u.id === selectedUserId);
@@ -21,13 +23,25 @@ export const TeamCapacityView: React.FC = () => {
         width: '100%',
       }}
     >
-      <div>
-        <h1 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
-          Team Directory & Workload
-        </h1>
-        <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
-          Engineering team capacity distribution, active sprint commitments, and project assignments.
-        </p>
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <h1 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
+            Team Directory & Workload
+          </h1>
+          <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
+            Engineering team capacity distribution, active sprint commitments, and project assignments.
+          </p>
+        </div>
+        {canCreateAccount && (
+          <button
+            onClick={() => setCreateModalOpen(true)}
+            className="btn btn-primary"
+            style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8125rem' }}
+          >
+            <UserPlus size={15} />
+            <span>+ Create Account</span>
+          </button>
+        )}
       </div>
 
       <div className="grid grid-cols-12 gap-5 items-start">
@@ -81,8 +95,21 @@ export const TeamCapacityView: React.FC = () => {
                         <div style={{ fontSize: '0.78rem', color: 'var(--text-primary)', fontWeight: 500 }}>
                           {u.title}
                         </div>
-                        <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>
-                          {u.department} • {u.role === 'INTERN' ? 'Intern' : 'Partner'}
+                        <div className="flex items-center gap-1.5" style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+                          <span>{u.department || 'Engineering'}</span>
+                          <span>•</span>
+                          <span
+                            className={`badge ${
+                              u.role === 'SUPERADMIN'
+                                ? 'badge-critical'
+                                : u.role === 'ADMIN'
+                                ? 'badge-warning'
+                                : 'badge-neutral'
+                            }`}
+                            style={{ fontSize: '0.62rem', padding: '0.1rem 0.35rem' }}
+                          >
+                            {u.role}
+                          </span>
                         </div>
                       </td>
 
@@ -202,6 +229,8 @@ export const TeamCapacityView: React.FC = () => {
           </div>
         )}
       </div>
+
+      <CreateAccountModal isOpen={createModalOpen} onClose={() => setCreateModalOpen(false)} />
     </div>
   );
 };

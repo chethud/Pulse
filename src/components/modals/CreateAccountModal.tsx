@@ -1,0 +1,360 @@
+import React, { useState } from 'react';
+import { X, UserPlus, Shield, Lock, Mail, User, Briefcase, Clock, CheckCircle2 } from 'lucide-react';
+import { useApp } from '../../context/AppContext';
+import { UserRole } from '../../types';
+
+interface CreateAccountModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({ isOpen, onClose }) => {
+  const { addUser, canCreateAccount } = useApp();
+
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [title, setTitle] = useState('Developer');
+  const [role, setRole] = useState<UserRole>('USER');
+  const [department, setDepartment] = useState('Engineering');
+  const [capacityHours, setCapacityHours] = useState(40);
+  const [error, setError] = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
+
+  if (!isOpen) return null;
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+
+    if (!canCreateAccount) {
+      setError('Permission denied. Only the CEO can create new user accounts.');
+      return;
+    }
+
+    if (!name.trim() || !email.trim() || !password.trim()) {
+      setError('Please provide Name, Email, and Password.');
+      return;
+    }
+
+    // Default avatars matching style
+    const avatarSeeds = [
+      'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150&auto=format&fit=crop&q=80',
+    ];
+    const randomAvatar = avatarSeeds[Math.floor(Math.random() * avatarSeeds.length)];
+
+    try {
+      addUser({
+        name: name.trim(),
+        email: email.trim().toLowerCase(),
+        password: password.trim(),
+        title: title.trim(),
+        role,
+        department,
+        capacityHoursPerWeek: Number(capacityHours) || 40,
+        avatar: randomAvatar,
+      });
+
+      setSuccessMsg(`Account for ${name.trim()} successfully created with role: ${role}!`);
+      setTimeout(() => {
+        setSuccessMsg(null);
+        setName('');
+        setEmail('');
+        setPassword('');
+        setTitle('Developer');
+        setRole('USER');
+        onClose();
+      }, 1200);
+    } catch (err) {
+      setError('Failed to create account. Please try again.');
+    }
+  };
+
+  return (
+    <div className="drawer-backdrop animate-fade-in" onClick={onClose}>
+      <div
+        className="admark-card animate-scale-up"
+        style={{
+          width: '100%',
+          maxWidth: '560px',
+          maxHeight: '90vh',
+          overflowY: 'auto',
+          margin: 'auto',
+          padding: '1.75rem',
+          position: 'relative',
+          backgroundColor: 'var(--bg-card)',
+          border: '1px solid var(--border-strong)',
+          boxShadow: '0 20px 45px rgba(0,0,0,0.45)',
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between" style={{ marginBottom: '1.25rem' }}>
+          <div className="flex items-center gap-2.5">
+            <div
+              style={{
+                width: '36px',
+                height: '36px',
+                borderRadius: '8px',
+                backgroundColor: 'rgba(230, 57, 70, 0.12)',
+                color: 'var(--brand-crimson)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <UserPlus size={20} />
+            </div>
+            <div>
+              <h2 style={{ fontSize: '1.15rem', fontWeight: 700, margin: 0 }}>Create User Account</h2>
+              <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: 0 }}>
+                Only the CEO can provision team credentials and assign security roles.
+              </p>
+            </div>
+          </div>
+          <button onClick={onClose} className="btn btn-ghost btn-icon">
+            <X size={18} />
+          </button>
+        </div>
+
+        {error && (
+          <div
+            style={{
+              padding: '0.65rem 0.85rem',
+              borderRadius: '6px',
+              backgroundColor: 'rgba(239, 68, 68, 0.12)',
+              border: '1px solid var(--status-critical)',
+              color: 'var(--status-critical)',
+              fontSize: '0.8rem',
+              marginBottom: '1rem',
+            }}
+          >
+            {error}
+          </div>
+        )}
+
+        {successMsg && (
+          <div
+            style={{
+              padding: '0.65rem 0.85rem',
+              borderRadius: '6px',
+              backgroundColor: 'rgba(34, 197, 94, 0.12)',
+              border: '1px solid var(--status-healthy)',
+              color: 'var(--status-healthy)',
+              fontSize: '0.8rem',
+              marginBottom: '1rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+            }}
+          >
+            <CheckCircle2 size={16} />
+            <span>{successMsg}</span>
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="flex flex-col gap-3.5">
+          {/* Full Name */}
+          <div>
+            <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+              Full Name *
+            </label>
+            <div className="relative flex items-center" style={{ marginTop: '4px' }}>
+              <input
+                type="text"
+                required
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="e.g. Anand Kumar"
+                className="input-field"
+                style={{ paddingLeft: '2.2rem' }}
+              />
+              <User size={14} style={{ position: 'absolute', left: '0.75rem', color: 'var(--text-muted)' }} />
+            </div>
+          </div>
+
+          {/* Email & Password */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                Email Address (Login ID) *
+              </label>
+              <div className="relative flex items-center" style={{ marginTop: '4px' }}>
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="anand@pulse.dev"
+                  className="input-field"
+                  style={{ paddingLeft: '2.2rem' }}
+                />
+                <Mail size={14} style={{ position: 'absolute', left: '0.75rem', color: 'var(--text-muted)' }} />
+              </div>
+            </div>
+
+            <div>
+              <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                Password *
+              </label>
+              <div className="relative flex items-center" style={{ marginTop: '4px' }}>
+                <input
+                  type="password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="input-field"
+                  style={{ paddingLeft: '2.2rem' }}
+                />
+                <Lock size={14} style={{ position: 'absolute', left: '0.75rem', color: 'var(--text-muted)' }} />
+              </div>
+            </div>
+          </div>
+
+          {/* Role Selection */}
+          <div>
+            <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+              Security Role *
+            </label>
+            <div className="grid grid-cols-3 gap-2" style={{ marginTop: '6px' }}>
+              {[
+                {
+                  id: 'SUPERADMIN' as UserRole,
+                  title: 'SUPERADMIN',
+                  badge: 'Full Access',
+                  desc: 'CEO level: account creation, role assignment, and full deletion.',
+                },
+                {
+                  id: 'ADMIN' as UserRole,
+                  title: 'ADMIN',
+                  badge: 'Can Delete',
+                  desc: 'Can delete projects, tasks, bugs, modules. Cannot create accounts.',
+                },
+                {
+                  id: 'USER' as UserRole,
+                  title: 'USER',
+                  badge: 'No Delete',
+                  desc: 'Standard member. No delete options anywhere across the system.',
+                },
+              ].map((r) => {
+                const isSelected = role === r.id;
+                return (
+                  <div
+                    key={r.id}
+                    onClick={() => setRole(r.id)}
+                    style={{
+                      padding: '0.75rem',
+                      borderRadius: '6px',
+                      border: isSelected ? '2px solid var(--brand-crimson)' : '1px solid var(--border-subtle)',
+                      backgroundColor: isSelected ? 'rgba(230, 57, 70, 0.06)' : 'var(--bg-app)',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '4px',
+                      transition: 'border-color 0.15s',
+                    }}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span style={{ fontWeight: 700, fontSize: '0.8rem', color: isSelected ? 'var(--brand-crimson)' : 'var(--text-primary)' }}>
+                        {r.title}
+                      </span>
+                      <span
+                        className={`badge ${
+                          r.id === 'SUPERADMIN'
+                            ? 'badge-critical'
+                            : r.id === 'ADMIN'
+                            ? 'badge-warning'
+                            : 'badge-neutral'
+                        }`}
+                        style={{ fontSize: '0.65rem' }}
+                      >
+                        {r.badge}
+                      </span>
+                    </div>
+                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', lineHeight: 1.3 }}>
+                      {r.desc}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Job Title & Department */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                Job Title
+              </label>
+              <div className="relative flex items-center" style={{ marginTop: '4px' }}>
+                <input
+                  type="text"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="e.g. Senior Backend Engineer"
+                  className="input-field"
+                  style={{ paddingLeft: '2.2rem' }}
+                />
+                <Briefcase size={14} style={{ position: 'absolute', left: '0.75rem', color: 'var(--text-muted)' }} />
+              </div>
+            </div>
+
+            <div>
+              <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                Department
+              </label>
+              <select
+                value={department}
+                onChange={(e) => setDepartment(e.target.value)}
+                className="input-field"
+                style={{ marginTop: '4px' }}
+              >
+                <option value="Engineering">Engineering</option>
+                <option value="Design">UI / UX Design</option>
+                <option value="QA">Quality Assurance</option>
+                <option value="Management">Management</option>
+                <option value="Operations">Operations</option>
+                <option value="Finance">Finance</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Weekly Capacity */}
+          <div>
+            <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+              Weekly Work Capacity (Hours)
+            </label>
+            <div className="relative flex items-center" style={{ marginTop: '4px' }}>
+              <input
+                type="number"
+                min={10}
+                max={60}
+                value={capacityHours}
+                onChange={(e) => setCapacityHours(Number(e.target.value))}
+                className="input-field"
+                style={{ paddingLeft: '2.2rem' }}
+              />
+              <Clock size={14} style={{ position: 'absolute', left: '0.75rem', color: 'var(--text-muted)' }} />
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex items-center justify-end gap-2.5" style={{ marginTop: '1rem', paddingTop: '0.75rem', borderTop: '1px solid var(--border-subtle)' }}>
+            <button type="button" onClick={onClose} className="btn btn-secondary">
+              Cancel
+            </button>
+            <button type="submit" className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <UserPlus size={15} />
+              <span>Create Account</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};

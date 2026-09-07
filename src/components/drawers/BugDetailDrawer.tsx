@@ -8,6 +8,7 @@ import {
   Smartphone,
   Layers,
   Calendar,
+  Trash2,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { BugStatus, BugSeverity } from '../../types';
@@ -20,6 +21,8 @@ export const BugDetailDrawer: React.FC = () => {
     projects,
     users,
     updateBugStatus,
+    deleteBug,
+    canDelete,
   } = useApp();
 
   if (!selectedBugId) return null;
@@ -92,9 +95,26 @@ export const BugDetailDrawer: React.FC = () => {
             </span>
           </div>
 
-          <button onClick={() => setSelectedBugId(null)} className="btn btn-ghost btn-icon">
-            <X size={17} />
-          </button>
+          <div className="flex items-center gap-2">
+            {canDelete && (
+              <button
+                onClick={() => {
+                  if (window.confirm(`Delete bug #${bug.bugNumber} "${bug.title}"? This cannot be undone.`)) {
+                    deleteBug(bug.id);
+                    setSelectedBugId(null);
+                  }
+                }}
+                className="btn btn-ghost btn-icon"
+                title="Delete Bug (Admin/SuperAdmin)"
+                style={{ color: 'var(--status-critical)' }}
+              >
+                <Trash2 size={16} />
+              </button>
+            )}
+            <button onClick={() => setSelectedBugId(null)} className="btn btn-ghost btn-icon">
+              <X size={17} />
+            </button>
+          </div>
         </div>
 
         {/* Status bar */}
