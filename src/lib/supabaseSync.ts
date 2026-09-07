@@ -1,6 +1,68 @@
 import { supabase, isSupabaseConfigured } from './supabase';
 import { Project, ProjectModule, Task, Bug, Client, User } from '../types';
 
+// Convert TS Client to DB Client Row
+export const clientToDb = (c: Client) => ({
+  id: c.id,
+  name: c.name,
+  logo: c.logo || null,
+  industry: c.industry || null,
+  website: c.website || null,
+  email: c.email || null,
+  phone: c.phone || null,
+  location: c.location || null,
+  account_manager_id: c.accountManagerId || null,
+  status: c.status || 'Active',
+  payment_terms: c.paymentTerms || null,
+  notes: c.notes || null,
+  contacts: c.contacts || [],
+  last_activity: c.lastActivity || 'Active',
+});
+
+// Convert DB Client Row to TS Client
+export const dbToClient = (row: any): Client => ({
+  id: row.id,
+  name: row.name,
+  logo: row.logo,
+  industry: row.industry || '',
+  website: row.website || '',
+  email: row.email || '',
+  phone: row.phone || '',
+  location: row.location || '',
+  accountManagerId: row.account_manager_id || 'user-1',
+  status: row.status || 'Active',
+  paymentTerms: row.payment_terms,
+  notes: row.notes || '',
+  contacts: Array.isArray(row.contacts) ? row.contacts : [],
+  lastActivity: row.last_activity || 'Active',
+});
+
+// Convert TS User to DB User Row
+export const userToDb = (u: User) => ({
+  id: u.id,
+  name: u.name,
+  email: u.email,
+  role: u.role,
+  avatar: u.avatar || null,
+  title: u.title || null,
+  client_id: u.clientId || null,
+  department: u.department || null,
+  capacity_hours_per_week: u.capacityHoursPerWeek || 40,
+});
+
+// Convert DB User Row to TS User
+export const dbToUser = (row: any): User => ({
+  id: row.id,
+  name: row.name,
+  email: row.email,
+  role: row.role || 'USER',
+  avatar: row.avatar || '',
+  title: row.title || '',
+  clientId: row.client_id,
+  department: row.department || '',
+  capacityHoursPerWeek: row.capacity_hours_per_week || 40,
+});
+
 // Convert TS Project to DB Project Row
 export const projectToDb = (p: Project) => ({
   id: p.id,

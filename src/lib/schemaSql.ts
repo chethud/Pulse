@@ -208,8 +208,40 @@ CREATE POLICY "Public access change_requests" ON public.change_requests FOR ALL 
 DROP POLICY IF EXISTS "Public access activities" ON public.activities;
 CREATE POLICY "Public access activities" ON public.activities FOR ALL USING (true) WITH CHECK (true);
 
--- Enable Realtime for live cross-device collaboration
-ALTER PUBLICATION supabase_realtime ADD TABLE public.projects;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.modules;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.tasks;
+-- 11. REMOVE STRICT FOREIGN KEY LOCKS (Allows distributed syncing without constraint deadlock)
+ALTER TABLE public.projects DROP CONSTRAINT IF EXISTS projects_client_id_fkey;
+ALTER TABLE public.modules DROP CONSTRAINT IF EXISTS modules_project_id_fkey;
+ALTER TABLE public.tasks DROP CONSTRAINT IF EXISTS tasks_project_id_fkey;
+
+-- 12. Enable Realtime for live cross-device collaboration
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_publication_tables 
+        WHERE pubname = 'supabase_realtime' AND tablename = 'projects'
+    ) THEN
+        ALTER PUBLICATION supabase_realtime ADD TABLE public.projects;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_publication_tables 
+        WHERE pubname = 'supabase_realtime' AND tablename = 'modules'
+    ) THEN
+        ALTER PUBLICATION supabase_realtime ADD TABLE public.modules;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_publication_tables 
+        WHERE pubname = 'supabase_realtime' AND tablename = 'clients'
+    ) THEN
+        ALTER PUBLICATION supabase_realtime ADD TABLE public.clients;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_publication_tables 
+        WHERE pubname = 'supabase_realtime' AND tablename = 'tasks'
+    ) THEN
+        ALTER PUBLICATION supabase_realtime ADD TABLE public.tasks;
+    END IF;
+END $$;
 `;

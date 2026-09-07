@@ -1,6 +1,6 @@
 -- ==============================================================================
--- Pulse / Admark Digitals Internal Command Center - Supabase Schema
--- Run this script in your Supabase SQL Editor:
+-- Pulse / Admark Digitals Internal Command Center - Supabase Database Schema
+-- Paste this entire SQL into Supabase SQL Editor and click RUN:
 -- https://supabase.com/dashboard/project/mbimqqllqitjmckybyll/sql/new
 -- ==============================================================================
 
@@ -112,22 +112,7 @@ CREATE TABLE IF NOT EXISTS public.tasks (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 6. BUGS TABLE
-CREATE TABLE IF NOT EXISTS public.bugs (
-    id TEXT PRIMARY KEY,
-    bug_number INTEGER,
-    project_id TEXT REFERENCES public.projects(id) ON DELETE CASCADE,
-    title TEXT NOT NULL,
-    description TEXT,
-    severity TEXT DEFAULT 'Medium',
-    status TEXT DEFAULT 'Open',
-    assignee_id TEXT,
-    steps_to_reproduce TEXT,
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    updated_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- 7. MILESTONES TABLE
+-- 6. MILESTONES TABLE
 CREATE TABLE IF NOT EXISTS public.milestones (
     id TEXT PRIMARY KEY,
     project_id TEXT REFERENCES public.projects(id) ON DELETE CASCADE,
@@ -140,7 +125,7 @@ CREATE TABLE IF NOT EXISTS public.milestones (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 8. CHANGE REQUESTS TABLE
+-- 7. CHANGE REQUESTS TABLE
 CREATE TABLE IF NOT EXISTS public.change_requests (
     id TEXT PRIMARY KEY,
     cr_number TEXT,
@@ -155,7 +140,7 @@ CREATE TABLE IF NOT EXISTS public.change_requests (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 9. ACTIVITIES & AUDIT LOG
+-- 8. ACTIVITIES & AUDIT LOG
 CREATE TABLE IF NOT EXISTS public.activities (
     id TEXT PRIMARY KEY,
     project_id TEXT,
@@ -169,18 +154,17 @@ CREATE TABLE IF NOT EXISTS public.activities (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- ENABLE ROW LEVEL SECURITY (RLS) & ALLOW INTERNAL ACCESS
+-- 9. ENABLE ROW LEVEL SECURITY (RLS)
 ALTER TABLE public.clients ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.projects ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.modules ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.tasks ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.bugs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.milestones ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.change_requests ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.activities ENABLE ROW LEVEL SECURITY;
 
--- Create open policies for anon & authenticated roles (internal delivery tool)
+-- 10. CREATE OPEN ACCESS POLICIES FOR INTERNAL ACCESS
 DROP POLICY IF EXISTS "Public access clients" ON public.clients;
 CREATE POLICY "Public access clients" ON public.clients FOR ALL USING (true) WITH CHECK (true);
 
@@ -196,9 +180,6 @@ CREATE POLICY "Public access modules" ON public.modules FOR ALL USING (true) WIT
 DROP POLICY IF EXISTS "Public access tasks" ON public.tasks;
 CREATE POLICY "Public access tasks" ON public.tasks FOR ALL USING (true) WITH CHECK (true);
 
-DROP POLICY IF EXISTS "Public access bugs" ON public.bugs;
-CREATE POLICY "Public access bugs" ON public.bugs FOR ALL USING (true) WITH CHECK (true);
-
 DROP POLICY IF EXISTS "Public access milestones" ON public.milestones;
 CREATE POLICY "Public access milestones" ON public.milestones FOR ALL USING (true) WITH CHECK (true);
 
@@ -208,7 +189,39 @@ CREATE POLICY "Public access change_requests" ON public.change_requests FOR ALL 
 DROP POLICY IF EXISTS "Public access activities" ON public.activities;
 CREATE POLICY "Public access activities" ON public.activities FOR ALL USING (true) WITH CHECK (true);
 
--- Enable Realtime for live cross-device collaboration
-ALTER PUBLICATION supabase_realtime ADD TABLE public.projects;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.modules;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.tasks;
+-- 11. REMOVE STRICT FOREIGN KEY LOCKS (Allows distributed syncing without constraint deadlock)
+ALTER TABLE public.projects DROP CONSTRAINT IF EXISTS projects_client_id_fkey;
+ALTER TABLE public.modules DROP CONSTRAINT IF EXISTS modules_project_id_fkey;
+ALTER TABLE public.tasks DROP CONSTRAINT IF EXISTS tasks_project_id_fkey;
+
+-- 12. ENABLE REALTIME BROADCASTING FOR LIVE SYNC
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_publication_tables 
+        WHERE pubname = 'supabase_realtime' AND tablename = 'projects'
+    ) THEN
+        ALTER PUBLICATION supabase_realtime ADD TABLE public.projects;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_publication_tables 
+        WHERE pubname = 'supabase_realtime' AND tablename = 'modules'
+    ) THEN
+        ALTER PUBLICATION supabase_realtime ADD TABLE public.modules;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_publication_tables 
+        WHERE pubname = 'supabase_realtime' AND tablename = 'clients'
+    ) THEN
+        ALTER PUBLICATION supabase_realtime ADD TABLE public.clients;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_publication_tables 
+        WHERE pubname = 'supabase_realtime' AND tablename = 'tasks'
+    ) THEN
+        ALTER PUBLICATION supabase_realtime ADD TABLE public.tasks;
+    END IF;
+END $$;

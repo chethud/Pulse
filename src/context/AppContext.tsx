@@ -54,6 +54,10 @@ import {
   dbToModule,
   taskToDb,
   dbToTask,
+  clientToDb,
+  dbToClient,
+  userToDb,
+  dbToUser,
   syncEntityToSupabase,
   deleteEntityFromSupabase,
   bootstrapTableIfEmpty,
@@ -347,6 +351,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [quickCreateOpen, setQuickCreateOpen] = useState(false);
 
+  // Save changes to localStorage helper
+  const syncStorage = (key: string, val: unknown) => {
+    try {
+      localStorage.setItem(`admark_${key}`, JSON.stringify(val));
+    } catch (err) {
+      console.warn('Storage quota error', err);
+    }
+  };
+
   // Supabase Cloud Sync state
   const [supabaseSyncStatus, setSupabaseSyncStatus] = useState<
     'connected' | 'syncing' | 'schema_needed' | 'error' | 'disconnected'
@@ -361,7 +374,37 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     try {
       setSupabaseSyncStatus('syncing');
 
-      // Test projects table
+      // 1. Clients (Seed/Fetch FIRST to satisfy foreign key relationships)
+      try {
+        const { data: remoteClients, error: cliErr } = await supabase.from('clients').select('*');
+        if (!cliErr && remoteClients && remoteClients.length > 0) {
+          const parsedClients = remoteClients.map(dbToClient);
+          setClients(parsedClients);
+          syncStorage('clients', parsedClients);
+        } else if (!cliErr && (!remoteClients || remoteClients.length === 0)) {
+          const localClients = loadStored('clients', INITIAL_CLIENTS);
+          await bootstrapTableIfEmpty('clients', localClients, clientToDb);
+        }
+      } catch (err) {
+        console.warn('[Supabase Clients Sync Error]', err);
+      }
+
+      // 2. Users
+      try {
+        const { data: remoteUsers, error: usrErr } = await supabase.from('users').select('*');
+        if (!usrErr && remoteUsers && remoteUsers.length > 0) {
+          const parsedUsers = remoteUsers.map(dbToUser);
+          setUsers(parsedUsers);
+          syncStorage('users', parsedUsers);
+        } else if (!usrErr && (!remoteUsers || remoteUsers.length === 0)) {
+          const localUsers = loadStored('users', INITIAL_USERS);
+          await bootstrapTableIfEmpty('users', localUsers, userToDb);
+        }
+      } catch (err) {
+        console.warn('[Supabase Users Sync Error]', err);
+      }
+
+      // 3. Projects
       const { data: remoteProjects, error: projErr } = await supabase.from('projects').select('*');
 
       if (projErr) {
@@ -376,25 +419,36 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
 
       if (remoteProjects && remoteProjects.length > 0) {
-        setProjects(remoteProjects.map(dbToProject));
+        const parsedProjects = remoteProjects.map(dbToProject);
+        setProjects(parsedProjects);
+        syncStorage('projects', parsedProjects);
       } else {
-        await bootstrapTableIfEmpty('projects', INITIAL_PROJECTS, projectToDb);
+        // Bootstrap using currently stored projects from local storage (preserves user progress)
+        const localProjects = loadStored('projects', INITIAL_PROJECTS);
+        await bootstrapTableIfEmpty('projects', localProjects, projectToDb);
       }
 
-      // Fetch modules
+      // 4. Modules
       const { data: remoteModules, error: modErr } = await supabase.from('modules').select('*');
       if (!modErr && remoteModules && remoteModules.length > 0) {
-        setModules(remoteModules.map(dbToModule));
-      } else if (!modErr && remoteModules && remoteModules.length === 0) {
-        await bootstrapTableIfEmpty('modules', INITIAL_MODULES, moduleToDb);
+        const parsedModules = remoteModules.map(dbToModule);
+        setModules(parsedModules);
+        syncStorage('modules', parsedModules);
+      } else if (!modErr && (!remoteModules || remoteModules.length === 0)) {
+        // Bootstrap using local modules (preserves user's exact module progress e.g. 75%, 60%, 40%)
+        const localModules = loadStored('modules', INITIAL_MODULES);
+        await bootstrapTableIfEmpty('modules', localModules, moduleToDb);
       }
 
-      // Fetch tasks
+      // 5. Tasks
       const { data: remoteTasks, error: taskErr } = await supabase.from('tasks').select('*');
       if (!taskErr && remoteTasks && remoteTasks.length > 0) {
-        setTasks(remoteTasks.map(dbToTask));
-      } else if (!taskErr && remoteTasks && remoteTasks.length === 0) {
-        await bootstrapTableIfEmpty('tasks', INITIAL_TASKS, taskToDb);
+        const parsedTasks = remoteTasks.map(dbToTask);
+        setTasks(parsedTasks);
+        syncStorage('tasks', parsedTasks);
+      } else if (!taskErr && (!remoteTasks || remoteTasks.length === 0)) {
+        const localTasks = loadStored('tasks', INITIAL_TASKS);
+        await bootstrapTableIfEmpty('tasks', localTasks, taskToDb);
       }
 
       setSupabaseSyncStatus('connected');
@@ -414,12 +468,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       .on('postgres_changes', { event: '*', schema: 'public', table: 'projects' }, (payload) => {
         if (payload.eventType === 'INSERT') {
           const newProj = dbToProject(payload.new);
-          setProjects((prev) => (prev.some((p) => p.id === newProj.id) ? prev : [newProj, ...prev]));
+          setProjects((prev) => {
+            const next = prev.some((p) => p.id === newProj.id) ? prev : [newProj, ...prev];
+            syncStorage('projects', next);
+            return next;
+          });
         } else if (payload.eventType === 'UPDATE') {
           const updatedProj = dbToProject(payload.new);
-          setProjects((prev) => prev.map((p) => (p.id === updatedProj.id ? updatedProj : p)));
+          setProjects((prev) => {
+            const next = prev.map((p) => (p.id === updatedProj.id ? updatedProj : p));
+            syncStorage('projects', next);
+            return next;
+          });
         } else if (payload.eventType === 'DELETE') {
-          setProjects((prev) => prev.filter((p) => p.id !== (payload.old as any).id));
+          setProjects((prev) => {
+            const next = prev.filter((p) => p.id !== (payload.old as any).id);
+            syncStorage('projects', next);
+            return next;
+          });
         }
       })
       .subscribe();
@@ -429,12 +495,51 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       .on('postgres_changes', { event: '*', schema: 'public', table: 'modules' }, (payload) => {
         if (payload.eventType === 'INSERT') {
           const newMod = dbToModule(payload.new);
-          setModules((prev) => (prev.some((m) => m.id === newMod.id) ? prev : [...prev, newMod]));
+          setModules((prev) => {
+            const next = prev.some((m) => m.id === newMod.id) ? prev : [...prev, newMod];
+            syncStorage('modules', next);
+            return next;
+          });
         } else if (payload.eventType === 'UPDATE') {
           const updatedMod = dbToModule(payload.new);
-          setModules((prev) => prev.map((m) => (m.id === updatedMod.id ? updatedMod : m)));
+          setModules((prev) => {
+            const next = prev.map((m) => (m.id === updatedMod.id ? updatedMod : m));
+            syncStorage('modules', next);
+            return next;
+          });
         } else if (payload.eventType === 'DELETE') {
-          setModules((prev) => prev.filter((m) => m.id !== (payload.old as any).id));
+          setModules((prev) => {
+            const next = prev.filter((m) => m.id !== (payload.old as any).id);
+            syncStorage('modules', next);
+            return next;
+          });
+        }
+      })
+      .subscribe();
+
+    const clientSub = supabase
+      .channel('public:clients')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'clients' }, (payload) => {
+        if (payload.eventType === 'INSERT') {
+          const newCli = dbToClient(payload.new);
+          setClients((prev) => {
+            const next = prev.some((c) => c.id === newCli.id) ? prev : [newCli, ...prev];
+            syncStorage('clients', next);
+            return next;
+          });
+        } else if (payload.eventType === 'UPDATE') {
+          const updatedCli = dbToClient(payload.new);
+          setClients((prev) => {
+            const next = prev.map((c) => (c.id === updatedCli.id ? updatedCli : c));
+            syncStorage('clients', next);
+            return next;
+          });
+        } else if (payload.eventType === 'DELETE') {
+          setClients((prev) => {
+            const next = prev.filter((c) => c.id !== (payload.old as any).id);
+            syncStorage('clients', next);
+            return next;
+          });
         }
       })
       .subscribe();
@@ -444,12 +549,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, (payload) => {
         if (payload.eventType === 'INSERT') {
           const newTask = dbToTask(payload.new);
-          setTasks((prev) => (prev.some((t) => t.id === newTask.id) ? prev : [newTask, ...prev]));
+          setTasks((prev) => {
+            const next = prev.some((t) => t.id === newTask.id) ? prev : [newTask, ...prev];
+            syncStorage('tasks', next);
+            return next;
+          });
         } else if (payload.eventType === 'UPDATE') {
           const updatedTask = dbToTask(payload.new);
-          setTasks((prev) => prev.map((t) => (t.id === updatedTask.id ? updatedTask : t)));
+          setTasks((prev) => {
+            const next = prev.map((t) => (t.id === updatedTask.id ? updatedTask : t));
+            syncStorage('tasks', next);
+            return next;
+          });
         } else if (payload.eventType === 'DELETE') {
-          setTasks((prev) => prev.filter((t) => t.id !== (payload.old as any).id));
+          setTasks((prev) => {
+            const next = prev.filter((t) => t.id !== (payload.old as any).id);
+            syncStorage('tasks', next);
+            return next;
+          });
         }
       })
       .subscribe();
@@ -457,6 +574,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return () => {
       supabase?.removeChannel(projectSub);
       supabase?.removeChannel(moduleSub);
+      supabase?.removeChannel(clientSub);
       supabase?.removeChannel(taskSub);
     };
 
@@ -520,14 +638,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // Save changes to localStorage helper
-  const syncStorage = (key: string, val: unknown) => {
-    try {
-      localStorage.setItem(`admark_${key}`, JSON.stringify(val));
-    } catch (err) {
-      console.warn('Storage quota error', err);
-    }
-  };
 
   const addTask = (newTaskData: Omit<Task, 'id' | 'taskNumber' | 'createdAt' | 'updatedAt'>) => {
     const maxNumber = tasks.reduce((max, t) => Math.max(max, t.taskNumber || 0), 100);
@@ -796,6 +906,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const updated = [newCli, ...clients];
     setClients(updated);
     syncStorage('clients', updated);
+    syncEntityToSupabase('clients', clientToDb(newCli));
   };
 
   const addRequirement = (req: Omit<Requirement, 'id' | 'code' | 'createdAt'>) => {

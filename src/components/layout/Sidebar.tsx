@@ -120,7 +120,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ projectTab = 'overview', setPr
     { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={15} strokeWidth={1.8} /> },
     { id: 'my-work', label: 'My Work', icon: <UserCheck size={15} strokeWidth={1.8} /> },
     { id: 'projects', label: 'Projects', icon: <FolderKanban size={15} strokeWidth={1.8} /> },
-    { id: 'modules', label: 'Modules', icon: <FolderTree size={15} strokeWidth={1.8} /> },
   ];
 
 
