@@ -31,6 +31,7 @@ import {
   Globe,
   Link2,
   Save,
+  Edit3,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { TaskStatus, TaskPriority, ChangeRequestStatus } from '../../types';
@@ -97,6 +98,15 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
   const [newModuleTargetDate, setNewModuleTargetDate] = useState('2025-10-31');
   const [newModuleStatus, setNewModuleStatus] = useState<'Planned' | 'In Progress' | 'Completed' | 'Delayed'>('In Progress');
   const [newModuleDeliverables, setNewModuleDeliverables] = useState('');
+
+  // Edit Module state
+  const [editingModule, setEditingModule] = useState<any>(null);
+  const [editModuleName, setEditModuleName] = useState('');
+  const [editModuleDesc, setEditModuleDesc] = useState('');
+  const [editModuleLeadId, setEditModuleLeadId] = useState('');
+  const [editModuleTargetDate, setEditModuleTargetDate] = useState('');
+  const [editModuleStatus, setEditModuleStatus] = useState<'Planned' | 'In Progress' | 'Completed' | 'Delayed'>('In Progress');
+  const [editModuleDeliverables, setEditModuleDeliverables] = useState('');
 
   const [taskViewMode, setTaskViewMode] = useState<'board' | 'list' | 'gantt' | 'calendar'>('board');
   const [taskFilterStatus, setTaskFilterStatus] = useState<string>('All');
@@ -167,6 +177,7 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
       priority: settingsPriority,
       deadline: settingsDeadline,
       techStack: settingsTech.split(',').map((t) => t.trim()).filter(Boolean),
+      progress: settingsStatus === 'Completed' ? 100 : project.progress,
     });
     setSettingsSavedNotice(true);
     setTimeout(() => setSettingsSavedNotice(false), 3500);
@@ -282,40 +293,19 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
               <span>•</span>
               <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{project.progress}% Complete</span>
               <span>•</span>
-              <select
-                value={project.status}
-                onChange={(e) => updateProject(project.id, { status: e.target.value as any })}
-                className="input-field"
+              <span
+                className={`badge ${project.status === 'Completed' ? 'badge-healthy' : 'badge-neutral'}`}
                 style={{
-                  padding: '0.1rem 0.45rem',
                   fontSize: '0.72rem',
-                  fontWeight: 700,
-                  height: '22px',
-                  width: 'auto',
+                  fontWeight: 600,
+                  padding: '0.15rem 0.5rem',
                   cursor: 'pointer',
-                  borderColor:
-                    project.status === 'Completed'
-                      ? 'var(--status-healthy)'
-                      : project.status === 'Active'
-                      ? 'var(--brand-crimson)'
-                      : 'var(--border-subtle)',
-                  color:
-                    project.status === 'Completed'
-                      ? 'var(--status-healthy)'
-                      : 'var(--text-primary)',
-                  backgroundColor: 'var(--bg-card)',
                 }}
-                title="Click to change project delivery status"
+                onClick={() => setCurrentTab('settings')}
+                title="Delivery Status (configure in Settings)"
               >
-                <option value="Active">Active</option>
-                <option value="Planning">Planning</option>
-                <option value="In Progress">In Progress</option>
-                <option value="On Hold">On Hold</option>
-                <option value="Completed">Completed ✓</option>
-                <option value="Deployed">Deployed</option>
-                <option value="Maintenance">Maintenance</option>
-                <option value="Archived">Archived</option>
-              </select>
+                {project.status === 'Completed' ? 'Completed ✓' : project.status}
+              </span>
               <span>•</span>
               <span className="status-indicator">
                 <span
@@ -338,46 +328,6 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
 
           {/* Action Buttons */}
           <div className="flex items-center gap-2">
-            {project.status !== 'Completed' ? (
-              <button
-                onClick={() => {
-                  updateProject(project.id, { status: 'Completed', progress: 100 });
-                }}
-                className="btn btn-secondary btn-sm"
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '5px',
-                  borderColor: 'var(--status-healthy)',
-                  color: 'var(--status-healthy)',
-                  fontWeight: 600,
-                }}
-                title="Mark this project as Completed"
-              >
-                <CheckCircle2 size={13} />
-                <span>Mark Completed</span>
-              </button>
-            ) : (
-              <button
-                onClick={() => {
-                  updateProject(project.id, { status: 'Active' });
-                }}
-                className="btn btn-secondary btn-sm"
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '5px',
-                  background: 'rgba(16, 185, 129, 0.12)',
-                  borderColor: 'var(--status-healthy)',
-                  color: 'var(--status-healthy)',
-                  fontWeight: 600,
-                }}
-                title="Project is Completed (click to reopen as Active)"
-              >
-                <CheckCircle2 size={13} />
-                <span>✓ Completed</span>
-              </button>
-            )}
             <button onClick={() => setQuickCreateOpen(true)} className="btn btn-primary btn-sm">
               <Plus size={14} />
               <span>Add Task</span>
@@ -1026,18 +976,83 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                   return (
                     <div key={mod.id} className="admark-card" style={{ padding: '1.25rem' }}>
                       <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <h3 style={{ fontSize: '1rem', fontWeight: 700 }}>{mod.name}</h3>
-                          {mod.status && (
-                            <span className={`badge ${statusBadgeClass}`}>
-                              {mod.status}
-                            </span>
-                          )}
+                          {/* Interactive Status Selector */}
+                          <select
+                            value={mod.status || 'Planned'}
+                            onChange={(e) => {
+                              const nextStatus = e.target.value as 'Planned' | 'In Progress' | 'Completed' | 'Delayed';
+                              updateModule(mod.id, {
+                                status: nextStatus,
+                                progress: nextStatus === 'Completed' ? 100 : (mod.progress === 100 ? 50 : mod.progress),
+                              });
+                            }}
+                            className="input-field"
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              padding: '0.12rem 0.5rem',
+                              fontSize: '0.72rem',
+                              fontWeight: 700,
+                              height: '24px',
+                              width: 'auto',
+                              borderRadius: '9999px',
+                              cursor: 'pointer',
+                              background:
+                                mod.status === 'Completed'
+                                  ? 'rgba(16, 185, 129, 0.15)'
+                                  : mod.status === 'In Progress'
+                                  ? 'rgba(59, 130, 246, 0.15)'
+                                  : mod.status === 'Delayed'
+                                  ? 'rgba(239, 68, 68, 0.15)'
+                                  : 'rgba(255, 255, 255, 0.08)',
+                              borderColor:
+                                mod.status === 'Completed'
+                                  ? 'var(--status-healthy)'
+                                  : mod.status === 'In Progress'
+                                  ? '#3b82f6'
+                                  : mod.status === 'Delayed'
+                                  ? 'var(--status-critical)'
+                                  : 'var(--border-subtle)',
+                              color:
+                                mod.status === 'Completed'
+                                  ? 'var(--status-healthy)'
+                                  : mod.status === 'In Progress'
+                                  ? '#60a5fa'
+                                  : mod.status === 'Delayed'
+                                  ? 'var(--status-critical)'
+                                  : 'var(--text-secondary)',
+                            }}
+                            title="Click to update module status"
+                          >
+                            <option value="Planned">Planned</option>
+                            <option value="In Progress">In Progress</option>
+                            <option value="Delayed">Delayed</option>
+                            <option value="Completed">Completed ✓</option>
+                          </select>
                         </div>
                         <div className="flex items-center gap-1.5">
                           <span className={`badge ${calculatedModProgress === 100 ? 'badge-healthy' : 'badge-neutral'}`}>
                             {calculatedModProgress}% Done
                           </span>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditingModule(mod);
+                              setEditModuleName(mod.name);
+                              setEditModuleDesc(mod.description || '');
+                              setEditModuleLeadId(mod.leadId);
+                              setEditModuleTargetDate(mod.targetDate || '');
+                              setEditModuleStatus(mod.status || 'In Progress');
+                              setEditModuleDeliverables(mod.deliverables ? mod.deliverables.join('\n') : '');
+                            }}
+                            className="btn btn-secondary btn-sm"
+                            title="Edit Module & Target Date"
+                            style={{ padding: '0.2rem 0.4rem', border: 'none', background: 'transparent', cursor: 'pointer' }}
+                          >
+                            <Edit3 size={13} style={{ color: 'var(--text-secondary)' }} />
+                          </button>
                           {canDelete && (
                             <button
                               onClick={(e) => {
@@ -1115,26 +1130,55 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                         </div>
                       )}
 
-                      {/* CEO Quick Actions */}
-                      {isCEO && (
-                        <div className="flex items-center justify-end gap-2" style={{ marginTop: '0.75rem', paddingTop: '0.5rem', borderTop: '1px solid var(--border-subtle)' }}>
-                          {calculatedModProgress < 100 && (
-                            <button
-                              onClick={() => {
-                                updateModule(mod.id, {
-                                  progress: 100,
-                                  status: 'Completed',
-                                });
-                              }}
-                              className="btn btn-secondary btn-sm"
-                              style={{ fontSize: '0.7rem', padding: '0.2rem 0.5rem' }}
-                            >
-                              <CheckCircle2 size={12} />
-                              <span>Mark Complete</span>
-                            </button>
-                          )}
-                        </div>
-                      )}
+                      {/* Quick Actions */}
+                      <div className="flex items-center justify-end gap-2" style={{ marginTop: '0.75rem', paddingTop: '0.5rem', borderTop: '1px solid var(--border-subtle)' }}>
+                        {mod.status !== 'Completed' && calculatedModProgress < 100 ? (
+                          <button
+                            onClick={() => {
+                              updateModule(mod.id, {
+                                progress: 100,
+                                status: 'Completed',
+                              });
+                            }}
+                            className="btn btn-secondary btn-sm"
+                            style={{
+                              fontSize: '0.72rem',
+                              padding: '0.25rem 0.6rem',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                            }}
+                            title="Mark this module as 100% Completed"
+                          >
+                            <CheckCircle2 size={12} />
+                            <span>Mark Complete</span>
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => {
+                              updateModule(mod.id, {
+                                progress: 50,
+                                status: 'In Progress',
+                              });
+                            }}
+                            className="btn btn-secondary btn-sm"
+                            style={{
+                              fontSize: '0.72rem',
+                              padding: '0.25rem 0.6rem',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              borderColor: 'var(--status-healthy)',
+                              color: 'var(--status-healthy)',
+                              background: 'rgba(16, 185, 129, 0.1)',
+                            }}
+                            title="Module is Completed. Click to reopen as In Progress"
+                          >
+                            <CheckCircle2 size={12} />
+                            <span>✓ Completed</span>
+                          </button>
+                        )}
+                      </div>
                     </div>
                   );
                 })}
@@ -1862,6 +1906,168 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
             </div>
 
             <form onSubmit={handleSaveProjectSettings} className="flex flex-col gap-4">
+              {/* Dedicated Project Completion & Delivery Status Card */}
+              <div
+                className="admark-card"
+                style={{
+                  padding: '1.25rem',
+                  border: project.status === 'Completed' ? '1px solid rgba(16, 185, 129, 0.4)' : '1px solid var(--border-subtle)',
+                  background: project.status === 'Completed' ? 'rgba(16, 185, 129, 0.04)' : undefined,
+                }}
+              >
+                <div className="flex items-center justify-between flex-wrap gap-3">
+                  <div className="flex items-center gap-3">
+                    <div
+                      style={{
+                        width: '40px',
+                        height: '40px',
+                        borderRadius: '8px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        background: project.status === 'Completed' ? 'rgba(16, 185, 129, 0.18)' : 'rgba(230, 57, 70, 0.12)',
+                        color: project.status === 'Completed' ? 'var(--status-healthy)' : 'var(--brand-crimson)',
+                      }}
+                    >
+                      <CheckCircle2 size={22} />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 style={{ fontSize: '1.05rem', fontWeight: 700 }}>Project Completion & Delivery Status</h3>
+                        <span
+                          className={`badge ${project.status === 'Completed' ? 'badge-healthy' : 'badge-neutral'}`}
+                          style={{ fontSize: '0.72rem', fontWeight: 700 }}
+                        >
+                          {project.status === 'Completed' ? 'COMPLETED ✓' : project.status.toUpperCase()}
+                        </span>
+                      </div>
+                      <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                        {project.status === 'Completed'
+                          ? 'This project is officially marked as complete. All deliverables, modules, and QA testing are finalized.'
+                          : 'Mark this project as completed to finalize delivery sign-off, or adjust the lifecycle status below.'}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* One-click Project Complete Button */}
+                  <div className="flex items-center gap-2">
+                    {project.status !== 'Completed' ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          updateProject(project.id, { status: 'Completed', progress: 100 });
+                          setSettingsStatus('Completed');
+                          setSettingsSavedNotice(true);
+                          setTimeout(() => setSettingsSavedNotice(false), 3500);
+                        }}
+                        className="btn btn-primary"
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          background: 'var(--status-healthy)',
+                          borderColor: 'var(--status-healthy)',
+                          fontWeight: 700,
+                          fontSize: '0.85rem',
+                          padding: '0.5rem 1rem',
+                        }}
+                        title="Mark project as 100% Completed"
+                      >
+                        <CheckCircle2 size={16} />
+                        <span>Mark Project as Completed</span>
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          updateProject(project.id, { status: 'Active' });
+                          setSettingsStatus('Active');
+                          setSettingsSavedNotice(true);
+                          setTimeout(() => setSettingsSavedNotice(false), 3500);
+                        }}
+                        className="btn btn-secondary"
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          borderColor: 'var(--border-subtle)',
+                          fontWeight: 600,
+                          fontSize: '0.85rem',
+                          padding: '0.5rem 1rem',
+                        }}
+                        title="Reopen this project as Active"
+                      >
+                        <span>Reopen Project (Set to Active)</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                <div
+                  style={{
+                    marginTop: '1rem',
+                    paddingTop: '0.85rem',
+                    borderTop: '1px solid var(--border-subtle)',
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+                    gap: '1rem',
+                    alignItems: 'center',
+                  }}
+                >
+                  <div>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                      Lifecycle Delivery Status
+                    </label>
+                    <select
+                      value={settingsStatus}
+                      onChange={(e) => {
+                        const next = e.target.value as any;
+                        setSettingsStatus(next);
+                        updateProject(project.id, {
+                          status: next,
+                          progress: next === 'Completed' ? 100 : project.progress,
+                        });
+                      }}
+                      className="input-field"
+                      style={{
+                        marginTop: '4px',
+                        fontWeight: 600,
+                        borderColor: settingsStatus === 'Completed' ? 'var(--status-healthy)' : undefined,
+                      }}
+                    >
+                      <option value="Active">Active (In Development)</option>
+                      <option value="Planning">Planning</option>
+                      <option value="In Progress">In Progress</option>
+                      <option value="On Hold">On Hold</option>
+                      <option value="Completed">Completed ✓</option>
+                      <option value="Deployed">Deployed / Live</option>
+                      <option value="Maintenance">Maintenance Mode</option>
+                      <option value="Archived">Archived</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                      Overall Delivery Progress
+                    </label>
+                    <div className="flex items-center gap-3" style={{ marginTop: '6px' }}>
+                      <div className="progress-bar-track" style={{ flex: 1, margin: 0, height: '8px' }}>
+                        <div
+                          className="progress-bar-fill"
+                          style={{
+                            width: `${project.progress}%`,
+                            backgroundColor: project.progress === 100 ? 'var(--status-healthy)' : 'var(--brand-crimson)',
+                          }}
+                        />
+                      </div>
+                      <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)', minWidth: '42px' }}>
+                        {project.progress}%
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               {/* Live Hosting & Deployment URLs */}
               <div className="admark-card" style={{ padding: '1.25rem' }}>
                 <div className="flex items-center gap-2" style={{ marginBottom: '0.75rem' }}>
@@ -2336,6 +2542,156 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                   </button>
                   <button type="submit" className="btn btn-primary">
                     Create Module
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Edit Module Modal */}
+        {editingModule && (
+          <div className="modal-backdrop animate-fade-in" onClick={() => setEditingModule(null)}>
+            <div
+              className="admark-card"
+              style={{ width: '100%', maxWidth: '520px', padding: '1.5rem', borderRadius: '0.75rem' }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between" style={{ marginBottom: '1rem' }}>
+                <div className="flex items-center gap-2">
+                  <Edit3 size={18} style={{ color: 'var(--brand-crimson)' }} />
+                  <h2 style={{ fontSize: '1.1rem', fontWeight: 700 }}>Edit Project Module</h2>
+                </div>
+                <button onClick={() => setEditingModule(null)} className="btn btn-ghost btn-icon">
+                  <X size={16} />
+                </button>
+              </div>
+
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (!editModuleName.trim()) return;
+
+                  const dels = editModuleDeliverables
+                    .split('\n')
+                    .map((d) => d.trim())
+                    .filter(Boolean);
+
+                  updateModule(editingModule.id, {
+                    name: editModuleName.trim(),
+                    description: editModuleDesc.trim(),
+                    leadId: editModuleLeadId || editingModule.leadId,
+                    targetDate: editModuleTargetDate || undefined,
+                    status: editModuleStatus,
+                    deliverables: dels.length > 0 ? dels : undefined,
+                    progress:
+                      editModuleStatus === 'Completed'
+                        ? 100
+                        : editingModule.progress === 100
+                        ? 50
+                        : editingModule.progress,
+                  });
+
+                  setEditingModule(null);
+                }}
+                className="flex flex-col gap-3"
+              >
+                <div>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                    Module Name *
+                  </label>
+                  <input
+                    required
+                    type="text"
+                    value={editModuleName}
+                    onChange={(e) => setEditModuleName(e.target.value)}
+                    className="input-field"
+                    style={{ marginTop: '4px' }}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                      Module Lead Engineer
+                    </label>
+                    <select
+                      value={editModuleLeadId}
+                      onChange={(e) => setEditModuleLeadId(e.target.value)}
+                      className="input-field"
+                      style={{ marginTop: '4px' }}
+                    >
+                      {users.map((u) => (
+                        <option key={u.id} value={u.id}>
+                          {u.name} ({u.role})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                      Module Status
+                    </label>
+                    <select
+                      value={editModuleStatus}
+                      onChange={(e) => setEditModuleStatus(e.target.value as any)}
+                      className="input-field"
+                      style={{ marginTop: '4px' }}
+                    >
+                      <option value="Planned">Planned</option>
+                      <option value="In Progress">In Progress</option>
+                      <option value="Delayed">Delayed</option>
+                      <option value="Completed">Completed ✓</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                    Target Completion Date
+                  </label>
+                  <input
+                    type="date"
+                    value={editModuleTargetDate}
+                    onChange={(e) => setEditModuleTargetDate(e.target.value)}
+                    className="input-field"
+                    style={{ marginTop: '4px' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                    Module Scope & Description
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={editModuleDesc}
+                    onChange={(e) => setEditModuleDesc(e.target.value)}
+                    className="input-field"
+                    style={{ marginTop: '4px', resize: 'vertical' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                    Key Deliverables Checklist (one per line)
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={editModuleDeliverables}
+                    onChange={(e) => setEditModuleDeliverables(e.target.value)}
+                    className="input-field"
+                    style={{ marginTop: '4px', resize: 'vertical' }}
+                  />
+                </div>
+
+                <div className="flex justify-end gap-2" style={{ marginTop: '0.75rem' }}>
+                  <button type="button" onClick={() => setEditingModule(null)} className="btn btn-secondary">
+                    Cancel
+                  </button>
+                  <button type="submit" className="btn btn-primary">
+                    Update Module
                   </button>
                 </div>
               </form>
