@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import {
   X,
-  CheckSquare,
-  Bug as BugIcon,
+  FolderTree,
   FolderKanban,
   Building2,
   GitPullRequest,
@@ -14,9 +13,9 @@ import {
   Server,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
-import { TaskPriority, BugSeverity } from '../../types';
+import { TaskPriority } from '../../types';
 
-type CreateTab = 'task' | 'bug' | 'project' | 'client' | 'cr' | 'time';
+type CreateTab = 'module' | 'project';
 
 export const QuickCreateModal: React.FC = () => {
   const {
@@ -26,41 +25,23 @@ export const QuickCreateModal: React.FC = () => {
     clients,
     users,
     modules,
-    tasks,
-    addTask,
-    addBug,
+    addModule,
     addProject,
-    addClient,
-    addChangeRequest,
-    logTime,
     currentUser,
     logout,
   } = useApp();
 
   const isCEO = currentUser.title === 'CEO' || currentUser.name.toLowerCase().includes('jois');
 
-  const [activeTab, setActiveTab] = useState<CreateTab>('task');
+  const [activeTab, setActiveTab] = useState<CreateTab>('module');
 
-  // Task form state
-  const [taskTitle, setTaskTitle] = useState('');
-  const [taskProjId, setTaskProjId] = useState(projects[0]?.id || '');
-  const [taskModuleId, setTaskModuleId] = useState('');
-  const [taskPriority, setTaskPriority] = useState<TaskPriority>('High');
-  const [taskAssignee, setTaskAssignee] = useState(users.find((u) => u.role === 'DEVELOPER')?.id || users[0].id);
-  const [taskEstHours, setTaskEstHours] = useState('16');
-  const [taskDueDate, setTaskDueDate] = useState('2025-03-15');
-  const [taskDesc, setTaskDesc] = useState('');
-
-  // Bug form state
-  const [bugTitle, setBugTitle] = useState('');
-  const [bugProjId, setBugProjId] = useState(projects[0]?.id || '');
-  const [bugSeverity, setBugSeverity] = useState<BugSeverity>('Major');
-  const [bugPriority, setBugPriority] = useState<TaskPriority>('High');
-  const [bugEnv, setBugEnv] = useState<'Development' | 'Staging' | 'Production'>('Staging');
-  const [bugAssignee, setBugAssignee] = useState(users.find((u) => u.role === 'DEVELOPER')?.id || users[0].id);
-  const [bugSteps, setBugSteps] = useState('');
-  const [bugExpected, setBugExpected] = useState('');
-  const [bugActual, setBugActual] = useState('');
+  // Module form state
+  const [moduleName, setModuleName] = useState('');
+  const [moduleProjId, setModuleProjId] = useState(projects[0]?.id || '');
+  const [moduleDesc, setModuleDesc] = useState('');
+  const [moduleLeadId, setModuleLeadId] = useState(users.find((u) => u.role === 'DEVELOPER')?.id || users[0]?.id || '');
+  const [moduleProgress, setModuleProgress] = useState('0');
+  const [moduleTargetDate, setModuleTargetDate] = useState('2026-11-30');
 
   // Project form state
   const [projName, setProjName] = useState('');
@@ -77,66 +58,25 @@ export const QuickCreateModal: React.FC = () => {
   const [projBackendProvider, setProjBackendProvider] = useState<'Supabase' | 'AWS' | 'Firebase' | 'Neon' | 'Self-Hosted' | 'Other' | 'None'>('Supabase');
   const [projBackendAccount, setProjBackendAccount] = useState('');
 
-  // Time log form state
-  const [timeProjId, setTimeProjId] = useState(projects[0]?.id || '');
-  const [timeTaskId, setTimeTaskId] = useState('');
-  const [timeHours, setTimeHours] = useState('4.0');
-  const [timeDesc, setTimeDesc] = useState('');
-  const [timeBillable, setTimeBillable] = useState(true);
-
   if (!quickCreateOpen) return null;
 
-  const handleCreateTask = (e: React.FormEvent) => {
+  const handleCreateModule = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!taskTitle.trim() || !taskProjId) return;
+    if (!moduleName.trim() || !moduleProjId) return;
 
-    addTask({
-      title: taskTitle.trim(),
-      description: taskDesc || 'Task created via Quick Create.',
-      projectId: taskProjId,
-      moduleId: taskModuleId || undefined,
-      assigneeId: taskAssignee,
-      reporterId: currentUser.id,
-      priority: taskPriority,
-      status: 'Ready',
-      startDate: new Date().toISOString().split('T')[0],
-      dueDate: taskDueDate,
-      estimatedHours: Number(taskEstHours) || 8,
-      loggedHours: 0,
-      tags: ['Feature', 'Sprint'],
-      subtasks: [
-        { id: `sub-${Date.now()}-1`, title: 'Initial setup & architecture', completed: false, assigneeId: taskAssignee },
-        { id: `sub-${Date.now()}-2`, title: 'Implementation & unit testing', completed: false, assigneeId: taskAssignee },
-      ],
-      isClientVisible: true,
+    addModule({
+      projectId: moduleProjId,
+      name: moduleName.trim(),
+      description: moduleDesc.trim() || 'Core delivery module.',
+      leadId: moduleLeadId,
+      progress: Math.min(100, Math.max(0, Number(moduleProgress) || 0)),
+      order: modules.filter((m) => m.projectId === moduleProjId).length + 1,
+      targetDate: moduleTargetDate || undefined,
     });
 
-    setTaskTitle('');
-    setTaskDesc('');
-    setQuickCreateOpen(false);
-  };
-
-  const handleCreateBug = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!bugTitle.trim() || !bugProjId) return;
-
-    addBug({
-      title: bugTitle.trim(),
-      description: bugActual || 'Bug reported via Quick Create',
-      projectId: bugProjId,
-      environment: bugEnv,
-      severity: bugSeverity,
-      priority: bugPriority,
-      reporterId: currentUser.id,
-      assigneeId: bugAssignee,
-      stepsToReproduce: bugSteps ? bugSteps.split('\n').filter(Boolean) : ['Open application', 'Perform action', 'Observe failure'],
-      expectedResult: bugExpected || 'Operation should succeed smoothly.',
-      actualResult: bugActual || 'Encountered unexpected error / failure.',
-      status: 'New',
-    });
-
-    setBugTitle('');
-    setBugSteps('');
+    setModuleName('');
+    setModuleDesc('');
+    setModuleProgress('0');
     setQuickCreateOpen(false);
   };
 
@@ -179,23 +119,7 @@ export const QuickCreateModal: React.FC = () => {
     setQuickCreateOpen(false);
   };
 
-  const handleLogTime = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!timeProjId || !timeHours) return;
 
-    logTime({
-      userId: currentUser.id,
-      projectId: timeProjId,
-      taskId: timeTaskId || undefined,
-      date: new Date().toISOString().split('T')[0],
-      hours: Number(timeHours) || 1,
-      description: timeDesc || 'Work completed on project deliverables.',
-      isBillable: timeBillable,
-    });
-
-    setTimeDesc('');
-    setQuickCreateOpen(false);
-  };
 
   return (
     <div className="modal-backdrop animate-fade-in" onClick={() => setQuickCreateOpen(false)}>
@@ -240,7 +164,7 @@ export const QuickCreateModal: React.FC = () => {
             <div>
               <div style={{ fontWeight: 700, fontSize: '0.95rem' }}>Quick Create</div>
               <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                Instantly spawn tasks, bugs, projects, or log time
+                Create project modules or client projects
               </div>
             </div>
           </div>
@@ -259,8 +183,7 @@ export const QuickCreateModal: React.FC = () => {
           }}
         >
           {[
-            { id: 'task', label: 'Task', icon: <CheckSquare size={14} /> },
-            { id: 'bug', label: 'Bug / Issue', icon: <BugIcon size={14} /> },
+            { id: 'module', label: 'Module', icon: <FolderTree size={14} /> },
             { id: 'project', label: 'Project', icon: <FolderKanban size={14} /> },
           ].map((t) => (
             <button
@@ -290,18 +213,18 @@ export const QuickCreateModal: React.FC = () => {
 
         {/* Form body */}
         <div style={{ padding: '1.25rem', overflowY: 'auto', flex: 1 }}>
-          {activeTab === 'task' && (
-            <form onSubmit={handleCreateTask} className="flex flex-col gap-4">
+          {activeTab === 'module' && (
+            <form onSubmit={handleCreateModule} className="flex flex-col gap-4">
               <div>
                 <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                  Task Title *
+                  Module Name *
                 </label>
                 <input
                   required
                   type="text"
-                  value={taskTitle}
-                  onChange={(e) => setTaskTitle(e.target.value)}
-                  placeholder="e.g. Implement Webhook Dispatch for Order Confirmation"
+                  value={moduleName}
+                  onChange={(e) => setModuleName(e.target.value)}
+                  placeholder="e.g. Authentication & RBAC Engine"
                   className="input-field"
                   style={{ marginTop: '4px' }}
                 />
@@ -313,8 +236,8 @@ export const QuickCreateModal: React.FC = () => {
                     Project *
                   </label>
                   <select
-                    value={taskProjId}
-                    onChange={(e) => setTaskProjId(e.target.value)}
+                    value={moduleProjId}
+                    onChange={(e) => setModuleProjId(e.target.value)}
                     className="input-field"
                     style={{ marginTop: '4px' }}
                   >
@@ -327,50 +250,11 @@ export const QuickCreateModal: React.FC = () => {
                 </div>
                 <div>
                   <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                    Module (Optional)
+                    Lead Developer
                   </label>
                   <select
-                    value={taskModuleId}
-                    onChange={(e) => setTaskModuleId(e.target.value)}
-                    className="input-field"
-                    style={{ marginTop: '4px' }}
-                  >
-                    <option value="">General Project Task</option>
-                    {modules
-                      .filter((m) => m.projectId === taskProjId)
-                      .map((m) => (
-                        <option key={m.id} value={m.id}>
-                          {m.name}
-                        </option>
-                      ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                    Priority
-                  </label>
-                  <select
-                    value={taskPriority}
-                    onChange={(e) => setTaskPriority(e.target.value as TaskPriority)}
-                    className="input-field"
-                    style={{ marginTop: '4px' }}
-                  >
-                    <option value="Low">Low</option>
-                    <option value="Medium">Medium</option>
-                    <option value="High">High</option>
-                    <option value="Urgent">Urgent</option>
-                  </select>
-                </div>
-                <div>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                    Assignee
-                  </label>
-                  <select
-                    value={taskAssignee}
-                    onChange={(e) => setTaskAssignee(e.target.value)}
+                    value={moduleLeadId}
+                    onChange={(e) => setModuleLeadId(e.target.value)}
                     className="input-field"
                     style={{ marginTop: '4px' }}
                   >
@@ -383,14 +267,31 @@ export const QuickCreateModal: React.FC = () => {
                       ))}
                   </select>
                 </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                    Est. Hours
+                    Initial Progress (%)
                   </label>
                   <input
                     type="number"
-                    value={taskEstHours}
-                    onChange={(e) => setTaskEstHours(e.target.value)}
+                    min="0"
+                    max="100"
+                    value={moduleProgress}
+                    onChange={(e) => setModuleProgress(e.target.value)}
+                    className="input-field"
+                    style={{ marginTop: '4px' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                    Target Completion Date
+                  </label>
+                  <input
+                    type="date"
+                    value={moduleTargetDate}
+                    onChange={(e) => setModuleTargetDate(e.target.value)}
                     className="input-field"
                     style={{ marginTop: '4px' }}
                   />
@@ -399,26 +300,13 @@ export const QuickCreateModal: React.FC = () => {
 
               <div>
                 <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                  Due Date
-                </label>
-                <input
-                  type="date"
-                  value={taskDueDate}
-                  onChange={(e) => setTaskDueDate(e.target.value)}
-                  className="input-field"
-                  style={{ marginTop: '4px' }}
-                />
-              </div>
-
-              <div>
-                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                  Task Description & Scope
+                  Module Scope & Description
                 </label>
                 <textarea
                   rows={3}
-                  value={taskDesc}
-                  onChange={(e) => setTaskDesc(e.target.value)}
-                  placeholder="Provide technical context, acceptance criteria, or API links..."
+                  value={moduleDesc}
+                  onChange={(e) => setModuleDesc(e.target.value)}
+                  placeholder="Describe technical deliverable, integrations, and milestones..."
                   className="input-field"
                   style={{ marginTop: '4px', resize: 'vertical' }}
                 />
@@ -429,133 +317,13 @@ export const QuickCreateModal: React.FC = () => {
                   Cancel
                 </button>
                 <button type="submit" className="btn btn-primary">
-                  Create Task
+                  Create Module
                 </button>
               </div>
             </form>
           )}
 
-          {activeTab === 'bug' && (
-            <form onSubmit={handleCreateBug} className="flex flex-col gap-4">
-              <div>
-                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                  Bug Title *
-                </label>
-                <input
-                  required
-                  type="text"
-                  value={bugTitle}
-                  onChange={(e) => setBugTitle(e.target.value)}
-                  placeholder="e.g. 500 error when clicking checkout with EUR currency"
-                  className="input-field"
-                  style={{ marginTop: '4px' }}
-                />
-              </div>
 
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                    Project *
-                  </label>
-                  <select
-                    value={bugProjId}
-                    onChange={(e) => setBugProjId(e.target.value)}
-                    className="input-field"
-                    style={{ marginTop: '4px' }}
-                  >
-                    {projects.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.code} - {p.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                    Severity *
-                  </label>
-                  <select
-                    value={bugSeverity}
-                    onChange={(e) => setBugSeverity(e.target.value as BugSeverity)}
-                    className="input-field"
-                    style={{ marginTop: '4px' }}
-                  >
-                    <option value="Critical">Critical</option>
-                    <option value="Major">Major</option>
-                    <option value="Minor">Minor</option>
-                    <option value="Trivial">Trivial</option>
-                  </select>
-                </div>
-                <div>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                    Environment
-                  </label>
-                  <select
-                    value={bugEnv}
-                    onChange={(e) => setBugEnv(e.target.value as 'Development' | 'Staging' | 'Production')}
-                    className="input-field"
-                    style={{ marginTop: '4px' }}
-                  >
-                    <option value="Development">Development</option>
-                    <option value="Staging">Staging</option>
-                    <option value="Production">Production</option>
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                  Steps to Reproduce (one per line)
-                </label>
-                <textarea
-                  rows={3}
-                  value={bugSteps}
-                  onChange={(e) => setBugSteps(e.target.value)}
-                  placeholder="1. Go to cart&#10;2. Select EUR currency&#10;3. Click Pay with Card"
-                  className="input-field"
-                  style={{ marginTop: '4px', resize: 'vertical' }}
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                    Expected Result
-                  </label>
-                  <input
-                    type="text"
-                    value={bugExpected}
-                    onChange={(e) => setBugExpected(e.target.value)}
-                    placeholder="Grand total matches itemized subtotal"
-                    className="input-field"
-                    style={{ marginTop: '4px' }}
-                  />
-                </div>
-                <div>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                    Actual Result
-                  </label>
-                  <input
-                    type="text"
-                    value={bugActual}
-                    onChange={(e) => setBugActual(e.target.value)}
-                    placeholder="Discrepancy of 1.25 EUR appears"
-                    className="input-field"
-                    style={{ marginTop: '4px' }}
-                  />
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-2" style={{ marginTop: '0.5rem' }}>
-                <button type="button" onClick={() => setQuickCreateOpen(false)} className="btn btn-secondary">
-                  Cancel
-                </button>
-                <button type="submit" className="btn btn-primary" style={{ background: 'var(--status-danger)' }}>
-                  File Bug
-                </button>
-              </div>
-            </form>
-          )}
 
           {activeTab === 'project' && (
             <form onSubmit={handleCreateProject} className="flex flex-col gap-4">
@@ -770,100 +538,7 @@ export const QuickCreateModal: React.FC = () => {
             </form>
           )}
 
-          {activeTab === 'time' && (
-            <form onSubmit={handleLogTime} className="flex flex-col gap-4">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                    Project *
-                  </label>
-                  <select
-                    value={timeProjId}
-                    onChange={(e) => setTimeProjId(e.target.value)}
-                    className="input-field"
-                    style={{ marginTop: '4px' }}
-                  >
-                    {projects.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.code} - {p.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                    Associated Task (Optional)
-                  </label>
-                  <select
-                    value={timeTaskId}
-                    onChange={(e) => setTimeTaskId(e.target.value)}
-                    className="input-field"
-                    style={{ marginTop: '4px' }}
-                  >
-                    <option value="">General Project Work</option>
-                    {tasks
-                      .filter((t) => t.projectId === timeProjId)
-                      .map((t) => (
-                        <option key={t.id} value={t.id}>
-                          #{t.taskNumber} {t.title}
-                        </option>
-                      ))}
-                  </select>
-                </div>
-              </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                    Hours Spent *
-                  </label>
-                  <input
-                    type="number"
-                    step="0.5"
-                    value={timeHours}
-                    onChange={(e) => setTimeHours(e.target.value)}
-                    className="input-field"
-                    style={{ marginTop: '4px' }}
-                  />
-                </div>
-                <div className="flex items-center gap-2" style={{ paddingTop: '1.5rem' }}>
-                  <input
-                    type="checkbox"
-                    id="billable"
-                    checked={timeBillable}
-                    onChange={(e) => setTimeBillable(e.target.checked)}
-                    style={{ width: '16px', height: '16px', accentColor: 'var(--brand-crimson)' }}
-                  />
-                  <label htmlFor="billable" style={{ fontSize: '0.8125rem', fontWeight: 600, cursor: 'pointer' }}>
-                    Billable to Client
-                  </label>
-                </div>
-              </div>
-
-              <div>
-                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                  Work Summary / Activities Done
-                </label>
-                <textarea
-                  rows={3}
-                  value={timeDesc}
-                  onChange={(e) => setTimeDesc(e.target.value)}
-                  placeholder="Completed code review, merged PR #45, verified in staging..."
-                  className="input-field"
-                  style={{ marginTop: '4px', resize: 'vertical' }}
-                />
-              </div>
-
-              <div className="flex justify-end gap-2" style={{ marginTop: '0.5rem' }}>
-                <button type="button" onClick={() => setQuickCreateOpen(false)} className="btn btn-secondary">
-                  Cancel
-                </button>
-                <button type="submit" className="btn btn-primary">
-                  Log Hours
-                </button>
-              </div>
-            </form>
-          )}
         </div>
       </div>
     </div>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { BarChart3, TrendingUp, CheckCircle, Bug, Clock, ShieldCheck } from 'lucide-react';
+import { BarChart3, TrendingUp, CheckCircle, Clock, ShieldCheck } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
 export const ReportsView: React.FC = () => {
@@ -42,13 +42,13 @@ export const ReportsView: React.FC = () => {
 
         <div className="kpi-strip-item">
           <div style={{ fontSize: '0.6875rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-            Defect Resolution
+            Sprint Velocity SLA
           </div>
           <div style={{ fontSize: '1.35rem', fontWeight: 700, color: 'var(--text-primary)', marginTop: '2px' }}>
-            1.8 Days
+            94.2%
           </div>
           <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-            Average turnaround for Critical QA defects
+            Milestones delivered within planned sprint cycle
           </div>
         </div>
 

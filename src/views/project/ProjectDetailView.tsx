@@ -6,8 +6,6 @@ import {
   FileText,
   Flag,
   Zap,
-  Bug as BugIcon,
-  TestTube2,
   GitPullRequest,
   Rocket,
   Clock,
@@ -53,19 +51,15 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
     modules,
     requirements,
     tasks,
-    bugs,
     milestones,
     sprints,
     changeRequests,
     releases,
-    testRuns,
-    testCases,
     clientUAT,
     documents,
     timeLogs,
     activities,
     setSelectedTaskId,
-    setSelectedBugId,
     updateTaskStatus,
     setQuickCreateOpen,
     approveMilestone,
@@ -119,9 +113,6 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
   const [taskScopeFilter, setTaskScopeFilter] = useState<'all' | 'remaining' | 'blockers'>(
     currentTab === 'what-left' ? 'remaining' : currentTab === 'blockers' ? 'blockers' : 'all'
   );
-  const [qualitySubTab, setQualitySubTab] = useState<'bugs' | 'test-runs' | 'test-cases'>(
-    currentTab === 'testing' ? 'test-runs' : 'bugs'
-  );
   const [clientSubTab, setClientSubTab] = useState<'uat' | 'cr'>('uat');
   const [showAddReviewModal, setShowAddReviewModal] = useState(false);
   const [newReviewTitle, setNewReviewTitle] = useState('');
@@ -156,8 +147,6 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
   useEffect(() => {
     if (currentTab === 'what-left') setTaskScopeFilter('remaining');
     else if (currentTab === 'blockers') setTaskScopeFilter('blockers');
-    else if (currentTab === 'testing') setQualitySubTab('test-runs');
-    else if (currentTab === 'bugs') setQualitySubTab('bugs');
     else if (currentTab === 'cr') setClientSubTab('cr');
     else if (currentTab === 'uat') setClientSubTab('uat');
   }, [currentTab]);
@@ -232,15 +221,12 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
 
   // Project-scoped data
   const projectTasks = tasks.filter((t) => t.projectId === project.id);
-  const projectBugs = bugs.filter((b) => b.projectId === project.id);
   const projectModules = modules.filter((m) => m.projectId === project.id);
   const projectReqs = requirements.filter((r) => r.projectId === project.id);
   const projectMilestones = milestones.filter((m) => m.projectId === project.id);
   const projectSprints = sprints.filter((s) => s.projectId === project.id);
   const projectCRs = changeRequests.filter((c) => c.projectId === project.id);
   const projectReleases = releases.filter((r) => r.projectId === project.id);
-  const projectTestRuns = testRuns.filter((tr) => tr.projectId === project.id);
-  const projectTestCases = testCases.filter((tc) => tc.projectId === project.id);
   const projectUAT = clientUAT.filter((u) => u.projectId === project.id);
   const projectDocs = documents.filter((d) => d.projectId === project.id);
   const projectTime = timeLogs.filter((tl) => tl.projectId === project.id);
@@ -253,8 +239,6 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
 
   // Remaining work items
   const remainingTasks = projectTasks.filter((t) => t.status !== 'Done');
-  const openBugsCount = projectBugs.filter((b) => b.status !== 'Closed' && b.status !== 'Verified').length;
-  const pendingQACount = projectTasks.filter((t) => t.status === 'QA').length;
   const pendingClientReviewCount = projectTasks.filter((t) => t.status === 'Client Review').length;
 
   // Blockers
@@ -366,10 +350,8 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
   // Deduplicated and non-redundant tabs
   const navTabs: { id: string; label: string; count?: number }[] = [
     { id: 'overview', label: 'Overview' },
-    { id: 'tasks', label: 'Tasks', count: projectTasks.length },
     { id: 'modules', label: 'Modules', count: projectModules.length },
     { id: 'client-review', label: 'Client Review', count: projectUAT.length },
-    { id: 'maintenance', label: 'Maintenance' },
     { id: 'settings', label: 'Settings' },
   ];
 
@@ -494,15 +476,11 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
               <button
                 key={tab.id}
                 onClick={() => {
-                  if (tab.id === 'tasks') {
-                    setTaskScopeFilter('all');
-                    setCurrentTab('tasks');
-                  } else if (tab.id === 'client-review') {
+                  if (tab.id === 'client-review') {
                     setCurrentTab('client-review');
                   } else {
                     setCurrentTab(tab.id);
                   }
-
                 }}
                 className={`tab-button ${active ? 'active' : ''}`}
               >
@@ -537,19 +515,13 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
 
               <div className="kpi-strip-item">
                 <div style={{ fontSize: '0.6875rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                  Tasks Completed
+                  Modules
                 </div>
                 <div style={{ fontSize: '1.35rem', fontWeight: 700, color: 'var(--text-primary)', marginTop: '2px' }}>
-                  {completedTasksCount} / {projectTasks.length}
+                  {projectModules.length}
                 </div>
-              </div>
-
-              <div className="kpi-strip-item">
-                <div style={{ fontSize: '0.6875rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                  Open Bugs
-                </div>
-                <div style={{ fontSize: '1.35rem', fontWeight: 700, color: openBugsCount > 0 ? 'var(--status-danger)' : 'var(--text-primary)', marginTop: '2px' }}>
-                  {openBugsCount}
+                <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginTop: '1px' }}>
+                  {projectModules.filter((m) => m.progress === 100).length} completed
                 </div>
               </div>
 
@@ -559,15 +531,6 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                 </div>
                 <div style={{ fontSize: '1.35rem', fontWeight: 700, color: blockedTasks.length > 0 ? 'var(--status-warning)' : 'var(--text-primary)', marginTop: '2px' }}>
                   {blockedTasks.length}
-                </div>
-              </div>
-
-              <div className="kpi-strip-item">
-                <div style={{ fontSize: '0.6875rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                  In QA
-                </div>
-                <div style={{ fontSize: '1.35rem', fontWeight: 700, color: 'var(--text-primary)', marginTop: '2px' }}>
-                  {pendingQACount}
                 </div>
               </div>
 
@@ -1739,7 +1702,7 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
               <div>
                 <h2 style={{ fontSize: '1.25rem', fontWeight: 800 }}>Project Completion Checklist — What Is Left?</h2>
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                  Clear, quantifiable inventory of all unfinished tasks, unresolved bugs, QA items, and client approvals
+                  Clear, quantifiable inventory of all unfinished tasks, active modules, blockers, and client approvals
                 </div>
               </div>
               <div className="flex items-center gap-2">
@@ -1763,27 +1726,27 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                 </div>
               </div>
 
-              <div className="admark-card" style={{ padding: '1rem', borderLeft: '4px solid var(--status-danger)' }}>
+              <div className="admark-card" style={{ padding: '1rem', borderLeft: '4px solid #3b82f6' }}>
                 <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>
-                  Open Bugs
+                  Active Modules
                 </div>
-                <div style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--status-danger)', marginTop: '4px' }}>
-                  {openBugsCount}
+                <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#3b82f6', marginTop: '4px' }}>
+                  {projectModules.length}
                 </div>
                 <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-                  Requiring verification
+                  {projectModules.filter((m) => m.progress < 100).length} in active progress
                 </div>
               </div>
 
               <div className="admark-card" style={{ padding: '1rem', borderLeft: '4px solid var(--status-warning)' }}>
                 <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>
-                  Pending QA Testing
+                  Blocked Tasks
                 </div>
                 <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#f59e0b', marginTop: '4px' }}>
-                  {pendingQACount}
+                  {blockedTasks.length}
                 </div>
                 <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-                  Tasks in QA queue
+                  Requiring dependency resolution
                 </div>
               </div>
 
@@ -1919,311 +1882,6 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                   );
                 })
               )}
-            </div>
-          </div>
-        )}
-
-        {/* ================= TAB 17: MAINTENANCE WORKSPACE ================= */}
-        {currentTab === 'maintenance' && (
-          <div className="flex flex-col gap-4">
-            <div className="flex items-center justify-between flex-wrap gap-3">
-              <div>
-                <h2 style={{ fontSize: '1.25rem', fontWeight: 800 }}>Post-Launch Maintenance & Support Workspace</h2>
-                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                  Ongoing production stability, maintenance tickets, routine patch cycles, and SLA monitoring
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowEditSlaModal(true);
-                    setEditUptimeSla(project.uptimeSla || '99.98%');
-                    setEditSlaTarget(project.slaTarget || 'Resolved within 4h SLA');
-                    setEditMaintenanceNotes(project.maintenanceNotes || '');
-                  }}
-                  className="btn btn-secondary btn-sm"
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}
-                >
-                  <Edit3 size={13} />
-                  <span>Edit SLA & Notes</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const nextStatus = project.status === 'Maintenance' ? 'Active' : 'Maintenance';
-                    updateProject(project.id, { status: nextStatus });
-                  }}
-                  className="btn btn-secondary btn-sm"
-                  style={{
-                    borderColor: project.status === 'Maintenance' ? 'var(--status-healthy)' : undefined,
-                    color: project.status === 'Maintenance' ? 'var(--status-healthy)' : undefined,
-                    fontWeight: 600,
-                  }}
-                >
-                  {project.status === 'Maintenance' ? '✓ Status: In Maintenance (Click to Revert)' : 'Set Project Status: Maintenance'}
-                </button>
-              </div>
-            </div>
-
-            {/* KPI Cards */}
-            <div className="grid grid-cols-3 gap-3">
-              <div className="admark-card" style={{ padding: '1rem' }}>
-                <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>
-                  Open Maintenance Tasks
-                </div>
-                <div style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '4px' }}>
-                  {currentMaintenanceTasks.filter((t) => t.status !== 'Done').length}
-                </div>
-                <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                  {currentMaintenanceTasks.filter((t) => t.status === 'In Progress').length} in progress • {currentMaintenanceTasks.filter((t) => t.status === 'Done').length} completed
-                </div>
-              </div>
-
-              <div className="admark-card" style={{ padding: '1rem' }}>
-                <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>
-                  Support Defect Backlog
-                </div>
-                <div style={{ fontSize: '1.75rem', fontWeight: 800, color: projectBugs.filter((b) => b.status !== 'Verified' && b.status !== 'Fixed').length > 0 ? 'var(--status-warning)' : 'var(--status-healthy)', marginTop: '4px' }}>
-                  {projectBugs.filter((b) => b.status !== 'Verified' && b.status !== 'Fixed').length}
-                </div>
-                <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{project.slaTarget || 'Resolved within 4h SLA'}</div>
-              </div>
-
-              <div className="admark-card" style={{ padding: '1rem' }}>
-                <div className="flex items-center justify-between">
-                  <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>
-                    Uptime & SLA
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowEditSlaModal(true);
-                      setEditUptimeSla(project.uptimeSla || '99.98%');
-                      setEditSlaTarget(project.slaTarget || 'Resolved within 4h SLA');
-                      setEditMaintenanceNotes(project.maintenanceNotes || '');
-                    }}
-                    className="btn btn-ghost btn-icon btn-sm"
-                    title="Edit Uptime & SLA Target"
-                    style={{ height: '20px', width: '20px', padding: 0 }}
-                  >
-                    <Edit3 size={11} />
-                  </button>
-                </div>
-                <div style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--status-healthy)', marginTop: '4px' }}>
-                  {project.uptimeSla || '99.98%'}
-                </div>
-                <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Continuous production monitoring</div>
-              </div>
-            </div>
-
-            {/* Maintenance Scope & SLA Notes Banner (if configured) */}
-            {project.maintenanceNotes && (
-              <div
-                className="admark-card"
-                style={{
-                  padding: '0.85rem 1rem',
-                  background: 'rgba(56, 189, 248, 0.04)',
-                  borderColor: 'rgba(56, 189, 248, 0.25)',
-                  fontSize: '0.8125rem',
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  justifyContent: 'space-between',
-                  gap: '1rem',
-                }}
-              >
-                <div>
-                  <div style={{ fontWeight: 700, color: '#38bdf8', marginBottom: '3px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                    Maintenance Policy & Operational Notes
-                  </div>
-                  <div style={{ color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                    {project.maintenanceNotes}
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowEditSlaModal(true);
-                    setEditMaintenanceNotes(project.maintenanceNotes || '');
-                  }}
-                  className="btn btn-ghost btn-sm"
-                  style={{ fontSize: '0.72rem', color: '#38bdf8' }}
-                >
-                  <Edit3 size={12} />
-                  <span>Edit</span>
-                </button>
-              </div>
-            )}
-
-            {/* Active Maintenance Tasks List */}
-            <div className="admark-card" style={{ padding: '1.25rem' }}>
-              <div className="flex items-center justify-between" style={{ marginBottom: '0.75rem' }}>
-                <div>
-                  <h3 style={{ fontSize: '0.95rem', fontWeight: 700 }}>Active Maintenance & Patch Tasks</h3>
-                  <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                    Click on any task to edit details, or change status directly from the dropdown.
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setNewMntTitle('');
-                    setNewMntAssignee(users[0]?.name || 'Harshith');
-                    setNewMntPriority('Medium');
-                    setNewMntStatus('In Progress');
-                    setNewMntDueDate('');
-                    setNewMntNotes('');
-                    setShowNewMaintenanceModal(true);
-                  }}
-                  className="btn btn-primary btn-sm"
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}
-                >
-                  <Plus size={14} />
-                  <span>New Maintenance Task</span>
-                </button>
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                {currentMaintenanceTasks.map((item, idx) => {
-                  return (
-                    <div
-                      key={item.id || idx}
-                      className="flex items-center justify-between"
-                      style={{
-                        padding: '0.65rem 0.85rem',
-                        background: 'var(--bg-app)',
-                        borderRadius: '6px',
-                        fontSize: '0.8125rem',
-                        border: '1px solid var(--border-subtle)',
-                        transition: 'border-color 0.15s ease',
-                      }}
-                    >
-                      <div className="flex items-center gap-2.5" style={{ flex: 1, minWidth: 0 }}>
-                        <span className="badge badge-neutral" style={{ fontFamily: 'var(--font-mono)', fontSize: '0.7rem' }}>
-                          {item.code || `MNT-${idx + 101}`}
-                        </span>
-                        <span style={{ fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {item.title}
-                        </span>
-                        {item.priority && (
-                          <span
-                            className="badge"
-                            style={{
-                              fontSize: '0.65rem',
-                              padding: '1px 5px',
-                              background:
-                                item.priority === 'Urgent'
-                                  ? 'rgba(239, 68, 68, 0.15)'
-                                  : item.priority === 'High'
-                                  ? 'rgba(249, 115, 22, 0.15)'
-                                  : item.priority === 'Medium'
-                                  ? 'rgba(234, 179, 8, 0.15)'
-                                  : 'rgba(148, 163, 184, 0.15)',
-                              color:
-                                item.priority === 'Urgent'
-                                  ? '#ef4444'
-                                  : item.priority === 'High'
-                                  ? '#f97316'
-                                  : item.priority === 'Medium'
-                                  ? '#eab308'
-                                  : '#94a3b8',
-                              border: 'none',
-                            }}
-                          >
-                            {item.priority}
-                          </span>
-                        )}
-                        {item.dueDate && (
-                          <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
-                            Due: {item.dueDate}
-                          </span>
-                        )}
-                      </div>
-
-                      <div className="flex items-center gap-2.5">
-                        <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 500 }}>
-                          {item.assigneeName || 'Unassigned'}
-                        </span>
-
-                        {/* Interactive Status Selector */}
-                        <select
-                          value={item.status}
-                          onChange={(e) => {
-                            const nextStatus = e.target.value as any;
-                            handleUpdateMaintenanceTask({ ...item, status: nextStatus });
-                          }}
-                          className="input-field"
-                          style={{
-                            fontSize: '0.72rem',
-                            padding: '2px 6px',
-                            height: '24px',
-                            fontWeight: 600,
-                            borderRadius: '4px',
-                            background:
-                              item.status === 'Done'
-                                ? 'rgba(16, 185, 129, 0.14)'
-                                : item.status === 'In Progress'
-                                ? 'rgba(56, 189, 248, 0.14)'
-                                : 'rgba(255, 255, 255, 0.05)',
-                            color:
-                              item.status === 'Done'
-                                ? '#34d399'
-                                : item.status === 'In Progress'
-                                ? '#38bdf8'
-                                : 'var(--text-secondary)',
-                            borderColor:
-                              item.status === 'Done'
-                                ? 'rgba(16, 185, 129, 0.4)'
-                                : item.status === 'In Progress'
-                                ? 'rgba(56, 189, 248, 0.4)'
-                                : 'var(--border-subtle)',
-                          }}
-                        >
-                          <option value="In Progress">In Progress</option>
-                          <option value="Ready">Ready</option>
-                          <option value="Done">Done</option>
-                          <option value="Scheduled">Scheduled</option>
-                          <option value="On Hold">On Hold</option>
-                        </select>
-
-                        {/* Edit Button */}
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setEditingMaintenanceTask(item);
-                            setEditMntTitle(item.title);
-                            setEditMntAssignee(item.assigneeName);
-                            setEditMntPriority(item.priority || 'Medium');
-                            setEditMntStatus(item.status);
-                            setEditMntDueDate(item.dueDate || '');
-                            setEditMntNotes(item.notes || '');
-                          }}
-                          className="btn btn-ghost btn-icon btn-sm"
-                          title="Edit Task Details"
-                          style={{ height: '24px', width: '24px', padding: 0 }}
-                        >
-                          <Edit3 size={12} />
-                        </button>
-
-                        {/* Delete Button */}
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (window.confirm(`Delete maintenance task "${item.title}"?`)) {
-                              handleDeleteMaintenanceTask(item.id);
-                            }
-                          }}
-                          className="btn btn-ghost btn-icon btn-sm"
-                          title="Delete Task"
-                          style={{ height: '24px', width: '24px', padding: 0, color: 'var(--status-critical)' }}
-                        >
-                          <Trash2 size={12} />
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
             </div>
           </div>
         )}

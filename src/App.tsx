@@ -14,7 +14,6 @@ import { ReportsView } from './views/ReportsView';
 import { SettingsView } from './views/SettingsView';
 import { AllTasksView } from './views/AllTasksView';
 import { TaskDetailDrawer } from './components/drawers/TaskDetailDrawer';
-import { BugDetailDrawer } from './components/drawers/BugDetailDrawer';
 import { CommandPalette } from './components/common/CommandPalette';
 import { QuickCreateModal } from './components/modals/QuickCreateModal';
 import { LoginView } from './views/LoginView';
@@ -105,7 +104,6 @@ export function AppContent() {
 
       {/* Drawers and Modals */}
       <TaskDetailDrawer />
-      <BugDetailDrawer />
       <CommandPalette />
       <QuickCreateModal />
     </div>

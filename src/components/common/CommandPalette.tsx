@@ -3,7 +3,7 @@ import {
   Search,
   FolderKanban,
   CheckSquare,
-  Bug,
+  FolderTree,
   Building2,
   Plus,
   Clock,
@@ -19,11 +19,10 @@ export const CommandPalette: React.FC = () => {
     setCommandPaletteOpen,
     projects,
     tasks,
-    bugs,
+    modules,
     clients,
     setSelectedProjectId,
     setSelectedTaskId,
-    setSelectedBugId,
     setCurrentView,
     setQuickCreateOpen,
     setActiveRole,
@@ -36,13 +35,12 @@ export const CommandPalette: React.FC = () => {
       return {
         actions: [
           { id: 'act-new-task', label: 'Create New Task', icon: <Plus size={16} />, execute: () => setQuickCreateOpen(true) },
-          { id: 'act-new-bug', label: 'Log New Bug / Issue', icon: <Bug size={16} />, execute: () => setQuickCreateOpen(true) },
           { id: 'act-log-time', label: 'Log Work Hours', icon: <Clock size={16} />, execute: () => setQuickCreateOpen(true) },
           { id: 'act-client-portal', label: 'Switch to Client Portal View', icon: <Shield size={16} />, execute: () => setActiveRole('CLIENT') },
         ],
         projects: projects.slice(0, 4),
         tasks: tasks.slice(0, 4),
-        bugs: bugs.slice(0, 3),
+        modules: modules.slice(0, 4),
         clients: clients.slice(0, 3),
       };
     }
@@ -51,14 +49,13 @@ export const CommandPalette: React.FC = () => {
     return {
       actions: [
         { id: 'act-new-task', label: 'Create New Task', icon: <Plus size={16} />, execute: () => setQuickCreateOpen(true) },
-        { id: 'act-new-bug', label: 'Log New Bug', icon: <Bug size={16} />, execute: () => setQuickCreateOpen(true) },
       ].filter((a) => a.label.toLowerCase().includes(q)),
       projects: projects.filter((p) => p.name.toLowerCase().includes(q) || p.code.toLowerCase().includes(q)),
       tasks: tasks.filter((t) => t.title.toLowerCase().includes(q) || `#${t.taskNumber}`.includes(q)),
-      bugs: bugs.filter((b) => b.title.toLowerCase().includes(q) || `#${b.bugNumber}`.includes(q)),
+      modules: modules.filter((m) => m.name.toLowerCase().includes(q) || m.description?.toLowerCase().includes(q)),
       clients: clients.filter((c) => c.name.toLowerCase().includes(q) || c.industry.toLowerCase().includes(q)),
     };
-  }, [query, projects, tasks, bugs, clients, setQuickCreateOpen, setActiveRole]);
+  }, [query, projects, tasks, modules, clients, setQuickCreateOpen, setActiveRole]);
 
   if (!commandPaletteOpen) return null;
 
@@ -94,7 +91,7 @@ export const CommandPalette: React.FC = () => {
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Type a command or search (projects, tasks, bugs, clients)..."
+            placeholder="Type a command or search (projects, tasks, modules, clients)..."
             style={{
               flex: 1,
               background: 'transparent',
@@ -215,39 +212,35 @@ export const CommandPalette: React.FC = () => {
             </div>
           )}
 
-          {/* Bugs */}
-          {filtered.bugs.length > 0 && (
+          {/* Modules */}
+          {filtered.modules.length > 0 && (
             <div>
               <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', padding: '0.25rem 0.5rem' }}>
-                Bugs ({filtered.bugs.length})
+                Modules ({filtered.modules.length})
               </div>
-              {filtered.bugs.map((b) => (
+              {filtered.modules.map((m) => (
                 <div
-                  key={b.id}
+                  key={m.id}
                   onClick={() => {
-                    setSelectedBugId(b.id);
+                    setSelectedProjectId(m.projectId);
+                    setCurrentView('projects');
                     setCommandPaletteOpen(false);
                   }}
                   className="admark-card-interactive flex items-center justify-between"
                   style={{ padding: '0.5rem 0.75rem', borderRadius: '0.375rem', cursor: 'pointer', margin: '2px 0' }}
                 >
                   <div className="flex items-center gap-2.5">
-                    <Bug size={16} color="var(--status-danger)" />
+                    <FolderTree size={16} color="var(--brand-crimson)" />
                     <div>
                       <div className="flex items-center gap-1.5">
-                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', fontWeight: 700, color: 'var(--status-danger)' }}>
-                          #{b.bugNumber}
-                        </span>
-                        <span style={{ fontSize: '0.8125rem', fontWeight: 600 }}>{b.title}</span>
+                        <span style={{ fontSize: '0.8125rem', fontWeight: 600 }}>{m.name}</span>
                       </div>
                       <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
-                        {b.environment} • Severity: {b.severity} • {b.status}
+                        Progress: {m.progress}% • Delivery Module
                       </div>
                     </div>
                   </div>
-                  <span className={`badge ${b.severity === 'Critical' ? 'badge-critical' : 'badge-neutral'}`}>
-                    {b.severity}
-                  </span>
+                  <span className="badge badge-neutral">{m.progress}%</span>
                 </div>
               ))}
             </div>

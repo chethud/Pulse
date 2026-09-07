@@ -135,7 +135,7 @@ export const SettingsView: React.FC = () => {
             <p style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.4 }}>
               • Only role that can create accounts<br />
               • Can assign & modify user roles<br />
-              • Full delete authority on projects, tasks & bugs
+              • Full delete authority on projects, modules & tasks
             </p>
           </div>
 
@@ -154,7 +154,7 @@ export const SettingsView: React.FC = () => {
               <span className="badge badge-warning" style={{ fontSize: '0.65rem' }}>Can Delete</span>
             </div>
             <p style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.4 }}>
-              • Delete privileges for projects, modules, tasks & bugs<br />
+              • Delete privileges for projects, modules & tasks<br />
               • Manage deliverables & team operations<br />
               • <strong>Cannot</strong> create accounts or change roles
             </p>
@@ -176,7 +176,7 @@ export const SettingsView: React.FC = () => {
             </div>
             <p style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.4 }}>
               • Standard operational workflow<br />
-              • Log time, report bugs, update tasks<br />
+              • Log time, complete modules, update tasks<br />
               • <strong>No delete options</strong> anywhere in the system
             </p>
           </div>

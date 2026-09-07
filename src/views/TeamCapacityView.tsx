@@ -275,7 +275,7 @@ export const TeamCapacityView: React.FC = () => {
                             : 'var(--text-primary)',
                       }}
                     >
-                      <option value="ADMIN">ADMIN (Can Delete Projects/Tasks/Bugs)</option>
+                      <option value="ADMIN">ADMIN (Can Delete Projects/Tasks/Modules)</option>
                       <option value="USER">EMPLOYEE (Standard, No Delete)</option>
                       <option value="SUPERADMIN">SUPERADMIN (Full Access)</option>
                     </select>

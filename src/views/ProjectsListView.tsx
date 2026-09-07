@@ -16,7 +16,6 @@ export const ProjectsListView: React.FC = () => {
     projects,
     clients,
     users,
-    bugs,
     currentUser,
     canDelete,
     isSuperAdmin,

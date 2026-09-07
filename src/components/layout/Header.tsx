@@ -97,8 +97,6 @@ export const Header: React.FC = () => {
       board: 'Delivery Board',
       tasks: 'All Tasks',
       modules: 'Modules',
-      bugs: 'Bugs & Issues',
-      testing: 'Testing & QA',
       releases: 'Releases',
       clients: 'Clients',
       time: 'Time Tracking',
@@ -162,7 +160,7 @@ export const Header: React.FC = () => {
         >
           <div className="flex items-center gap-2">
             <Search size={13} color="var(--text-muted)" />
-            <span style={{ fontSize: '0.78rem' }}>Search projects, tasks, bugs...</span>
+            <span style={{ fontSize: '0.78rem' }}>Search projects, tasks, modules...</span>
           </div>
           <kbd
             style={{

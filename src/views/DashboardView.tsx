@@ -2,7 +2,6 @@ import React from 'react';
 import {
   FolderKanban,
   Clock,
-  Bug as BugIcon,
   ChevronRight,
   Plus,
   ArrowRight,
@@ -14,7 +13,7 @@ export const DashboardView: React.FC = () => {
   const {
     projects,
     tasks,
-    bugs,
+    modules,
     clients,
     activities,
     users,
@@ -29,7 +28,6 @@ export const DashboardView: React.FC = () => {
   const overdueTasks = tasks.filter((t) => {
     return t.status !== 'Done' && new Date(t.dueDate) < new Date('2025-03-01');
   });
-  const openBugs = bugs.filter((b) => b.status !== 'Closed' && b.status !== 'Verified');
 
   // Team capacity
   const teamMembers = users.filter((u) => u.role !== 'CLIENT');
@@ -63,7 +61,7 @@ export const DashboardView: React.FC = () => {
             Software Delivery
           </h1>
           <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
-            Manage projects, workload, quality and releases from one place.
+            Manage projects, workload, modules and releases from one place.
           </p>
         </div>
 
@@ -106,10 +104,10 @@ export const DashboardView: React.FC = () => {
 
         <div className="kpi-strip-item">
           <div style={{ fontSize: '0.6875rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-            Open Bugs
+            Active Modules
           </div>
-          <div style={{ fontSize: '1.35rem', fontWeight: 700, color: openBugs.length > 0 ? 'var(--status-danger)' : 'var(--text-primary)', marginTop: '2px' }}>
-            {openBugs.length}
+          <div style={{ fontSize: '1.35rem', fontWeight: 700, color: 'var(--text-primary)', marginTop: '2px' }}>
+            {modules.length}
           </div>
         </div>
 
