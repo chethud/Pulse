@@ -22,7 +22,7 @@ export const ReportsView: React.FC = () => {
           Delivery Reports
         </h1>
         <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
-          Cross-project velocity, milestone on-time performance, and SLA compliance metrics.
+          Cross-project velocity, module delivery performance, and SLA compliance metrics.
         </p>
       </div>
 
@@ -30,13 +30,13 @@ export const ReportsView: React.FC = () => {
       <div className="kpi-strip">
         <div className="kpi-strip-item">
           <div style={{ fontSize: '0.6875rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-            Milestone On-Time SLA
+            Module Delivery SLA
           </div>
           <div style={{ fontSize: '1.35rem', fontWeight: 700, color: 'var(--status-healthy)', marginTop: '2px' }}>
             91.4%
           </div>
           <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-            11 of 12 phase milestones signed off on target
+            11 of 12 core architecture modules delivered on target
           </div>
         </div>
 

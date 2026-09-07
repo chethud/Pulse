@@ -434,6 +434,9 @@ export const INITIAL_MODULES: ProjectModule[] = [
     leadId: 'user-4',
     progress: 100,
     order: 1,
+    status: 'Completed',
+    targetDate: '2025-03-15',
+    deliverables: ['OAuth2 Google/GitHub SSO', 'Role-based access matrix', 'Token refresh handler'],
   },
   {
     id: 'mod-2',
@@ -443,6 +446,9 @@ export const INITIAL_MODULES: ProjectModule[] = [
     leadId: 'user-5',
     progress: 85,
     order: 2,
+    status: 'In Progress',
+    targetDate: '2025-04-20',
+    deliverables: ['Encrypted passport vault', 'Travel preferences editor', 'Booking history timeline'],
   },
   {
     id: 'mod-3',
@@ -452,6 +458,9 @@ export const INITIAL_MODULES: ProjectModule[] = [
     leadId: 'user-4',
     progress: 65,
     order: 3,
+    status: 'In Progress',
+    targetDate: '2025-05-30',
+    deliverables: ['Real-time 30-min inventory lock', 'Multi-city itinerary builder', 'Automated PDF voucher generation'],
   },
   {
     id: 'mod-4',
@@ -461,6 +470,9 @@ export const INITIAL_MODULES: ProjectModule[] = [
     leadId: 'user-4',
     progress: 40,
     order: 4,
+    status: 'In Progress',
+    targetDate: '2025-06-15',
+    deliverables: ['Stripe 3D-Secure integration', 'ECB live rate currency FX', 'Instant webhook callback auditor'],
   },
   {
     id: 'mod-5',
@@ -470,6 +482,9 @@ export const INITIAL_MODULES: ProjectModule[] = [
     leadId: 'user-3',
     progress: 30,
     order: 5,
+    status: 'Planned',
+    targetDate: '2025-07-20',
+    deliverables: ['Conversion funnel analytics', 'Agency commission export', 'Executive delivery scorecard'],
   },
   {
     id: 'mod-6',
@@ -479,6 +494,9 @@ export const INITIAL_MODULES: ProjectModule[] = [
     leadId: 'user-5',
     progress: 70,
     order: 6,
+    status: 'In Progress',
+    targetDate: '2025-06-30',
+    deliverables: ['SendGrid transactional templates', 'Twilio WhatsApp webhook', 'Emergency itinerary dispatch'],
   },
 ];
 

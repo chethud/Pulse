@@ -118,6 +118,7 @@ interface AppContextType {
   updateProject: (projectId: string, updates: Partial<Project>) => void;
   deleteProject: (projectId: string) => void;
   addModule: (module: Omit<ProjectModule, 'id' | 'progress'>) => void;
+  updateModule: (moduleId: string, updates: Partial<ProjectModule>) => void;
   addMilestone: (milestone: Omit<Milestone, 'id' | 'number' | 'progress' | 'isClientApproved'>) => void;
   addClient: (client: Omit<Client, 'id' | 'lastActivity'>) => void;
   addRequirement: (req: Omit<Requirement, 'id' | 'code' | 'createdAt'>) => void;
@@ -480,6 +481,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     syncStorage('modules', updated);
   };
 
+  const updateModule = (moduleId: string, updates: Partial<ProjectModule>) => {
+    const updated = modules.map((m) => (m.id === moduleId ? { ...m, ...updates } : m));
+    setModules(updated);
+    syncStorage('modules', updated);
+  };
+
   const addMilestone = (mil: Omit<Milestone, 'id' | 'number' | 'progress' | 'isClientApproved'>) => {
     const projMilestones = milestones.filter((m) => m.projectId === mil.projectId);
     const nextNum = projMilestones.length + 1;
@@ -742,6 +749,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         updateProject,
         deleteProject,
         addModule,
+        updateModule,
         addMilestone,
         addClient,
         addRequirement,

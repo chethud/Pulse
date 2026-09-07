@@ -114,6 +114,9 @@ export interface ProjectModule {
   leadId: string;
   progress: number;
   order: number;
+  targetDate?: string;
+  status?: 'Planned' | 'In Progress' | 'Completed' | 'Delayed';
+  deliverables?: string[];
 }
 
 export interface ProjectFeature {

@@ -17,13 +17,12 @@ export const ClientPortalView: React.FC = () => {
   const {
     currentUser,
     projects,
-    milestones,
+    modules,
     releases,
     clientUAT,
     documents,
     changeRequests,
     addChangeRequest,
-    approveMilestone,
     approveRelease,
     updateUATStatus,
   } = useApp();
@@ -32,7 +31,7 @@ export const ClientPortalView: React.FC = () => {
   const clientProjects = projects.filter((p) => p.clientId === 'client-1' || p.clientId === currentUser.clientId);
   const activeProj = clientProjects[0] || projects[0];
 
-  const clientMilestones = milestones.filter((m) => m.projectId === activeProj.id);
+  const clientModules = modules.filter((m) => m.projectId === activeProj.id);
   const clientReleases = releases.filter((r) => r.projectId === activeProj.id);
   const uatItems = clientUAT.filter((u) => u.projectId === activeProj.id);
   const sharedDocs = documents.filter((d) => d.projectId === activeProj.id && d.isClientVisible);
@@ -141,19 +140,19 @@ export const ClientPortalView: React.FC = () => {
         )}
       </div>
 
-      {/* Milestones & Deliverables Section */}
+      {/* Modules & Deliverables Section */}
       <div className="admark-card" style={{ padding: '1.5rem' }}>
         <div className="flex items-center justify-between" style={{ marginBottom: '1rem' }}>
           <div>
-            <h3 style={{ fontSize: '1.1rem', fontWeight: 800 }}>Project Milestones & Deliverables</h3>
+            <h3 style={{ fontSize: '1.1rem', fontWeight: 800 }}>Project Modules & Deliverables</h3>
             <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-              Official sign-off checkpoints for development phases
+              Official architecture modules and deliverable progress for development phases
             </div>
           </div>
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-          {clientMilestones.map((m) => (
+          {clientModules.map((m) => (
             <div
               key={m.id}
               style={{
@@ -169,37 +168,31 @@ export const ClientPortalView: React.FC = () => {
               <div>
                 <div className="flex items-center gap-2">
                   <span style={{ fontWeight: 800, color: 'var(--brand-crimson)', fontSize: '0.85rem' }}>
-                    Milestone {m.number}:
+                    Module:
                   </span>
                   <span style={{ fontWeight: 700, fontSize: '0.9rem' }}>{m.name}</span>
-                  <span className={`badge ${m.status === 'Completed' ? 'badge-healthy' : 'badge-neutral'}`}>
-                    {m.status}
+                  <span className={`badge ${m.status === 'Completed' || m.progress === 100 ? 'badge-healthy' : 'badge-neutral'}`}>
+                    {m.status || (m.progress === 100 ? 'Completed' : 'In Progress')}
                   </span>
                 </div>
                 <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
                   {m.description}
                 </div>
-                <div className="flex flex-wrap gap-2" style={{ marginTop: '6px' }}>
-                  {m.deliverables.map((d, i) => (
-                    <span key={i} style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                      • {d}
-                    </span>
-                  ))}
-                </div>
+                {m.deliverables && m.deliverables.length > 0 && (
+                  <div className="flex flex-wrap gap-2" style={{ marginTop: '6px' }}>
+                    {m.deliverables.map((d, i) => (
+                      <span key={i} style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                        • {d}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div>
-                {m.isClientApproved ? (
-                  <span className="badge badge-healthy" style={{ padding: '0.4rem 0.75rem' }}>
-                    <CheckCircle2 size={14} />
-                    <span>Signed-off ({m.approvalDate})</span>
-                  </span>
-                ) : (
-                  <button onClick={() => approveMilestone(m.id)} className="btn btn-primary btn-sm">
-                    <CheckCircle2 size={14} />
-                    <span>Approve Deliverable</span>
-                  </button>
-                )}
+                <span className="badge badge-info" style={{ padding: '0.4rem 0.75rem' }}>
+                  {m.progress}% Completed
+                </span>
               </div>
             </div>
           ))}

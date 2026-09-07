@@ -67,8 +67,9 @@ export function AppContent() {
         return <ProjectDetailView currentTab="requirements" setCurrentTab={setProjectTab} />;
       case 'change-requests':
         return <ProjectDetailView currentTab="cr" setCurrentTab={setProjectTab} />;
+      case 'modules':
       case 'milestones':
-        return <ProjectDetailView currentTab="milestones" setCurrentTab={setProjectTab} />;
+        return <ProjectDetailView currentTab="modules" setCurrentTab={setProjectTab} />;
       case 'sprints':
         return <ProjectDetailView currentTab="sprints" setCurrentTab={setProjectTab} />;
       case 'testing':

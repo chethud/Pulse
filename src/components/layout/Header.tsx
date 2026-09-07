@@ -82,7 +82,7 @@ export const Header: React.FC = () => {
       projects: 'Projects',
       board: 'Delivery Board',
       tasks: 'All Tasks',
-      milestones: 'Milestones',
+      modules: 'Modules',
       bugs: 'Bugs & Issues',
       testing: 'Testing & QA',
       releases: 'Releases',

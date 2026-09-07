@@ -75,7 +75,7 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
     updateProject,
     deleteProject,
     addModule,
-    addMilestone,
+    updateModule,
     logout,
     setCurrentView,
     setSelectedProjectId,
@@ -90,16 +90,9 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
   const [newModuleName, setNewModuleName] = useState('');
   const [newModuleDesc, setNewModuleDesc] = useState('');
   const [newModuleLeadId, setNewModuleLeadId] = useState(users[0]?.id || '');
-
-  // Add Milestone modal state (CEO Only)
-  const [showAddMilestoneModal, setShowAddMilestoneModal] = useState(false);
-  const [newMilestoneName, setNewMilestoneName] = useState('');
-  const [newMilestoneDesc, setNewMilestoneDesc] = useState('');
-  const [newMilestoneOwnerId, setNewMilestoneOwnerId] = useState(users[0]?.id || '');
-  const [newMilestoneStartDate, setNewMilestoneStartDate] = useState(new Date().toISOString().split('T')[0]);
-  const [newMilestoneEndDate, setNewMilestoneEndDate] = useState('2025-10-31');
-  const [newMilestoneDeliverables, setNewMilestoneDeliverables] = useState('');
-  const [newMilestoneStatus, setNewMilestoneStatus] = useState<'Upcoming' | 'In Progress' | 'Completed' | 'Delayed'>('Upcoming');
+  const [newModuleTargetDate, setNewModuleTargetDate] = useState('2025-10-31');
+  const [newModuleStatus, setNewModuleStatus] = useState<'Planned' | 'In Progress' | 'Completed' | 'Delayed'>('In Progress');
+  const [newModuleDeliverables, setNewModuleDeliverables] = useState('');
 
   const [taskViewMode, setTaskViewMode] = useState<'board' | 'list' | 'gantt' | 'calendar'>('board');
   const [taskFilterStatus, setTaskFilterStatus] = useState<string>('All');
@@ -240,7 +233,6 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
     { id: 'overview', label: 'Overview' },
     { id: 'tasks', label: 'Tasks', count: projectTasks.length },
     { id: 'modules', label: 'Modules', count: projectModules.length },
-    { id: 'milestones', label: 'Milestones', count: projectMilestones.length },
     { id: 'quality', label: 'Quality & QA', count: openBugsCount + projectTestRuns.length },
     { id: 'client-review', label: 'Client Review', count: projectUAT.length },
     { id: 'maintenance', label: 'Maintenance' },
@@ -874,9 +866,9 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
           <div className="flex flex-col gap-3">
             <div className="flex items-center justify-between">
               <div>
-                <h2 style={{ fontSize: '1.1rem', fontWeight: 800 }}>Functional Modules & Features</h2>
+                <h2 style={{ fontSize: '1.1rem', fontWeight: 800 }}>Functional Modules & Deliverables</h2>
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                  Architecture breakdown into core modules and mapped client features
+                  Architecture modules, technical ownership, key deliverables, and execution progress
                 </div>
               </div>
 
@@ -920,8 +912,8 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                 <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-primary)' }}>
                   No Modules Configured Yet
                 </h3>
-                <p style={{ fontSize: '0.825rem', color: 'var(--text-secondary)', maxWidth: '420px', marginTop: '0.4rem', lineHeight: 1.5 }}>
-                  Functional modules break this project into distinct feature areas, technical ownership, and deliverable packages.
+                <p style={{ fontSize: '0.825rem', color: 'var(--text-secondary)', maxWidth: '440px', marginTop: '0.4rem', lineHeight: 1.5 }}>
+                  Functional modules break this project into distinct feature areas, technical ownership, milestones, and deliverable packages.
                 </p>
                 <button
                   onClick={() => {
@@ -944,38 +936,113 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                 {projectModules.map((mod) => {
                   const lead = users.find((u) => u.id === mod.leadId);
                   const modTasks = projectTasks.filter((t) => t.moduleId === mod.id);
+                  const modCompleted = modTasks.filter((t) => t.status === 'Done').length;
+                  const calculatedModProgress = modTasks.length > 0 ? Math.round((modCompleted / modTasks.length) * 100) : mod.progress;
+
+                  const statusBadgeClass =
+                    mod.status === 'Completed' || calculatedModProgress === 100
+                      ? 'badge-healthy'
+                      : mod.status === 'Delayed'
+                      ? 'badge-critical'
+                      : mod.status === 'Planned'
+                      ? 'badge-neutral'
+                      : 'badge-info';
 
                   return (
                     <div key={mod.id} className="admark-card" style={{ padding: '1.25rem' }}>
-                      <div className="flex items-center justify-between">
-                        <h3 style={{ fontSize: '1rem', fontWeight: 700 }}>{mod.name}</h3>
-                        <span className="badge badge-info">{mod.progress}% Done</span>
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <h3 style={{ fontSize: '1rem', fontWeight: 700 }}>{mod.name}</h3>
+                          {mod.status && (
+                            <span className={`badge ${statusBadgeClass}`}>
+                              {mod.status}
+                            </span>
+                          )}
+                        </div>
+                        <span className={`badge ${calculatedModProgress === 100 ? 'badge-healthy' : 'badge-neutral'}`}>
+                          {calculatedModProgress}% Done
+                        </span>
                       </div>
-                      <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
+
+                      <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginTop: '6px', lineHeight: 1.45 }}>
                         {mod.description}
                       </p>
 
-                      <div className="progress-bar-track" style={{ margin: '0.75rem 0' }}>
-                        <div className="progress-bar-fill" style={{ width: `${mod.progress}%`, backgroundColor: 'var(--brand-crimson)' }} />
+                      <div className="progress-bar-track" style={{ margin: '0.75rem 0 0.5rem 0' }}>
+                        <div
+                          className="progress-bar-fill"
+                          style={{
+                            width: `${calculatedModProgress}%`,
+                            backgroundColor: calculatedModProgress === 100 ? 'var(--status-healthy)' : 'var(--brand-crimson)',
+                          }}
+                        />
                       </div>
 
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
-                        Lead: <strong style={{ color: 'var(--text-secondary)' }}>{lead?.name}</strong> • Linked Tasks: {modTasks.length}
+                      <div className="flex items-center justify-between flex-wrap gap-2" style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.65rem' }}>
+                        <span>
+                          Lead: <strong style={{ color: 'var(--text-secondary)' }}>{lead?.name || 'Assigned Lead'}</strong>
+                        </span>
+                        {mod.targetDate && (
+                          <span>
+                            Target: <strong style={{ color: 'var(--text-primary)' }}>{mod.targetDate}</strong>
+                          </span>
+                        )}
+                        <span>Tasks: {modTasks.length} ({modCompleted} done)</span>
                       </div>
 
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        {modTasks.slice(0, 3).map((mt) => (
-                          <div
-                            key={mt.id}
-                            onClick={() => setSelectedTaskId(mt.id)}
-                            className="admark-card-interactive flex items-center justify-between"
-                            style={{ padding: '0.4rem 0.6rem', borderRadius: '4px', background: 'var(--bg-app)', cursor: 'pointer', fontSize: '0.75rem' }}
-                          >
-                            <span className="truncate">#{mt.taskNumber} {mt.title}</span>
-                            <span className="badge badge-neutral" style={{ fontSize: '0.65rem' }}>{mt.status}</span>
+                      {/* Deliverables checklist if defined */}
+                      {mod.deliverables && mod.deliverables.length > 0 && (
+                        <div style={{ marginTop: '0.5rem', background: 'var(--bg-app)', padding: '0.65rem 0.75rem', borderRadius: '0.4rem', border: '1px solid var(--border-subtle)', marginBottom: '0.65rem' }}>
+                          <div style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.35rem' }}>
+                            Deliverables Checklist
                           </div>
-                        ))}
-                      </div>
+                          <div className="flex flex-wrap gap-1.5">
+                            {mod.deliverables.map((del, idx) => (
+                              <span key={idx} className="badge badge-neutral" style={{ padding: '0.2rem 0.45rem', fontSize: '0.7rem' }}>
+                                ✓ {del}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Linked tasks preview */}
+                      {modTasks.length > 0 && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                          {modTasks.slice(0, 3).map((mt) => (
+                            <div
+                              key={mt.id}
+                              onClick={() => setSelectedTaskId(mt.id)}
+                              className="admark-card-interactive flex items-center justify-between"
+                              style={{ padding: '0.35rem 0.6rem', borderRadius: '4px', background: 'var(--bg-app)', cursor: 'pointer', fontSize: '0.75rem' }}
+                            >
+                              <span className="truncate">#{mt.taskNumber} {mt.title}</span>
+                              <span className="badge badge-neutral" style={{ fontSize: '0.65rem' }}>{mt.status}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* CEO Quick Actions */}
+                      {isCEO && (
+                        <div className="flex items-center justify-end gap-2" style={{ marginTop: '0.75rem', paddingTop: '0.5rem', borderTop: '1px solid var(--border-subtle)' }}>
+                          {calculatedModProgress < 100 && (
+                            <button
+                              onClick={() => {
+                                updateModule(mod.id, {
+                                  progress: 100,
+                                  status: 'Completed',
+                                });
+                              }}
+                              className="btn btn-secondary btn-sm"
+                              style={{ fontSize: '0.7rem', padding: '0.2rem 0.5rem' }}
+                            >
+                              <CheckCircle2 size={12} />
+                              <span>Mark Complete</span>
+                            </button>
+                          )}
+                        </div>
+                      )}
                     </div>
                   );
                 })}
@@ -1033,145 +1100,6 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                 </div>
               ))}
             </div>
-          </div>
-        )}
-
-        {/* ================= TAB 5: MILESTONES ================= */}
-        {currentTab === 'milestones' && (
-          <div className="flex flex-col gap-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 style={{ fontSize: '1.1rem', fontWeight: 800 }}>Milestone Sign-offs & Roadmaps</h2>
-                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                  Deliverable tracking and formal client approval gates
-                </div>
-              </div>
-
-              <button
-                onClick={() => {
-                  if (isCEO) {
-                    setShowAddMilestoneModal(true);
-                  } else {
-                    setShowCeoRequiredModal(true);
-                  }
-                }}
-                className="btn btn-primary btn-sm"
-                title={isCEO ? 'Add New Milestone' : 'Only CEO (T Jois) is authorized to add milestones'}
-              >
-                <Plus size={14} />
-                <span>Add Milestone</span>
-                {!isCEO && <span style={{ fontSize: '0.65rem', opacity: 0.8, marginLeft: '2px' }}>(CEO only)</span>}
-              </button>
-            </div>
-
-            {projectMilestones.length === 0 ? (
-              <div
-                className="admark-card flex flex-col items-center justify-center text-center"
-                style={{ padding: '3.5rem 1.5rem', borderRadius: '0.75rem', border: '1px dashed var(--border-subtle)' }}
-              >
-                <div
-                  style={{
-                    width: '48px',
-                    height: '48px',
-                    borderRadius: '50%',
-                    background: 'var(--bg-elevated)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: 'var(--brand-crimson)',
-                    marginBottom: '1rem',
-                  }}
-                >
-                  <Flag size={22} />
-                </div>
-                <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                  No Milestones Defined Yet
-                </h3>
-                <p style={{ fontSize: '0.825rem', color: 'var(--text-secondary)', maxWidth: '420px', marginTop: '0.4rem', lineHeight: 1.5 }}>
-                  Define milestone sign-offs, deliverables, and client approval stages to map the delivery roadmap.
-                </p>
-                <button
-                  onClick={() => {
-                    if (isCEO) {
-                      setShowAddMilestoneModal(true);
-                    } else {
-                      setShowCeoRequiredModal(true);
-                    }
-                  }}
-                  className="btn btn-primary btn-sm"
-                  style={{ marginTop: '1.25rem' }}
-                >
-                  <Plus size={14} />
-                  <span>Add First Milestone</span>
-                  {!isCEO && <span style={{ fontSize: '0.65rem', opacity: 0.8, marginLeft: '2px' }}>(CEO only)</span>}
-                </button>
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                {projectMilestones.map((m) => (
-                  <div key={m.id} className="admark-card" style={{ padding: '1.25rem' }}>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2.5">
-                        <span
-                          style={{
-                            width: '32px',
-                            height: '32px',
-                            borderRadius: '50%',
-                            background: m.status === 'Completed' ? 'var(--status-healthy)' : 'var(--bg-elevated)',
-                            color: m.status === 'Completed' ? '#fff' : 'var(--brand-crimson)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            fontWeight: 800,
-                          }}
-                        >
-                          {m.number}
-                        </span>
-                        <div>
-                          <h3 style={{ fontSize: '1rem', fontWeight: 700 }}>{m.name}</h3>
-                          <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                            Timeline: {m.startDate} to {m.endDate}
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-3">
-                        <span className={`badge ${m.status === 'Completed' ? 'badge-healthy' : 'badge-neutral'}`}>
-                          {m.status}
-                        </span>
-                        {m.isClientApproved ? (
-                          <span className="badge badge-healthy">
-                            <CheckCircle2 size={12} />
-                            <span>Approved by Client</span>
-                          </span>
-                        ) : (
-                          <button onClick={() => approveMilestone(m.id)} className="btn btn-primary btn-sm">
-                            Approve Milestone
-                          </button>
-                        )}
-                      </div>
-                    </div>
-
-                    <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
-                      {m.description}
-                    </p>
-
-                    <div style={{ marginTop: '0.75rem', background: 'var(--bg-app)', padding: '0.75rem', borderRadius: '0.5rem' }}>
-                      <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.35rem' }}>
-                        Deliverables Checklist
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        {m.deliverables.map((del, idx) => (
-                          <span key={idx} className="badge badge-neutral" style={{ padding: '0.25rem 0.5rem' }}>
-                            ✓ {del}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
         )}
 
@@ -2194,16 +2122,25 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                   e.preventDefault();
                   if (!newModuleName.trim()) return;
 
+                  const dels = newModuleDeliverables
+                    .split('\n')
+                    .map((d) => d.trim())
+                    .filter(Boolean);
+
                   addModule({
                     projectId: project.id,
                     name: newModuleName.trim(),
                     description: newModuleDesc.trim() || 'Functional architecture module deliverable.',
                     leadId: newModuleLeadId || currentUser.id,
                     order: projectModules.length + 1,
+                    targetDate: newModuleTargetDate || project.deadline,
+                    status: newModuleStatus,
+                    deliverables: dels.length > 0 ? dels : undefined,
                   });
 
                   setNewModuleName('');
                   setNewModuleDesc('');
+                  setNewModuleDeliverables('');
                   setShowAddModuleModal(false);
                 }}
                 className="flex flex-col gap-3"
@@ -2223,124 +2160,14 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                   />
                 </div>
 
-                <div>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                    Module Lead Engineer
-                  </label>
-                  <select
-                    value={newModuleLeadId}
-                    onChange={(e) => setNewModuleLeadId(e.target.value)}
-                    className="input-field"
-                    style={{ marginTop: '4px' }}
-                  >
-                    {users.map((u) => (
-                      <option key={u.id} value={u.id}>
-                        {u.name} ({u.title})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                    Module Scope & Description
-                  </label>
-                  <textarea
-                    rows={3}
-                    value={newModuleDesc}
-                    onChange={(e) => setNewModuleDesc(e.target.value)}
-                    placeholder="Describe technical scope, key services, and features..."
-                    className="input-field"
-                    style={{ marginTop: '4px', resize: 'vertical' }}
-                  />
-                </div>
-
-                <div className="flex justify-end gap-2" style={{ marginTop: '0.75rem' }}>
-                  <button type="button" onClick={() => setShowAddModuleModal(false)} className="btn btn-secondary">
-                    Cancel
-                  </button>
-                  <button type="submit" className="btn btn-primary">
-                    Create Module
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
-
-        {/* Add Milestone Modal (CEO Only) */}
-        {showAddMilestoneModal && (
-          <div className="modal-backdrop animate-fade-in" onClick={() => setShowAddMilestoneModal(false)}>
-            <div
-              className="admark-card"
-              style={{ width: '100%', maxWidth: '540px', padding: '1.5rem', borderRadius: '0.75rem' }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex items-center justify-between" style={{ marginBottom: '1rem' }}>
-                <div className="flex items-center gap-2">
-                  <Flag size={18} style={{ color: 'var(--brand-crimson)' }} />
-                  <h2 style={{ fontSize: '1.1rem', fontWeight: 700 }}>Add Project Milestone</h2>
-                </div>
-                <button onClick={() => setShowAddMilestoneModal(false)} className="btn btn-ghost btn-icon">
-                  <X size={16} />
-                </button>
-              </div>
-
-              <div style={{ padding: '0.45rem 0.75rem', background: 'rgba(230, 57, 70, 0.08)', border: '1px solid rgba(230, 57, 70, 0.2)', borderRadius: '6px', fontSize: '0.75rem', color: 'var(--brand-crimson)', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span>✓ CEO Authorized Action ({currentUser.name})</span>
-              </div>
-
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  if (!newMilestoneName.trim()) return;
-
-                  const dels = newMilestoneDeliverables
-                    .split('\n')
-                    .map((d) => d.trim())
-                    .filter(Boolean);
-
-                  addMilestone({
-                    projectId: project.id,
-                    name: newMilestoneName.trim(),
-                    description: newMilestoneDesc.trim() || 'Milestone deliverable stage and approval gate.',
-                    ownerId: newMilestoneOwnerId || currentUser.id,
-                    startDate: newMilestoneStartDate || new Date().toISOString().split('T')[0],
-                    endDate: newMilestoneEndDate || project.deadline,
-                    status: newMilestoneStatus,
-                    deliverables: dels.length > 0 ? dels : ['Architecture verification', 'Stage deployment', 'Acceptance test report'],
-                  });
-
-                  setNewMilestoneName('');
-                  setNewMilestoneDesc('');
-                  setNewMilestoneDeliverables('');
-                  setShowAddMilestoneModal(false);
-                }}
-                className="flex flex-col gap-3"
-              >
-                <div>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                    Milestone Title *
-                  </label>
-                  <input
-                    required
-                    type="text"
-                    value={newMilestoneName}
-                    onChange={(e) => setNewMilestoneName(e.target.value)}
-                    placeholder="e.g. Milestone 1: Core Engine & API Architecture"
-                    className="input-field"
-                    style={{ marginTop: '4px' }}
-                  />
-                </div>
-
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                      Milestone Owner
+                      Module Lead Engineer
                     </label>
                     <select
-                      value={newMilestoneOwnerId}
-                      onChange={(e) => setNewMilestoneOwnerId(e.target.value)}
+                      value={newModuleLeadId}
+                      onChange={(e) => setNewModuleLeadId(e.target.value)}
                       className="input-field"
                       style={{ marginTop: '4px' }}
                     >
@@ -2357,12 +2184,12 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                       Initial Status
                     </label>
                     <select
-                      value={newMilestoneStatus}
-                      onChange={(e) => setNewMilestoneStatus(e.target.value as any)}
+                      value={newModuleStatus}
+                      onChange={(e) => setNewModuleStatus(e.target.value as any)}
                       className="input-field"
                       style={{ marginTop: '4px' }}
                     >
-                      <option value="Upcoming">Upcoming</option>
+                      <option value="Planned">Planned</option>
                       <option value="In Progress">In Progress</option>
                       <option value="Completed">Completed</option>
                       <option value="Delayed">Delayed</option>
@@ -2370,43 +2197,28 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                      Start Date
-                    </label>
-                    <input
-                      type="date"
-                      value={newMilestoneStartDate}
-                      onChange={(e) => setNewMilestoneStartDate(e.target.value)}
-                      className="input-field"
-                      style={{ marginTop: '4px' }}
-                    />
-                  </div>
-
-                  <div>
-                    <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                      Target Due Date
-                    </label>
-                    <input
-                      type="date"
-                      value={newMilestoneEndDate}
-                      onChange={(e) => setNewMilestoneEndDate(e.target.value)}
-                      className="input-field"
-                      style={{ marginTop: '4px' }}
-                    />
-                  </div>
+                <div>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                    Target Completion Date
+                  </label>
+                  <input
+                    type="date"
+                    value={newModuleTargetDate}
+                    onChange={(e) => setNewModuleTargetDate(e.target.value)}
+                    className="input-field"
+                    style={{ marginTop: '4px' }}
+                  />
                 </div>
 
                 <div>
                   <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                    Description & Objectives
+                    Module Scope & Description
                   </label>
                   <textarea
                     rows={2}
-                    value={newMilestoneDesc}
-                    onChange={(e) => setNewMilestoneDesc(e.target.value)}
-                    placeholder="Milestone release criteria and scope..."
+                    value={newModuleDesc}
+                    onChange={(e) => setNewModuleDesc(e.target.value)}
+                    placeholder="Describe technical scope, key services, and features..."
                     className="input-field"
                     style={{ marginTop: '4px', resize: 'vertical' }}
                   />
@@ -2414,24 +2226,24 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
 
                 <div>
                   <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                    Key Deliverables (one per line)
+                    Key Deliverables Checklist (one per line)
                   </label>
                   <textarea
                     rows={3}
-                    value={newMilestoneDeliverables}
-                    onChange={(e) => setNewMilestoneDeliverables(e.target.value)}
-                    placeholder="Core API endpoints&#10;Database migration&#10;Client staging sign-off"
+                    value={newModuleDeliverables}
+                    onChange={(e) => setNewModuleDeliverables(e.target.value)}
+                    placeholder="OAuth2 SSO integration&#10;Role-based access matrix&#10;Acceptance test suite"
                     className="input-field"
                     style={{ marginTop: '4px', resize: 'vertical' }}
                   />
                 </div>
 
                 <div className="flex justify-end gap-2" style={{ marginTop: '0.75rem' }}>
-                  <button type="button" onClick={() => setShowAddMilestoneModal(false)} className="btn btn-secondary">
+                  <button type="button" onClick={() => setShowAddModuleModal(false)} className="btn btn-secondary">
                     Cancel
                   </button>
                   <button type="submit" className="btn btn-primary">
-                    Create Milestone
+                    Create Module
                   </button>
                 </div>
               </form>
@@ -2497,7 +2309,7 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
               </div>
 
               <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                Only <strong>CEO (T Jois)</strong> is authorized to create/delete projects and add modules or milestones in the Admark Digitals workspace. Please sign in with the CEO account credentials to perform this action.
+                Only <strong>CEO (T Jois)</strong> is authorized to create/delete projects and add modules in the Admark Digitals workspace. Please sign in with the CEO account credentials to perform this action.
               </p>
 
               <div style={{ marginTop: '1rem', padding: '0.75rem', background: 'var(--bg-app)', borderRadius: '6px', fontSize: '0.8rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
