@@ -539,6 +539,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const addUser = (newUser: Omit<User, 'id'>): User => {
+    if (!isSuperAdmin) {
+      throw new Error('Unauthorized: Only SuperAdmin can create accounts.');
+    }
     const user: User = {
       ...newUser,
       id: `user-${Date.now()}`,
@@ -554,6 +557,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const updateUserRole = (userId: string, newRole: UserRole) => {
+    if (!isSuperAdmin) {
+      console.warn('Unauthorized: Only SuperAdmin can change user roles.');
+      return;
+    }
     const updated = users.map((u) => (u.id === userId ? { ...u, role: newRole } : u));
     setUsers(updated);
     syncStorage('users', updated);
