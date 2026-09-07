@@ -151,6 +151,37 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  // One-time purge of legacy mock clients, projects, tasks, etc.
+  const CLEAN_DATA_TAG = 'pulse_clean_slate_v1';
+  try {
+    if (localStorage.getItem(CLEAN_DATA_TAG) !== 'true') {
+      const keysToPurge = [
+        'clients',
+        'projects',
+        'modules',
+        'requirements',
+        'tasks',
+        'bugs',
+        'milestones',
+        'sprints',
+        'changeRequests',
+        'approvals',
+        'releases',
+        'timeLogs',
+        'documents',
+        'activities',
+        'notifications',
+        'testCases',
+        'testRuns',
+        'clientUAT',
+      ];
+      keysToPurge.forEach((k) => localStorage.removeItem(`admark_${k}`));
+      localStorage.setItem(CLEAN_DATA_TAG, 'true');
+    }
+  } catch {
+    // Ignore storage issues
+  }
+
   // Main state with localStorage sync
   const loadStored = <T,>(key: string, defaultVal: T): T => {
     try {
