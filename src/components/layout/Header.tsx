@@ -24,9 +24,7 @@ export const Header: React.FC = () => {
     theme,
     toggleTheme,
     currentUser,
-    setCurrentUser,
     logout,
-    users,
     activeRole,
     setActiveRole,
     notifications,
@@ -378,52 +376,6 @@ export const Header: React.FC = () => {
                   <Settings size={13} />
                   <span>Preferences</span>
                 </button>
-              </div>
-
-              {/* Active User Switcher */}
-              <div style={{ padding: '0.4rem 0.65rem' }}>
-                <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600, marginBottom: '4px' }}>
-                  Switch Active User
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                  {users.map((u) => {
-                    const isSelected = currentUser.id === u.id;
-                    return (
-                      <button
-                        key={u.id}
-                        onClick={() => {
-                          setCurrentUser(u.id);
-                          setUserMenuOpen(false);
-                        }}
-                        style={{
-                          padding: '0.35rem 0.5rem',
-                          fontSize: '0.75rem',
-                          borderRadius: '4px',
-                          background: isSelected ? 'var(--bg-elevated)' : 'transparent',
-                          color: isSelected ? 'var(--text-primary)' : 'var(--text-secondary)',
-                          border: 'none',
-                          textAlign: 'left',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          fontWeight: isSelected ? 600 : 400,
-                        }}
-                      >
-                        <div className="flex items-center gap-2">
-                          <img
-                            src={u.avatar}
-                            alt={u.name}
-                            style={{ width: '18px', height: '18px', borderRadius: '50%', objectFit: 'cover' }}
-                          />
-                          <span>{u.name}</span>
-                          <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>({u.title})</span>
-                        </div>
-                        {isSelected && <span className="status-dot danger" />}
-                      </button>
-                    );
-                  })}
-                </div>
               </div>
 
               {/* Sign Out */}

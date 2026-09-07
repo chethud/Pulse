@@ -19,7 +19,7 @@ export const ProjectsListView: React.FC = () => {
     setSelectedProjectId,
     setQuickCreateOpen,
     deleteProject,
-    setCurrentUser,
+    logout,
   } = useApp();
 
   const isCEO = currentUser.title === 'CEO' || currentUser.name.toLowerCase().includes('jois');
@@ -309,22 +309,22 @@ export const ProjectsListView: React.FC = () => {
             </div>
 
             <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-              Only <strong>CEO (T Jois)</strong> is authorized to create and delete projects in the Admark Digitals workspace.
+              Only <strong>CEO (T Jois)</strong> is authorized to create and delete projects in the Admark Digitals workspace. Please sign in with the CEO account credentials to perform this action.
             </p>
 
             <div style={{ marginTop: '1rem', padding: '0.75rem', background: 'var(--bg-app)', borderRadius: '6px', fontSize: '0.8rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
               <div>
-                <div style={{ fontWeight: 600 }}>Switch profile to continue:</div>
-                <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>T Jois (CEO)</div>
+                <div style={{ fontWeight: 600 }}>CEO Account Required:</div>
+                <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>tjois@admarkdigitals.com</div>
               </div>
               <button
                 onClick={() => {
-                  setCurrentUser('user-2');
                   setShowCeoRequiredModal(false);
+                  logout();
                 }}
-                className="btn btn-primary btn-sm"
+                className="btn btn-secondary btn-sm"
               >
-                Switch to T Jois
+                Sign Out to Switch
               </button>
             </div>
 

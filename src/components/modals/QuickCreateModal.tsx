@@ -30,7 +30,7 @@ export const QuickCreateModal: React.FC = () => {
     addChangeRequest,
     logTime,
     currentUser,
-    setCurrentUser,
+    logout,
   } = useApp();
 
   const isCEO = currentUser.title === 'CEO' || currentUser.name.toLowerCase().includes('jois');
@@ -545,11 +545,14 @@ export const QuickCreateModal: React.FC = () => {
                   <span>Only CEO (T Jois) is authorized to create client projects.</span>
                   <button
                     type="button"
-                    onClick={() => setCurrentUser('user-2')}
-                    className="btn btn-sm btn-primary"
+                    onClick={() => {
+                      setQuickCreateOpen(false);
+                      logout();
+                    }}
+                    className="btn btn-sm btn-secondary"
                     style={{ fontSize: '0.72rem', height: '26px', padding: '0 8px', whiteSpace: 'nowrap' }}
                   >
-                    Switch to CEO T Jois
+                    Sign Out to Switch
                   </button>
                 </div>
               ) : (
