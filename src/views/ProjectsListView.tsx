@@ -7,6 +7,7 @@ import {
   ShieldAlert,
   X,
   ExternalLink,
+  CheckCircle2,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
@@ -22,6 +23,7 @@ export const ProjectsListView: React.FC = () => {
     setSelectedProjectId,
     setQuickCreateOpen,
     deleteProject,
+    updateProject,
     logout,
   } = useApp();
 
@@ -231,6 +233,49 @@ export const ProjectsListView: React.FC = () => {
 
                   <td style={{ textAlign: 'center' }}>
                     <div className="flex items-center justify-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                      {proj.status !== 'Completed' ? (
+                        <button
+                          onClick={() => updateProject(proj.id, { status: 'Completed', progress: 100 })}
+                          className="btn btn-secondary btn-sm"
+                          style={{
+                            height: '24px',
+                            padding: '0 7px',
+                            fontSize: '0.7rem',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '3px',
+                            color: 'var(--status-healthy)',
+                            borderColor: 'rgba(16, 185, 129, 0.4)',
+                            fontWeight: 600,
+                          }}
+                          title="Mark project Completed"
+                        >
+                          <CheckCircle2 size={11} />
+                          <span>Complete</span>
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => updateProject(proj.id, { status: 'Active' })}
+                          className="btn btn-secondary btn-sm"
+                          style={{
+                            height: '24px',
+                            padding: '0 6px',
+                            fontSize: '0.68rem',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '3px',
+                            background: 'rgba(16, 185, 129, 0.12)',
+                            color: 'var(--status-healthy)',
+                            borderColor: 'var(--status-healthy)',
+                            fontWeight: 700,
+                          }}
+                          title="Project is Completed (click to reopen as Active)"
+                        >
+                          <CheckCircle2 size={11} />
+                          <span>✓ Done</span>
+                        </button>
+                      )}
+
                       <button
                         onClick={() => {
                           const url = proj.liveUrl || proj.productionUrl || proj.stagingUrl;

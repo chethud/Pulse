@@ -282,6 +282,41 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
               <span>•</span>
               <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{project.progress}% Complete</span>
               <span>•</span>
+              <select
+                value={project.status}
+                onChange={(e) => updateProject(project.id, { status: e.target.value as any })}
+                className="input-field"
+                style={{
+                  padding: '0.1rem 0.45rem',
+                  fontSize: '0.72rem',
+                  fontWeight: 700,
+                  height: '22px',
+                  width: 'auto',
+                  cursor: 'pointer',
+                  borderColor:
+                    project.status === 'Completed'
+                      ? 'var(--status-healthy)'
+                      : project.status === 'Active'
+                      ? 'var(--brand-crimson)'
+                      : 'var(--border-subtle)',
+                  color:
+                    project.status === 'Completed'
+                      ? 'var(--status-healthy)'
+                      : 'var(--text-primary)',
+                  backgroundColor: 'var(--bg-card)',
+                }}
+                title="Click to change project delivery status"
+              >
+                <option value="Active">Active</option>
+                <option value="Planning">Planning</option>
+                <option value="In Progress">In Progress</option>
+                <option value="On Hold">On Hold</option>
+                <option value="Completed">Completed ✓</option>
+                <option value="Deployed">Deployed</option>
+                <option value="Maintenance">Maintenance</option>
+                <option value="Archived">Archived</option>
+              </select>
+              <span>•</span>
               <span className="status-indicator">
                 <span
                   className={`status-dot ${
@@ -303,6 +338,46 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
 
           {/* Action Buttons */}
           <div className="flex items-center gap-2">
+            {project.status !== 'Completed' ? (
+              <button
+                onClick={() => {
+                  updateProject(project.id, { status: 'Completed', progress: 100 });
+                }}
+                className="btn btn-secondary btn-sm"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  borderColor: 'var(--status-healthy)',
+                  color: 'var(--status-healthy)',
+                  fontWeight: 600,
+                }}
+                title="Mark this project as Completed"
+              >
+                <CheckCircle2 size={13} />
+                <span>Mark Completed</span>
+              </button>
+            ) : (
+              <button
+                onClick={() => {
+                  updateProject(project.id, { status: 'Active' });
+                }}
+                className="btn btn-secondary btn-sm"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  background: 'rgba(16, 185, 129, 0.12)',
+                  borderColor: 'var(--status-healthy)',
+                  color: 'var(--status-healthy)',
+                  fontWeight: 600,
+                }}
+                title="Project is Completed (click to reopen as Active)"
+              >
+                <CheckCircle2 size={13} />
+                <span>✓ Completed</span>
+              </button>
+            )}
             <button onClick={() => setQuickCreateOpen(true)} className="btn btn-primary btn-sm">
               <Plus size={14} />
               <span>Add Task</span>
