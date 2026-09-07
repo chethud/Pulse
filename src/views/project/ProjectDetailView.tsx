@@ -1235,14 +1235,18 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                             className="btn btn-secondary btn-sm"
                             style={{
                               fontSize: '0.72rem',
-                              padding: '0.25rem 0.6rem',
+                              padding: '0.25rem 0.65rem',
                               display: 'inline-flex',
                               alignItems: 'center',
                               gap: '4px',
+                              color: '#38bdf8',
+                              borderColor: 'rgba(56, 189, 248, 0.35)',
+                              background: 'rgba(56, 189, 248, 0.08)',
+                              fontWeight: 600,
                             }}
                             title="Mark this module as 100% Completed"
                           >
-                            <CheckCircle2 size={12} />
+                            <CheckCircle2 size={12} style={{ color: '#38bdf8' }} />
                             <span>Mark Complete</span>
                           </button>
                         ) : (
@@ -1256,17 +1260,18 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                             className="btn btn-secondary btn-sm"
                             style={{
                               fontSize: '0.72rem',
-                              padding: '0.25rem 0.6rem',
+                              padding: '0.25rem 0.65rem',
                               display: 'inline-flex',
                               alignItems: 'center',
                               gap: '4px',
-                              borderColor: 'var(--status-healthy)',
-                              color: 'var(--status-healthy)',
-                              background: 'rgba(16, 185, 129, 0.1)',
+                              borderColor: 'rgba(16, 185, 129, 0.5)',
+                              color: '#34d399',
+                              background: 'rgba(16, 185, 129, 0.16)',
+                              fontWeight: 700,
                             }}
                             title="Module is Completed. Click to reopen as In Progress"
                           >
-                            <CheckCircle2 size={12} />
+                            <CheckCircle2 size={12} style={{ color: '#34d399' }} />
                             <span>✓ Completed</span>
                           </button>
                         )}

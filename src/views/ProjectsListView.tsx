@@ -247,18 +247,19 @@ export const ProjectsListView: React.FC = () => {
                           className="btn btn-secondary btn-sm"
                           style={{
                             height: '24px',
-                            padding: '0 7px',
+                            padding: '0 8px',
                             fontSize: '0.7rem',
                             display: 'inline-flex',
                             alignItems: 'center',
-                            gap: '3px',
-                            color: 'var(--status-healthy)',
-                            borderColor: 'rgba(16, 185, 129, 0.4)',
+                            gap: '4px',
+                            color: '#38bdf8',
+                            borderColor: 'rgba(56, 189, 248, 0.35)',
+                            background: 'rgba(56, 189, 248, 0.08)',
                             fontWeight: 600,
                           }}
                           title="Mark project Completed"
                         >
-                          <CheckCircle2 size={11} />
+                          <CheckCircle2 size={11} style={{ color: '#38bdf8' }} />
                           <span>Complete</span>
                         </button>
                       ) : (
@@ -267,19 +268,19 @@ export const ProjectsListView: React.FC = () => {
                           className="btn btn-secondary btn-sm"
                           style={{
                             height: '24px',
-                            padding: '0 6px',
-                            fontSize: '0.68rem',
+                            padding: '0 8px',
+                            fontSize: '0.7rem',
                             display: 'inline-flex',
                             alignItems: 'center',
-                            gap: '3px',
-                            background: 'rgba(16, 185, 129, 0.12)',
-                            color: 'var(--status-healthy)',
-                            borderColor: 'var(--status-healthy)',
+                            gap: '4px',
+                            background: 'rgba(16, 185, 129, 0.16)',
+                            color: '#34d399',
+                            borderColor: 'rgba(16, 185, 129, 0.5)',
                             fontWeight: 700,
                           }}
                           title="Project is Completed (click to reopen as Active)"
                         >
-                          <CheckCircle2 size={11} />
+                          <CheckCircle2 size={11} style={{ color: '#34d399' }} />
                           <span>✓ Done</span>
                         </button>
                       )}
