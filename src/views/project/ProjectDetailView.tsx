@@ -565,200 +565,275 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
               </div>
             </div>
 
-            {/* Cloud & Hosting Infrastructure Summary */}
-            <div
-              className="admark-card"
-              style={{
-                padding: '0.65rem 1rem',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                flexWrap: 'wrap',
-                gap: '0.75rem',
-                fontSize: '0.78rem',
-                background: 'rgba(255, 255, 255, 0.02)',
-              }}
-            >
-              <div className="flex items-center gap-4 flex-wrap">
-                {/* Git Account */}
-                <div className="flex items-center gap-1.5" title="Connected Git Repository Account">
-                  <GitBranch size={13} style={{ color: 'var(--brand-crimson)' }} />
-                  <span style={{ color: 'var(--text-muted)', fontSize: '0.72rem' }}>Git Org:</span>
-                  <strong style={{ color: project.gitAccount ? 'var(--text-primary)' : 'var(--text-muted)', fontFamily: 'var(--font-mono)', fontSize: '0.75rem' }}>
-                    {project.gitAccount || (project.repositoryUrl ? project.repositoryUrl.replace(/^https?:\/\//, '') : 'Not configured')}
-                  </strong>
-                </div>
-
-                <span style={{ color: 'var(--border-subtle)', opacity: 0.6 }}>|</span>
-
-                {/* Vercel Account */}
-                <div className="flex items-center gap-1.5" title="Vercel Hosting Account">
-                  <Globe size={13} style={{ color: '#38bdf8' }} />
-                  <span style={{ color: 'var(--text-muted)', fontSize: '0.72rem' }}>Vercel:</span>
-                  <strong style={{ color: project.vercelAccount ? 'var(--text-primary)' : 'var(--text-muted)', fontSize: '0.75rem' }}>
-                    {project.vercelAccount || 'Not configured'}
-                  </strong>
-                </div>
-
-                <span style={{ color: 'var(--border-subtle)', opacity: 0.6 }}>|</span>
-
-                {/* Cloud & Database Provider: Supabase or AWS */}
-                <div className="flex items-center gap-1.5" title="Backend & Database Platform">
-                  <Database size={13} style={{ color: project.backendProvider === 'AWS' ? '#fbbf24' : '#34d399' }} />
-                  <span style={{ color: 'var(--text-muted)', fontSize: '0.72rem' }}>Backend:</span>
-                  <span
-                    className="badge"
-                    style={{
-                      fontSize: '0.68rem',
-                      padding: '1px 6px',
-                      background: project.backendProvider === 'AWS' ? 'rgba(251, 191, 36, 0.14)' : 'rgba(52, 211, 153, 0.14)',
-                      color: project.backendProvider === 'AWS' ? '#fbbf24' : '#34d399',
-                      borderColor: project.backendProvider === 'AWS' ? 'rgba(251, 191, 36, 0.35)' : 'rgba(52, 211, 153, 0.35)',
-                      fontWeight: 600,
-                    }}
-                  >
-                    {project.backendProvider || 'Supabase'}
-                  </span>
-                  {project.backendAccount && (
-                    <span style={{ color: 'var(--text-secondary)', fontSize: '0.72rem' }}>
-                      ({project.backendAccount})
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              <button
-                onClick={() => setCurrentTab('settings')}
-                className="btn btn-ghost btn-sm"
-                style={{ fontSize: '0.72rem', height: '24px', padding: '0 8px', color: 'var(--brand-crimson)' }}
+            {/* Delivery setup: cloud stack + assigned team */}
+            <div className="admark-card" style={{ overflow: 'hidden' }}>
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+                  gap: 0,
+                }}
               >
-                <SettingsIcon size={12} />
-                <span>Configure Cloud & Hosting</span>
-              </button>
-            </div>
-
-            {/* Development Assignment Card (Who the project is assigned to for development) */}
-            <div
-              className="admark-card"
-              style={{
-                padding: '0.85rem 1.25rem',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                flexWrap: 'wrap',
-                gap: '1rem',
-                borderLeft: '3px solid var(--brand-crimson)',
-                background: 'linear-gradient(90deg, rgba(230, 57, 70, 0.06) 0%, rgba(255, 255, 255, 0.02) 100%)',
-              }}
-            >
-              <div className="flex items-center gap-4 flex-wrap">
-                {/* Lead / Assigned Person Avatar and Info */}
-                <div className="flex items-center gap-3">
-                  <div style={{ position: 'relative' }}>
-                    <img
-                      src={leadPerson?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'}
-                      alt={leadPerson?.name}
-                      style={{
-                        width: '40px',
-                        height: '40px',
-                        borderRadius: '50%',
-                        objectFit: 'cover',
-                        border: '2px solid var(--brand-crimson)',
-                      }}
-                    />
-                    <div
-                      style={{
-                        position: 'absolute',
-                        bottom: 0,
-                        right: 0,
-                        width: '10px',
-                        height: '10px',
-                        borderRadius: '50%',
-                        backgroundColor: '#10b981',
-                        border: '2px solid var(--bg-card)',
-                      }}
-                      title="Active"
-                    />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                        {leadPerson?.name || 'Unassigned'}
-                      </span>
-                      <span
-                        className="badge"
-                        style={{
-                          fontSize: '0.65rem',
-                          padding: '1px 6px',
-                          background: 'rgba(230, 57, 70, 0.14)',
-                          color: 'var(--brand-crimson)',
-                          borderColor: 'rgba(230, 57, 70, 0.35)',
-                          fontWeight: 700,
-                          textTransform: 'uppercase',
-                        }}
-                      >
-                        Assigned Lead
-                      </span>
+                {/* Cloud & Hosting */}
+                <div
+                  style={{
+                    padding: '1rem 1.15rem',
+                    borderRight: '1px solid var(--border-subtle)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0.75rem',
+                    minWidth: 0,
+                  }}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <div style={{ fontSize: '0.6875rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                      Cloud & Hosting
                     </div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
-                      <span>{leadPerson?.title || 'Team Member'}</span>
-                      {leadPerson?.department && <span> • {leadPerson.department}</span>}
-                      {leadPerson?.email && <span style={{ color: 'var(--text-muted)' }}> ({leadPerson.email})</span>}
-                    </div>
+                    <button
+                      onClick={() => setCurrentTab('settings')}
+                      className="btn btn-ghost btn-sm"
+                      style={{ fontSize: '0.7rem', height: '22px', padding: '0 6px', color: 'var(--text-secondary)' }}
+                    >
+                      <SettingsIcon size={11} />
+                      <span>Configure</span>
+                    </button>
                   </div>
-                </div>
 
-                {/* Supporting Team Members */}
-                {project.teamMemberIds && project.teamMemberIds.length > 0 && (
                   <div
                     style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      paddingLeft: '1.25rem',
-                      borderLeft: '1px solid var(--border-subtle)',
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+                      gap: '0.55rem',
                     }}
                   >
-                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                      Team Members:
-                    </span>
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      {assignableUsers
-                        .filter((u) => project.teamMemberIds?.includes(u.id) && u.id !== leadPerson?.id)
-                        .map((u) => (
-                          <div
-                            key={u.id}
-                            className="flex items-center gap-1.5"
+                    {[
+                      {
+                        key: 'git',
+                        label: 'Git Org',
+                        value: project.gitAccount || (project.repositoryUrl ? project.repositoryUrl.replace(/^https?:\/\//, '') : 'Not set'),
+                        icon: <GitBranch size={14} />,
+                        accent: 'var(--brand-crimson)',
+                        accentBg: 'rgba(225, 29, 72, 0.12)',
+                      },
+                      {
+                        key: 'vercel',
+                        label: 'Vercel',
+                        value: project.vercelAccount || 'Not set',
+                        icon: <Globe size={14} />,
+                        accent: '#38bdf8',
+                        accentBg: 'rgba(56, 189, 248, 0.12)',
+                      },
+                      {
+                        key: 'backend',
+                        label: 'Backend',
+                        value: project.backendProvider
+                          ? `${project.backendProvider}${project.backendAccount ? ` · ${project.backendAccount}` : ''}`
+                          : 'Not set',
+                        icon: <Database size={14} />,
+                        accent: project.backendProvider === 'AWS' ? '#fbbf24' : '#34d399',
+                        accentBg:
+                          project.backendProvider === 'AWS'
+                            ? 'rgba(251, 191, 36, 0.12)'
+                            : 'rgba(52, 211, 153, 0.12)',
+                      },
+                    ].map((item) => (
+                      <div
+                        key={item.key}
+                        style={{
+                          padding: '0.65rem 0.7rem',
+                          borderRadius: 'var(--radius-md)',
+                          background: 'var(--bg-app)',
+                          border: '1px solid var(--border-subtle)',
+                          minWidth: 0,
+                        }}
+                        title={item.value}
+                      >
+                        <div className="flex items-center gap-1.5" style={{ marginBottom: '0.35rem' }}>
+                          <span
                             style={{
-                              padding: '2px 8px',
-                              borderRadius: '4px',
-                              background: 'var(--bg-elevated)',
-                              border: '1px solid var(--border-subtle)',
-                              fontSize: '0.72rem',
-                              color: 'var(--text-secondary)',
+                              width: '22px',
+                              height: '22px',
+                              borderRadius: '5px',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              background: item.accentBg,
+                              color: item.accent,
+                              flexShrink: 0,
                             }}
-                            title={`${u.name} (${u.title || 'Team Member'})`}
                           >
-                            <img
-                              src={u.avatar}
-                              alt={u.name}
-                              style={{ width: '15px', height: '15px', borderRadius: '50%', objectFit: 'cover' }}
-                            />
-                            <span>{u.name}</span>
-                          </div>
-                        ))}
+                            {item.icon}
+                          </span>
+                          <span style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                            {item.label}
+                          </span>
+                        </div>
+                        <div
+                          style={{
+                            fontSize: '0.78rem',
+                            fontWeight: 600,
+                            color: item.value === 'Not set' ? 'var(--text-muted)' : 'var(--text-primary)',
+                            fontFamily: item.key === 'git' ? 'var(--font-mono)' : 'inherit',
+                            lineHeight: 1.35,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          {item.value}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Assigned Team */}
+                <div
+                  style={{
+                    padding: '1rem 1.15rem',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0.75rem',
+                    minWidth: 0,
+                    background: 'linear-gradient(135deg, rgba(225, 29, 72, 0.04) 0%, transparent 55%)',
+                  }}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <div style={{ fontSize: '0.6875rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                      Assigned Team
+                    </div>
+                    <button
+                      onClick={() => setCurrentTab('settings')}
+                      className="btn btn-ghost btn-sm"
+                      style={{ fontSize: '0.7rem', height: '22px', padding: '0 6px', color: 'var(--text-secondary)' }}
+                    >
+                      <UserCheck size={11} />
+                      <span>Manage</span>
+                    </button>
+                  </div>
+
+                  <div className="flex items-center gap-3" style={{ minWidth: 0 }}>
+                    <div style={{ position: 'relative', flexShrink: 0 }}>
+                      <img
+                        src={leadPerson?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'}
+                        alt={leadPerson?.name || 'Unassigned'}
+                        style={{
+                          width: '44px',
+                          height: '44px',
+                          borderRadius: '50%',
+                          objectFit: 'cover',
+                          border: '2px solid var(--brand-crimson)',
+                        }}
+                      />
+                      <span
+                        style={{
+                          position: 'absolute',
+                          bottom: 1,
+                          right: 1,
+                          width: '10px',
+                          height: '10px',
+                          borderRadius: '50%',
+                          backgroundColor: 'var(--status-healthy)',
+                          border: '2px solid var(--bg-card)',
+                        }}
+                      />
+                    </div>
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-primary)' }} className="truncate">
+                          {leadPerson?.name || 'Unassigned'}
+                        </span>
+                        <span
+                          className="badge"
+                          style={{
+                            fontSize: '0.62rem',
+                            padding: '1px 6px',
+                            background: 'rgba(225, 29, 72, 0.14)',
+                            color: 'var(--brand-crimson)',
+                            borderColor: 'rgba(225, 29, 72, 0.3)',
+                            fontWeight: 700,
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.03em',
+                          }}
+                        >
+                          Lead
+                        </span>
+                      </div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '2px' }} className="truncate">
+                        {[leadPerson?.title, leadPerson?.department].filter(Boolean).join(' · ') || 'No lead assigned'}
+                      </div>
+                      {leadPerson?.email && (
+                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '1px', fontFamily: 'var(--font-mono)' }} className="truncate">
+                          {leadPerson.email}
+                        </div>
+                      )}
                     </div>
                   </div>
-                )}
-              </div>
 
-              {/* Right: Project Assignment Scope Badge */}
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: '0.65rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  Project Assignment
-                </div>
-                <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                  Assigned Team & Delivery
+                  {(() => {
+                    const supporting = assignableUsers.filter(
+                      (u) => project.teamMemberIds?.includes(u.id) && u.id !== leadPerson?.id
+                    );
+                    if (supporting.length === 0) {
+                      return (
+                        <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                          No supporting team members yet.
+                        </div>
+                      );
+                    }
+                    return (
+                      <div className="flex items-center gap-2.5" style={{ minWidth: 0 }}>
+                        <div className="flex items-center" style={{ paddingLeft: '2px' }}>
+                          {supporting.slice(0, 5).map((u, idx) => (
+                            <img
+                              key={u.id}
+                              src={u.avatar}
+                              alt={u.name}
+                              title={`${u.name}${u.title ? ` · ${u.title}` : ''}`}
+                              style={{
+                                width: '24px',
+                                height: '24px',
+                                borderRadius: '50%',
+                                objectFit: 'cover',
+                                border: '2px solid var(--bg-card)',
+                                marginLeft: idx === 0 ? 0 : '-8px',
+                                position: 'relative',
+                                zIndex: 5 - idx,
+                              }}
+                            />
+                          ))}
+                          {supporting.length > 5 && (
+                            <span
+                              style={{
+                                width: '24px',
+                                height: '24px',
+                                borderRadius: '50%',
+                                marginLeft: '-8px',
+                                background: 'var(--bg-elevated)',
+                                border: '2px solid var(--bg-card)',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontSize: '0.62rem',
+                                fontWeight: 700,
+                                color: 'var(--text-secondary)',
+                              }}
+                            >
+                              +{supporting.length - 5}
+                            </span>
+                          )}
+                        </div>
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                            {supporting.length} team member{supporting.length === 1 ? '' : 's'}
+                          </div>
+                          <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }} className="truncate">
+                            {supporting.map((u) => u.name.split(' ')[0]).join(', ')}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
             </div>

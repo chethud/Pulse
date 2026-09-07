@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useLayoutEffect, useRef } from 'react';
 import { useApp } from './context/AppContext';
 import { Header } from './components/layout/Header';
 import { Sidebar } from './components/layout/Sidebar';
@@ -30,6 +30,15 @@ export function AppContent() {
   } = useApp();
 
   const [projectTab, setProjectTab] = useState<string>('overview');
+  const prevProjectIdRef = useRef<string | null>(null);
+
+  // Land on Overview whenever a different project is opened (e.g. from My Work)
+  useLayoutEffect(() => {
+    if (selectedProjectId && selectedProjectId !== prevProjectIdRef.current) {
+      setProjectTab('overview');
+    }
+    prevProjectIdRef.current = selectedProjectId;
+  }, [selectedProjectId]);
 
   // If user is not signed in, show the login screen
   if (!isAuthenticated) {

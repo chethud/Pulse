@@ -6,7 +6,6 @@ import {
   Moon,
   Sun,
   ChevronDown,
-  Settings,
   User,
   RotateCcw,
   LogOut,
@@ -414,43 +413,50 @@ export const Header: React.FC = () => {
                 padding: '0.4rem',
               }}
             >
-              {/* User summary */}
-              <div style={{ padding: '0.5rem 0.65rem', borderBottom: '1px solid var(--border-subtle)' }}>
+              {/* User summary — click opens Settings */}
+              <button
+                type="button"
+                onClick={() => {
+                  if (!isPhotoAdmin) {
+                    setSelectedProjectId(null);
+                    setCurrentView('settings');
+                  }
+                  setUserMenuOpen(false);
+                }}
+                style={{
+                  display: 'block',
+                  width: '100%',
+                  padding: '0.5rem 0.65rem',
+                  border: 'none',
+                  borderBottom: '1px solid var(--border-subtle)',
+                  background: 'transparent',
+                  cursor: isPhotoAdmin ? 'default' : 'pointer',
+                  textAlign: 'left',
+                }}
+                title={isPhotoAdmin ? undefined : 'Open Settings'}
+              >
                 <div style={{ fontWeight: 600, fontSize: '0.8125rem', color: 'var(--text-primary)' }}>
                   {currentUser.name}
                 </div>
                 <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
                   {currentUser.email}
                 </div>
-              </div>
+              </button>
 
               {/* Standard Links */}
               <div style={{ padding: '0.25rem 0', borderBottom: '1px solid var(--border-subtle)' }}>
                 {!isPhotoAdmin && (
-                  <>
-                    <button
-                      onClick={() => {
-                        setCurrentView('my-work');
-                        setUserMenuOpen(false);
-                      }}
-                      className="btn btn-ghost btn-sm"
-                      style={{ width: '100%', justifyContent: 'flex-start', padding: '0.4rem 0.65rem' }}
-                    >
-                      <User size={13} />
-                      <span>My Work</span>
-                    </button>
-                    <button
-                      onClick={() => {
-                        setCurrentView('settings');
-                        setUserMenuOpen(false);
-                      }}
-                      className="btn btn-ghost btn-sm"
-                      style={{ width: '100%', justifyContent: 'flex-start', padding: '0.4rem 0.65rem' }}
-                    >
-                      <Settings size={13} />
-                      <span>Preferences</span>
-                    </button>
-                  </>
+                  <button
+                    onClick={() => {
+                      setCurrentView('my-work');
+                      setUserMenuOpen(false);
+                    }}
+                    className="btn btn-ghost btn-sm"
+                    style={{ width: '100%', justifyContent: 'flex-start', padding: '0.4rem 0.65rem' }}
+                  >
+                    <User size={13} />
+                    <span>My Work</span>
+                  </button>
                 )}
                 {canManageProfilePhotos && (
                   <button

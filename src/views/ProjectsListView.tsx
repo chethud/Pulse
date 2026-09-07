@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import {
   Plus,
   Search,
-  ChevronRight,
   Trash2,
   ShieldAlert,
   X,
@@ -32,8 +31,6 @@ export const ProjectsListView: React.FC = () => {
   const {
     projects,
     clients,
-    users,
-    currentUser,
     canDelete,
     isSuperAdmin,
     setSelectedProjectId,
@@ -153,27 +150,17 @@ export const ProjectsListView: React.FC = () => {
         <table className="admark-table">
           <thead>
             <tr>
-              <th style={{ width: '26%' }}>Project</th>
-              <th style={{ width: '16%' }}>Client</th>
-              <th style={{ width: '14%' }}>Assigned Developer</th>
-              <th style={{ width: '12%' }}>Progress</th>
-              <th style={{ width: '10%' }}>Health</th>
-              <th style={{ width: '10%', textAlign: 'right' }}>Deadline</th>
+              <th style={{ width: '30%' }}>Project</th>
+              <th style={{ width: '20%' }}>Client</th>
+              <th style={{ width: '14%' }}>Progress</th>
+              <th style={{ width: '12%' }}>Health</th>
+              <th style={{ width: '12%', textAlign: 'right' }}>Deadline</th>
               <th style={{ width: '12%', textAlign: 'center' }}>Actions</th>
             </tr>
           </thead>
           <tbody>
             {filteredProjects.map((proj) => {
               const client = clients.find((c) => c.id === proj.clientId);
-              const devUsers = users.filter(
-                (u) =>
-                  u.department === 'Engineering' ||
-                  (u.department !== 'Leadership' && !['CEO', 'COO', 'CFO'].includes(u.title || '') && u.role !== 'SUPERADMIN' && u.role !== 'ADMIN')
-              );
-              const assignedDev =
-                devUsers.find((u) => u.id === proj.projectManagerId) ||
-                devUsers.find((u) => proj.teamMemberIds?.includes(u.id)) ||
-                devUsers[0];
               const deadlineUrgent =
                 proj.status !== 'Completed' && isDeadlineWithin15Days(proj.deadline);
 
@@ -211,17 +198,6 @@ export const ProjectsListView: React.FC = () => {
 
                   <td style={{ color: 'var(--text-secondary)', fontSize: '0.78rem' }}>
                     {client?.name || 'Enterprise'}
-                  </td>
-
-                  <td>
-                    <div className="flex items-center gap-1.5">
-                      <img
-                        src={assignedDev?.avatar}
-                        alt={assignedDev?.name}
-                        style={{ width: '18px', height: '18px', borderRadius: '50%', objectFit: 'cover' }}
-                      />
-                      <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>{assignedDev?.name}</span>
-                    </div>
                   </td>
 
                   <td>

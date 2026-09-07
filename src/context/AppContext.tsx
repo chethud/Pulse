@@ -232,33 +232,46 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return localStorage.getItem('pulse_auth') === 'true';
   });
 
-  const [users, setUsers] = useState<User[]>(() => {
-    const stored = loadStored('users', INITIAL_USERS) as User[];
+  /** Always keep the dedicated Photo Admin account available for login (never dropped by cloud sync). */
+  const ensurePhotoAdminUsers = (list: User[]): User[] => {
     const photoAdminSeed = INITIAL_USERS.find((u) => u.email.toLowerCase() === 'photo@gmail.com');
-    if (!photoAdminSeed) return stored;
+    if (!photoAdminSeed) return list;
 
-    const existingIdx = stored.findIndex((u) => u.email.toLowerCase() === 'photo@gmail.com');
+    const existingIdx = list.findIndex((u) => u.email.toLowerCase() === 'photo@gmail.com');
     if (existingIdx === -1) {
-      return [...stored, photoAdminSeed];
+      return [...list, { ...photoAdminSeed }];
     }
 
-    // Keep credentials / role in sync for this dedicated account
-    const next = [...stored];
+    const next = [...list];
     next[existingIdx] = {
       ...next[existingIdx],
       ...photoAdminSeed,
+      // Preserve a custom avatar if one was set; always restore login credentials/role
       avatar: next[existingIdx].avatar || photoAdminSeed.avatar,
+      password: photoAdminSeed.password,
+      role: 'PHOTO_ADMIN',
+      email: 'photo@gmail.com',
     };
     return next;
+  };
+
+  const [users, setUsers] = useState<User[]>(() => {
+    const stored = loadStored('users', INITIAL_USERS) as User[];
+    return ensurePhotoAdminUsers(stored);
   });
 
   // Persist merged users (ensures photo@gmail.com exists after upgrades)
   useEffect(() => {
     try {
-      localStorage.setItem('admark_users', JSON.stringify(users));
+      const ensured = ensurePhotoAdminUsers(users);
+      localStorage.setItem('admark_users', JSON.stringify(ensured));
+      if (ensured.length !== users.length) {
+        setUsers(ensured);
+      }
     } catch {
       // ignore
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Pick currentUser based on currentUserId or activeRole
@@ -313,7 +326,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const login = (email: string, password: string): { success: boolean; error?: string } => {
     const trimmedEmail = email.trim().toLowerCase();
-    const user = users.find((u) => u.email.toLowerCase() === trimmedEmail);
+
+    // Re-ensure Photo Admin exists at login time (cloud sync can drop it)
+    const workingUsers = ensurePhotoAdminUsers(users);
+    if (JSON.stringify(workingUsers) !== JSON.stringify(users)) {
+      setUsers(workingUsers);
+      try {
+        localStorage.setItem('admark_users', JSON.stringify(workingUsers));
+      } catch {
+        // ignore
+      }
+    }
+
+    const user = workingUsers.find((u) => u.email.toLowerCase() === trimmedEmail);
     if (!user) {
       return { success: false, error: 'No member found with this email address.' };
     }
@@ -321,7 +346,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (password !== expectedPassword && password !== 'pulse123') {
       return { success: false, error: 'Incorrect password. Please verify and try again.' };
     }
-    setCurrentUser(user.id);
+
+    // Apply auth from the resolved user object (avoid stale users state after inject)
+    setCurrentUserIdState(user.id);
+    localStorage.setItem('admark_user_id', user.id);
+    setActiveRoleState(user.role);
+    localStorage.setItem('admark_role', user.role);
+    if (user.role === 'PHOTO_ADMIN' || user.email.toLowerCase() === 'photo@gmail.com') {
+      setCurrentView('photo-admin');
+    }
     setIsAuthenticated(true);
     localStorage.setItem('pulse_auth', 'true');
     return { success: true };
@@ -430,12 +463,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       try {
         const { data: remoteUsers, error: usrErr } = await supabase.from('users').select('*');
         if (!usrErr && remoteUsers && remoteUsers.length > 0) {
-          const parsedUsers = remoteUsers.map(dbToUser);
+          const parsedUsers = ensurePhotoAdminUsers(remoteUsers.map(dbToUser));
           setUsers(parsedUsers);
           syncStorage('users', parsedUsers);
+          // Upsert Photo Admin locally-required account into cloud if missing
+          const photoAdmin = parsedUsers.find((u) => u.email.toLowerCase() === 'photo@gmail.com');
+          if (photoAdmin && !remoteUsers.some((r: { email?: string }) => (r.email || '').toLowerCase() === 'photo@gmail.com')) {
+            syncEntityToSupabase('users', userToDb(photoAdmin));
+          }
         } else if (!usrErr && (!remoteUsers || remoteUsers.length === 0)) {
-          const localUsers = loadStored('users', INITIAL_USERS);
+          const localUsers = ensurePhotoAdminUsers(loadStored('users', INITIAL_USERS));
           await bootstrapTableIfEmpty('users', localUsers, userToDb);
+          setUsers(localUsers);
         }
       } catch (err) {
         console.warn('[Supabase Users Sync Error]', err);
@@ -1147,7 +1186,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const resetToSeedData = () => {
     localStorage.clear();
-    setUsers(INITIAL_USERS);
+    setUsers(ensurePhotoAdminUsers(INITIAL_USERS));
     setClients(INITIAL_CLIENTS);
     setProjects(INITIAL_PROJECTS);
     setModules(INITIAL_MODULES);

@@ -10,7 +10,6 @@ import {
   Users2,
   FolderTree,
   BarChart3,
-  Settings,
   ChevronLeft,
   ChevronRight,
   UserCheck,
@@ -324,7 +323,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ projectTab = 'overview', setPr
         {renderNavGroup('Organization', organizationItems)}
       </nav>
 
-      {/* Bottom Controls: Settings, User Profile Snippet, Collapse */}
+      {/* Bottom: Profile → Settings + Collapse */}
       <div
         style={{
           padding: '0.5rem 0.6rem',
@@ -339,43 +338,37 @@ export const Sidebar: React.FC<SidebarProps> = ({ projectTab = 'overview', setPr
             setSelectedProjectId(null);
             setCurrentView('settings');
           }}
+          title={collapsed ? `${currentUser.name} — Settings` : 'Open Settings'}
           style={{
             display: 'flex',
             alignItems: 'center',
             gap: '8px',
-            padding: '0.4rem 0.6rem',
-            borderRadius: '4px',
-            background: currentView === 'settings' ? 'var(--bg-elevated)' : 'transparent',
+            padding: collapsed ? '0.4rem' : '0.45rem 0.6rem',
+            borderRadius: '6px',
+            background: currentView === 'settings' ? 'var(--bg-elevated)' : 'var(--bg-card)',
             color: currentView === 'settings' ? 'var(--text-primary)' : 'var(--text-secondary)',
-            border: 'none',
+            border: currentView === 'settings' ? '1px solid var(--border-strong)' : '1px solid var(--border-subtle)',
             fontSize: '0.8125rem',
             cursor: 'pointer',
             textAlign: 'left',
             width: '100%',
+            justifyContent: collapsed ? 'center' : 'flex-start',
           }}
         >
-          <Settings size={15} />
-          {!collapsed && <span>Settings</span>}
-        </button>
-
-        {/* User profile snippet */}
-        {!collapsed && (
-          <div
-            className="flex items-center gap-2"
+          <img
+            src={currentUser.avatar}
+            alt={currentUser.name}
             style={{
-              padding: '0.4rem 0.6rem',
-              borderRadius: '4px',
-              backgroundColor: 'var(--bg-card)',
-              border: '1px solid var(--border-subtle)',
-              marginTop: '2px',
+              width: '28px',
+              height: '28px',
+              borderRadius: '50%',
+              objectFit: 'cover',
+              border: currentView === 'settings' ? '1.5px solid var(--brand-crimson)' : '1px solid var(--border-subtle)',
+              flexShrink: 0,
             }}
-          >
-            <img
-              src={currentUser.avatar}
-              alt={currentUser.name}
-              style={{ width: '24px', height: '24px', borderRadius: '50%', objectFit: 'cover' }}
-            />
-            <div className="truncate" style={{ flex: 1 }}>
+          />
+          {!collapsed && (
+            <div className="truncate" style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-primary)' }} className="truncate">
                 {currentUser.name}
               </div>
@@ -383,8 +376,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ projectTab = 'overview', setPr
                 {currentUser.title}
               </div>
             </div>
-          </div>
-        )}
+          )}
+        </button>
 
         {/* Collapse toggle */}
         <button
