@@ -30,7 +30,6 @@ export const ClientsView: React.FC = () => {
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [location, setLocation] = useState('London, UK');
-  const [paymentTerms, setPaymentTerms] = useState('Net 30');
   const [notes, setNotes] = useState('');
 
   const filteredClients = clients.filter((c) => {
@@ -62,7 +61,6 @@ export const ClientsView: React.FC = () => {
       contractDetails: {
         startDate: new Date().toISOString().split('T')[0],
       },
-      paymentTerms,
       notes: notes || 'New enterprise client partnership.',
       contacts: [
         {
@@ -227,45 +225,14 @@ export const ClientsView: React.FC = () => {
                   </h2>
                   <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
                     {selectedClient.industry} • {selectedClient.location}
+                    {selectedClient.contractDetails?.startDate && (
+                      <> • Partner since {selectedClient.contractDetails.startDate}</>
+                    )}
                   </div>
                 </div>
               </div>
 
               <span className="badge badge-healthy">{selectedClient.status}</span>
-            </div>
-
-            {/* Commercial Contract Details */}
-            <div
-              style={{
-                padding: '0.875rem',
-                borderRadius: '0.5rem',
-                background: 'var(--bg-app)',
-                border: '1px solid var(--border-subtle)',
-              }}
-            >
-              <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.5rem' }}>
-                Commercial Engagement
-              </div>
-              <div className="grid grid-cols-2 gap-2" style={{ fontSize: '0.8125rem' }}>
-                <div>
-                  <span style={{ color: 'var(--text-muted)' }}>Contract Type:</span>
-                  <div style={{ fontWeight: 600 }}>{selectedClient.contractDetails?.type || 'N/A'}</div>
-                </div>
-                <div>
-                  <span style={{ color: 'var(--text-muted)' }}>Contract Value:</span>
-                  <div style={{ fontWeight: 700, color: 'var(--status-healthy)' }}>
-                    {selectedClient.contractDetails?.value || 'N/A'}
-                  </div>
-                </div>
-                <div>
-                  <span style={{ color: 'var(--text-muted)' }}>Payment Terms:</span>
-                  <div style={{ fontWeight: 600 }}>{selectedClient.paymentTerms || 'N/A'}</div>
-                </div>
-                <div>
-                  <span style={{ color: 'var(--text-muted)' }}>Start Date:</span>
-                  <div style={{ fontWeight: 600 }}>{selectedClient.contractDetails?.startDate || 'N/A'}</div>
-                </div>
-              </div>
             </div>
 
             {/* Client Contacts */}

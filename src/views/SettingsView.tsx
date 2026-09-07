@@ -65,7 +65,7 @@ export const SettingsView: React.FC = () => {
             <thead>
               <tr style={{ background: 'var(--bg-elevated)', borderBottom: '1px solid var(--border-subtle)' }}>
                 <th style={{ padding: '0.6rem 0.75rem' }}>Role</th>
-                <th style={{ padding: '0.6rem 0.75rem' }}>Projects & Financials</th>
+                <th style={{ padding: '0.6rem 0.75rem' }}>Projects & Delivery</th>
                 <th style={{ padding: '0.6rem 0.75rem' }}>Tasks & Code</th>
                 <th style={{ padding: '0.6rem 0.75rem' }}>Bugs & QA</th>
                 <th style={{ padding: '0.6rem 0.75rem' }}>Releases & Deploy</th>
@@ -75,11 +75,11 @@ export const SettingsView: React.FC = () => {
             <tbody>
               {[
                 { role: 'Super Admin', fin: 'Full Access', code: 'Full Access', qa: 'Full Access', rel: 'Full Access', notes: 'Visible' },
-                { role: 'Project Manager', fin: 'Project Budget', code: 'Manage & Assign', qa: 'Review & Verify', rel: 'Approve Candidate', notes: 'Visible' },
-                { role: 'Team Lead', fin: 'No Access', code: 'Review & Merge', qa: 'Triage & Assign', rel: 'Build & Deploy', notes: 'Visible' },
-                { role: 'Developer', fin: 'No Access', code: 'Commit & Log Time', qa: 'Resolve Defect', rel: 'View Artifacts', notes: 'Visible' },
-                { role: 'QA Tester', fin: 'No Access', code: 'Link Test Run', qa: 'Log & Execute', rel: 'Pass / Fail Gate', notes: 'Visible' },
-                { role: 'Client Portal', fin: 'Invoices Only', code: 'Approved Only', qa: 'UAT Sign-off', rel: 'Acceptance Sign', notes: 'MASKED / HIDDEN' },
+                { role: 'Project Manager', fin: 'Manage Projects', code: 'Manage & Assign', qa: 'Review & Verify', rel: 'Approve Candidate', notes: 'Visible' },
+                { role: 'Team Lead', fin: 'Team Projects', code: 'Review & Merge', qa: 'Triage & Assign', rel: 'Build & Deploy', notes: 'Visible' },
+                { role: 'Developer', fin: 'Assigned Only', code: 'Commit & Log Time', qa: 'Resolve Defect', rel: 'View Artifacts', notes: 'Visible' },
+                { role: 'QA Tester', fin: 'Assigned Only', code: 'Link Test Run', qa: 'Log & Execute', rel: 'Pass / Fail Gate', notes: 'Visible' },
+                { role: 'Client Portal', fin: 'Client Projects', code: 'Approved Only', qa: 'UAT Sign-off', rel: 'Acceptance Sign', notes: 'MASKED / HIDDEN' },
               ].map((row, idx) => (
                 <tr key={idx} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
                   <td style={{ padding: '0.6rem 0.75rem', fontWeight: 700 }}>{row.role}</td>

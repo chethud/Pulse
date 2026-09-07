@@ -94,10 +94,7 @@ export const INITIAL_CLIENTS: Client[] = [
     contractDetails: {
       startDate: '2025-01-15',
       endDate: '2026-12-31',
-      type: 'Retainer',
-      value: '$180,000 / yr',
     },
-    paymentTerms: 'Net 30',
     notes: 'Premium enterprise travel booking agency. High priority on performance and mobile responsiveness.',
     contacts: [
       {
@@ -133,10 +130,7 @@ export const INITIAL_CLIENTS: Client[] = [
     status: 'Active',
     contractDetails: {
       startDate: '2024-11-01',
-      type: 'Fixed Price',
-      value: '$320,000',
     },
-    paymentTerms: 'Milestone Based (30/30/40)',
     notes: 'PCI-DSS certified transaction engine platform. Strict QA and security audits required.',
     contacts: [
       {
@@ -162,10 +156,7 @@ export const INITIAL_CLIENTS: Client[] = [
     status: 'Active',
     contractDetails: {
       startDate: '2025-02-01',
-      type: 'Fixed Price',
-      value: '$95,000',
     },
-    paymentTerms: 'Net 15',
     notes: 'Bespoke luxury safari and heritage tour booking engine with multi-currency checkout.',
     contacts: [
       {
@@ -191,10 +182,7 @@ export const INITIAL_CLIENTS: Client[] = [
     status: 'Active',
     contractDetails: {
       startDate: '2025-03-01',
-      type: 'Fixed Price',
-      value: '$65,000',
     },
-    paymentTerms: 'Net 30',
     notes: 'Immersive guided heritage walks, royal palace tours and AR historical walkthrough app.',
     contacts: [
       {
@@ -220,10 +208,7 @@ export const INITIAL_CLIENTS: Client[] = [
     status: 'Active',
     contractDetails: {
       startDate: '2024-09-15',
-      type: 'Time & Material',
-      value: '$240,000 cap',
     },
-    paymentTerms: 'Bi-weekly Net 15',
     notes: 'Warehouse automation and fleet visibility portal with IoT telematics streaming.',
     contacts: [
       {

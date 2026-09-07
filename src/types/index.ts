@@ -49,10 +49,8 @@ export interface Client {
   contractDetails?: {
     startDate?: string;
     endDate?: string;
-    type?: 'Retainer' | 'Fixed Price' | 'Time & Material';
-    value?: string;
   };
-  paymentTerms: string;
+  paymentTerms?: string;
   notes: string;
   contacts: ClientContact[];
   lastActivity: string;
