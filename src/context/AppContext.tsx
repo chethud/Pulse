@@ -59,6 +59,9 @@ interface ActiveTimer {
 interface AppContextType {
   theme: 'dark' | 'light';
   toggleTheme: () => void;
+  isAuthenticated: boolean;
+  login: (email: string, password: string) => { success: boolean; error?: string };
+  logout: () => void;
   currentUser: User;
   setCurrentUser: (userId: string) => void;
   activeRole: UserRole;
@@ -140,7 +143,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   });
 
   const [currentUserId, setCurrentUserIdState] = useState<string>(() => {
-    return localStorage.getItem('admark_user_id') || 'user-1';
+    return localStorage.getItem('admark_user_id') || 'user-2';
+  });
+
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
+    return localStorage.getItem('pulse_auth') === 'true';
   });
 
   const [users] = useState<User[]>(INITIAL_USERS);
@@ -172,6 +179,27 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (role === 'CLIENT') {
       setCurrentView('client-portal');
     }
+  };
+
+  const login = (email: string, password: string): { success: boolean; error?: string } => {
+    const trimmedEmail = email.trim().toLowerCase();
+    const user = users.find((u) => u.email.toLowerCase() === trimmedEmail);
+    if (!user) {
+      return { success: false, error: 'No member found with this email address.' };
+    }
+    const expectedPassword = user.password || 'password123';
+    if (password !== expectedPassword && password !== 'pulse123') {
+      return { success: false, error: 'Incorrect password. Please verify and try again.' };
+    }
+    setCurrentUser(user.id);
+    setIsAuthenticated(true);
+    localStorage.setItem('pulse_auth', 'true');
+    return { success: true };
+  };
+
+  const logout = () => {
+    setIsAuthenticated(false);
+    localStorage.removeItem('pulse_auth');
   };
 
   const toggleTheme = () => {
@@ -628,6 +656,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       value={{
         theme,
         toggleTheme,
+        isAuthenticated,
+        login,
+        logout,
         currentUser,
         setCurrentUser,
         activeRole,

@@ -17,9 +17,11 @@ import { TaskDetailDrawer } from './components/drawers/TaskDetailDrawer';
 import { BugDetailDrawer } from './components/drawers/BugDetailDrawer';
 import { CommandPalette } from './components/common/CommandPalette';
 import { QuickCreateModal } from './components/modals/QuickCreateModal';
+import { LoginView } from './views/LoginView';
 
 export function AppContent() {
   const {
+    isAuthenticated,
     currentView,
     activeRole,
     selectedProjectId,
@@ -27,6 +29,11 @@ export function AppContent() {
   } = useApp();
 
   const [projectTab, setProjectTab] = useState<string>('overview');
+
+  // If user is not signed in, show the login screen
+  if (!isAuthenticated) {
+    return <LoginView />;
+  }
 
   // Determine what view to render
   const renderView = () => {

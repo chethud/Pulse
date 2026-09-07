@@ -9,6 +9,7 @@ import {
   Settings,
   User,
   RotateCcw,
+  LogOut,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { UserRole } from '../../types';
@@ -24,6 +25,7 @@ export const Header: React.FC = () => {
     toggleTheme,
     currentUser,
     setCurrentUser,
+    logout,
     users,
     activeRole,
     setActiveRole,
@@ -422,6 +424,29 @@ export const Header: React.FC = () => {
                     );
                   })}
                 </div>
+              </div>
+
+              {/* Sign Out */}
+              <div style={{ padding: '0.4rem 0.65rem', borderTop: '1px solid var(--border-subtle)' }}>
+                <button
+                  onClick={() => {
+                    setUserMenuOpen(false);
+                    logout();
+                  }}
+                  className="btn btn-ghost btn-sm"
+                  style={{
+                    color: 'var(--status-danger)',
+                    fontSize: '0.75rem',
+                    width: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'flex-start',
+                    gap: '6px',
+                  }}
+                >
+                  <LogOut size={13} />
+                  <span>Sign Out</span>
+                </button>
               </div>
             </div>
           )}

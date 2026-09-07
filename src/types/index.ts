@@ -22,6 +22,7 @@ export interface User {
   clientId?: string; // Set if user is a CLIENT role
   department?: string;
   capacityHoursPerWeek: number;
+  password?: string;
 }
 
 export interface ClientContact {

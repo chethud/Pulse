@@ -32,6 +32,7 @@ export const INITIAL_USERS: User[] = [
     title: 'COO',
     department: 'Leadership',
     capacityHoursPerWeek: 40,
+    password: 'password123',
   },
   {
     id: 'user-2',
@@ -42,6 +43,7 @@ export const INITIAL_USERS: User[] = [
     title: 'CEO',
     department: 'Leadership',
     capacityHoursPerWeek: 40,
+    password: 'password123',
   },
   {
     id: 'user-3',
@@ -52,6 +54,7 @@ export const INITIAL_USERS: User[] = [
     title: 'Developer',
     department: 'Engineering',
     capacityHoursPerWeek: 40,
+    password: 'password123',
   },
   {
     id: 'user-4',
@@ -62,6 +65,7 @@ export const INITIAL_USERS: User[] = [
     title: 'CFO',
     department: 'Leadership',
     capacityHoursPerWeek: 40,
+    password: 'password123',
   },
   {
     id: 'user-5',
@@ -72,6 +76,7 @@ export const INITIAL_USERS: User[] = [
     title: 'Intern',
     department: 'Engineering',
     capacityHoursPerWeek: 40,
+    password: 'password123',
   },
 ];
 
