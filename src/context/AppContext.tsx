@@ -152,7 +152,7 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // One-time load of live production clients and projects
-  const LIVE_DATA_TAG = 'pulse_pm_harshith_v8';
+  const LIVE_DATA_TAG = 'pulse_pm_harshith_v9';
   try {
     if (localStorage.getItem(LIVE_DATA_TAG) !== 'true') {
       localStorage.setItem('admark_clients', JSON.stringify(INITIAL_CLIENTS));
