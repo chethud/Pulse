@@ -1,5 +1,17 @@
 import React, { useState } from 'react';
-import { X, UserPlus, Shield, Lock, Mail, User, Briefcase, Clock, CheckCircle2 } from 'lucide-react';
+import {
+  X,
+  UserPlus,
+  Lock,
+  Mail,
+  User,
+  Briefcase,
+  Clock,
+  Layers,
+  CheckCircle2,
+  Eye,
+  EyeOff,
+} from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { UserRole } from '../../types';
 
@@ -14,6 +26,7 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({ isOpen, 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [title, setTitle] = useState('Developer');
   const [role, setRole] = useState<UserRole>('USER');
   const [department, setDepartment] = useState('Engineering');
@@ -75,48 +88,48 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({ isOpen, 
   };
 
   return (
-    <div className="drawer-backdrop animate-fade-in" onClick={onClose}>
+    <div className="modal-backdrop animate-fade-in" onClick={onClose}>
       <div
         className="admark-card animate-scale-up"
         style={{
           width: '100%',
-          maxWidth: '560px',
+          maxWidth: '620px',
           maxHeight: '90vh',
           overflowY: 'auto',
-          margin: 'auto',
           padding: '1.75rem',
-          position: 'relative',
           backgroundColor: 'var(--bg-card)',
           border: '1px solid var(--border-strong)',
-          boxShadow: '0 20px 45px rgba(0,0,0,0.45)',
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.75)',
+          borderRadius: '12px',
         }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="flex items-center justify-between" style={{ marginBottom: '1.25rem' }}>
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-3">
             <div
               style={{
-                width: '36px',
-                height: '36px',
+                width: '40px',
+                height: '40px',
                 borderRadius: '8px',
                 backgroundColor: 'rgba(230, 57, 70, 0.12)',
                 color: 'var(--brand-crimson)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
+                flexShrink: 0,
               }}
             >
-              <UserPlus size={20} />
+              <UserPlus size={22} />
             </div>
             <div>
               <h2 style={{ fontSize: '1.15rem', fontWeight: 700, margin: 0 }}>Create User Account</h2>
-              <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: 0 }}>
+              <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: 0, marginTop: '2px' }}>
                 Only the CEO can provision team credentials and assign security roles.
               </p>
             </div>
           </div>
-          <button onClick={onClose} className="btn btn-ghost btn-icon">
+          <button onClick={onClose} className="btn btn-ghost btn-icon" style={{ borderRadius: '6px' }}>
             <X size={18} />
           </button>
         </div>
@@ -157,13 +170,17 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({ isOpen, 
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-3.5">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           {/* Full Name */}
           <div>
             <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
               Full Name *
             </label>
-            <div className="relative flex items-center" style={{ marginTop: '4px' }}>
+            <div style={{ position: 'relative', display: 'flex', alignItems: 'center', width: '100%', marginTop: '6px' }}>
+              <User
+                size={15}
+                style={{ position: 'absolute', left: '12px', color: 'var(--text-muted)', pointerEvents: 'none', zIndex: 2 }}
+              />
               <input
                 type="text"
                 required
@@ -171,9 +188,8 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({ isOpen, 
                 onChange={(e) => setName(e.target.value)}
                 placeholder="e.g. Anand Kumar"
                 className="input-field"
-                style={{ paddingLeft: '2.2rem' }}
+                style={{ width: '100%', paddingLeft: '38px', height: '38px', boxSizing: 'border-box' }}
               />
-              <User size={14} style={{ position: 'absolute', left: '0.75rem', color: 'var(--text-muted)' }} />
             </div>
           </div>
 
@@ -183,7 +199,11 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({ isOpen, 
               <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
                 Email Address (Login ID) *
               </label>
-              <div className="relative flex items-center" style={{ marginTop: '4px' }}>
+              <div style={{ position: 'relative', display: 'flex', alignItems: 'center', width: '100%', marginTop: '6px' }}>
+                <Mail
+                  size={15}
+                  style={{ position: 'absolute', left: '12px', color: 'var(--text-muted)', pointerEvents: 'none', zIndex: 2 }}
+                />
                 <input
                   type="email"
                   required
@@ -191,9 +211,8 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({ isOpen, 
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="anand@pulse.dev"
                   className="input-field"
-                  style={{ paddingLeft: '2.2rem' }}
+                  style={{ width: '100%', paddingLeft: '38px', height: '38px', boxSizing: 'border-box' }}
                 />
-                <Mail size={14} style={{ position: 'absolute', left: '0.75rem', color: 'var(--text-muted)' }} />
               </div>
             </div>
 
@@ -201,17 +220,29 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({ isOpen, 
               <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
                 Password *
               </label>
-              <div className="relative flex items-center" style={{ marginTop: '4px' }}>
+              <div style={{ position: 'relative', display: 'flex', alignItems: 'center', width: '100%', marginTop: '6px' }}>
+                <Lock
+                  size={15}
+                  style={{ position: 'absolute', left: '12px', color: 'var(--text-muted)', pointerEvents: 'none', zIndex: 2 }}
+                />
                 <input
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
                   className="input-field"
-                  style={{ paddingLeft: '2.2rem' }}
+                  style={{ width: '100%', paddingLeft: '38px', paddingRight: '36px', height: '38px', boxSizing: 'border-box' }}
                 />
-                <Lock size={14} style={{ position: 'absolute', left: '0.75rem', color: 'var(--text-muted)' }} />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="btn btn-ghost btn-icon"
+                  style={{ position: 'absolute', right: '6px', padding: '4px', width: '28px', height: '28px', color: 'var(--text-muted)' }}
+                  title={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+                </button>
               </div>
             </div>
           </div>
@@ -221,7 +252,7 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({ isOpen, 
             <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
               Security Role *
             </label>
-            <div className="grid grid-cols-3 gap-2" style={{ marginTop: '6px' }}>
+            <div className="grid grid-cols-3 gap-2.5" style={{ marginTop: '6px' }}>
               {[
                 {
                   id: 'SUPERADMIN' as UserRole,
@@ -248,21 +279,22 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({ isOpen, 
                     key={r.id}
                     onClick={() => setRole(r.id)}
                     style={{
-                      padding: '0.75rem',
-                      borderRadius: '6px',
+                      padding: '0.85rem',
+                      borderRadius: '8px',
                       border: isSelected ? '2px solid var(--brand-crimson)' : '1px solid var(--border-subtle)',
-                      backgroundColor: isSelected ? 'rgba(230, 57, 70, 0.06)' : 'var(--bg-app)',
+                      backgroundColor: isSelected ? 'rgba(230, 57, 70, 0.08)' : 'var(--bg-app)',
                       cursor: 'pointer',
                       display: 'flex',
                       flexDirection: 'column',
+                      justifyContent: 'flex-start',
                       gap: '4px',
-                      transition: 'border-color 0.15s',
+                      transition: 'border-color 0.15s, background-color 0.15s',
                     }}
                   >
-                    <div className="flex items-center justify-between">
-                      <span style={{ fontWeight: 700, fontSize: '0.8rem', color: isSelected ? 'var(--brand-crimson)' : 'var(--text-primary)' }}>
-                        {r.title}
-                      </span>
+                    <div style={{ fontWeight: 700, fontSize: '0.82rem', color: isSelected ? 'var(--brand-crimson)' : 'var(--text-primary)' }}>
+                      {r.title}
+                    </div>
+                    <div>
                       <span
                         className={`badge ${
                           r.id === 'SUPERADMIN'
@@ -271,14 +303,14 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({ isOpen, 
                             ? 'badge-warning'
                             : 'badge-neutral'
                         }`}
-                        style={{ fontSize: '0.65rem' }}
+                        style={{ fontSize: '0.62rem', padding: '0.12rem 0.45rem', display: 'inline-block' }}
                       >
                         {r.badge}
                       </span>
                     </div>
-                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', lineHeight: 1.3 }}>
+                    <p style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', margin: 0, marginTop: '4px', lineHeight: 1.35 }}>
                       {r.desc}
-                    </span>
+                    </p>
                   </div>
                 );
               })}
@@ -291,16 +323,19 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({ isOpen, 
               <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
                 Job Title
               </label>
-              <div className="relative flex items-center" style={{ marginTop: '4px' }}>
+              <div style={{ position: 'relative', display: 'flex', alignItems: 'center', width: '100%', marginTop: '6px' }}>
+                <Briefcase
+                  size={15}
+                  style={{ position: 'absolute', left: '12px', color: 'var(--text-muted)', pointerEvents: 'none', zIndex: 2 }}
+                />
                 <input
                   type="text"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="e.g. Senior Backend Engineer"
                   className="input-field"
-                  style={{ paddingLeft: '2.2rem' }}
+                  style={{ width: '100%', paddingLeft: '38px', height: '38px', boxSizing: 'border-box' }}
                 />
-                <Briefcase size={14} style={{ position: 'absolute', left: '0.75rem', color: 'var(--text-muted)' }} />
               </div>
             </div>
 
@@ -308,19 +343,25 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({ isOpen, 
               <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
                 Department
               </label>
-              <select
-                value={department}
-                onChange={(e) => setDepartment(e.target.value)}
-                className="input-field"
-                style={{ marginTop: '4px' }}
-              >
-                <option value="Engineering">Engineering</option>
-                <option value="Design">UI / UX Design</option>
-                <option value="QA">Quality Assurance</option>
-                <option value="Management">Management</option>
-                <option value="Operations">Operations</option>
-                <option value="Finance">Finance</option>
-              </select>
+              <div style={{ position: 'relative', display: 'flex', alignItems: 'center', width: '100%', marginTop: '6px' }}>
+                <Layers
+                  size={15}
+                  style={{ position: 'absolute', left: '12px', color: 'var(--text-muted)', pointerEvents: 'none', zIndex: 2 }}
+                />
+                <select
+                  value={department}
+                  onChange={(e) => setDepartment(e.target.value)}
+                  className="input-field"
+                  style={{ width: '100%', paddingLeft: '38px', height: '38px', boxSizing: 'border-box' }}
+                >
+                  <option value="Engineering">Engineering</option>
+                  <option value="Design">UI / UX Design</option>
+                  <option value="QA">Quality Assurance</option>
+                  <option value="Management">Management</option>
+                  <option value="Operations">Operations</option>
+                  <option value="Finance">Finance</option>
+                </select>
+              </div>
             </div>
           </div>
 
@@ -329,7 +370,11 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({ isOpen, 
             <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
               Weekly Work Capacity (Hours)
             </label>
-            <div className="relative flex items-center" style={{ marginTop: '4px' }}>
+            <div style={{ position: 'relative', display: 'flex', alignItems: 'center', width: '100%', marginTop: '6px' }}>
+              <Clock
+                size={15}
+                style={{ position: 'absolute', left: '12px', color: 'var(--text-muted)', pointerEvents: 'none', zIndex: 2 }}
+              />
               <input
                 type="number"
                 min={10}
@@ -337,14 +382,13 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({ isOpen, 
                 value={capacityHours}
                 onChange={(e) => setCapacityHours(Number(e.target.value))}
                 className="input-field"
-                style={{ paddingLeft: '2.2rem' }}
+                style={{ width: '100%', paddingLeft: '38px', height: '38px', boxSizing: 'border-box' }}
               />
-              <Clock size={14} style={{ position: 'absolute', left: '0.75rem', color: 'var(--text-muted)' }} />
             </div>
           </div>
 
           {/* Actions */}
-          <div className="flex items-center justify-end gap-2.5" style={{ marginTop: '1rem', paddingTop: '0.75rem', borderTop: '1px solid var(--border-subtle)' }}>
+          <div className="flex items-center justify-end gap-2.5" style={{ marginTop: '0.75rem', paddingTop: '1rem', borderTop: '1px solid var(--border-subtle)' }}>
             <button type="button" onClick={onClose} className="btn btn-secondary">
               Cancel
             </button>
