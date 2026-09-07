@@ -46,6 +46,18 @@ import {
   INITIAL_TEST_RUNS,
   INITIAL_CLIENT_UAT,
 } from '../data/seedData';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import {
+  projectToDb,
+  dbToProject,
+  moduleToDb,
+  dbToModule,
+  taskToDb,
+  dbToTask,
+  syncEntityToSupabase,
+  deleteEntityFromSupabase,
+  bootstrapTableIfEmpty,
+} from '../lib/supabaseSync';
 
 interface ActiveTimer {
   taskId?: string;
@@ -146,7 +158,12 @@ interface AppContextType {
   markNotificationRead: (id: string) => void;
   markAllNotificationsRead: () => void;
   resetToSeedData: () => void;
+
+  // Supabase Cloud Sync
+  supabaseSyncStatus: 'connected' | 'syncing' | 'schema_needed' | 'error' | 'disconnected';
+  retrySupabaseSync: () => Promise<void>;
 }
+
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
@@ -330,6 +347,121 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [quickCreateOpen, setQuickCreateOpen] = useState(false);
 
+  // Supabase Cloud Sync state
+  const [supabaseSyncStatus, setSupabaseSyncStatus] = useState<
+    'connected' | 'syncing' | 'schema_needed' | 'error' | 'disconnected'
+  >(isSupabaseConfigured ? 'syncing' : 'disconnected');
+
+  const initSupabaseData = async () => {
+    if (!supabase || !isSupabaseConfigured) {
+      setSupabaseSyncStatus('disconnected');
+      return;
+    }
+
+    try {
+      setSupabaseSyncStatus('syncing');
+
+      // Test projects table
+      const { data: remoteProjects, error: projErr } = await supabase.from('projects').select('*');
+
+      if (projErr) {
+        if (projErr.code === 'PGRST205' || projErr.message?.includes('schema cache')) {
+          console.warn('[Supabase] Database tables not found. Run supabase_schema.sql in Supabase SQL Editor.');
+          setSupabaseSyncStatus('schema_needed');
+          return;
+        }
+        console.warn('[Supabase] Error connecting:', projErr.message);
+        setSupabaseSyncStatus('error');
+        return;
+      }
+
+      if (remoteProjects && remoteProjects.length > 0) {
+        setProjects(remoteProjects.map(dbToProject));
+      } else {
+        await bootstrapTableIfEmpty('projects', INITIAL_PROJECTS, projectToDb);
+      }
+
+      // Fetch modules
+      const { data: remoteModules, error: modErr } = await supabase.from('modules').select('*');
+      if (!modErr && remoteModules && remoteModules.length > 0) {
+        setModules(remoteModules.map(dbToModule));
+      } else if (!modErr && remoteModules && remoteModules.length === 0) {
+        await bootstrapTableIfEmpty('modules', INITIAL_MODULES, moduleToDb);
+      }
+
+      // Fetch tasks
+      const { data: remoteTasks, error: taskErr } = await supabase.from('tasks').select('*');
+      if (!taskErr && remoteTasks && remoteTasks.length > 0) {
+        setTasks(remoteTasks.map(dbToTask));
+      } else if (!taskErr && remoteTasks && remoteTasks.length === 0) {
+        await bootstrapTableIfEmpty('tasks', INITIAL_TASKS, taskToDb);
+      }
+
+      setSupabaseSyncStatus('connected');
+    } catch (err) {
+      console.warn('[Supabase Sync Init Error]', err);
+      setSupabaseSyncStatus('error');
+    }
+  };
+
+  useEffect(() => {
+    initSupabaseData();
+
+    if (!supabase || !isSupabaseConfigured) return;
+
+    const projectSub = supabase
+      .channel('public:projects')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'projects' }, (payload) => {
+        if (payload.eventType === 'INSERT') {
+          const newProj = dbToProject(payload.new);
+          setProjects((prev) => (prev.some((p) => p.id === newProj.id) ? prev : [newProj, ...prev]));
+        } else if (payload.eventType === 'UPDATE') {
+          const updatedProj = dbToProject(payload.new);
+          setProjects((prev) => prev.map((p) => (p.id === updatedProj.id ? updatedProj : p)));
+        } else if (payload.eventType === 'DELETE') {
+          setProjects((prev) => prev.filter((p) => p.id !== (payload.old as any).id));
+        }
+      })
+      .subscribe();
+
+    const moduleSub = supabase
+      .channel('public:modules')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'modules' }, (payload) => {
+        if (payload.eventType === 'INSERT') {
+          const newMod = dbToModule(payload.new);
+          setModules((prev) => (prev.some((m) => m.id === newMod.id) ? prev : [...prev, newMod]));
+        } else if (payload.eventType === 'UPDATE') {
+          const updatedMod = dbToModule(payload.new);
+          setModules((prev) => prev.map((m) => (m.id === updatedMod.id ? updatedMod : m)));
+        } else if (payload.eventType === 'DELETE') {
+          setModules((prev) => prev.filter((m) => m.id !== (payload.old as any).id));
+        }
+      })
+      .subscribe();
+
+    const taskSub = supabase
+      .channel('public:tasks')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, (payload) => {
+        if (payload.eventType === 'INSERT') {
+          const newTask = dbToTask(payload.new);
+          setTasks((prev) => (prev.some((t) => t.id === newTask.id) ? prev : [newTask, ...prev]));
+        } else if (payload.eventType === 'UPDATE') {
+          const updatedTask = dbToTask(payload.new);
+          setTasks((prev) => prev.map((t) => (t.id === updatedTask.id ? updatedTask : t)));
+        } else if (payload.eventType === 'DELETE') {
+          setTasks((prev) => prev.filter((t) => t.id !== (payload.old as any).id));
+        }
+      })
+      .subscribe();
+
+    return () => {
+      supabase?.removeChannel(projectSub);
+      supabase?.removeChannel(moduleSub);
+      supabase?.removeChannel(taskSub);
+    };
+
+  }, []);
+
   // Active Timer state
   const [activeTimer, setActiveTimer] = useState<ActiveTimer>({
     elapsedSeconds: 0,
@@ -409,6 +541,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const updated = [newTask, ...tasks];
     setTasks(updated);
     syncStorage('tasks', updated);
+    syncEntityToSupabase('tasks', taskToDb(newTask));
 
     // Add activity
     const activity: ActivityItem = {
@@ -430,6 +563,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const updated = tasks.map((t) => (t.id === taskId ? { ...t, ...updates, updatedAt: new Date().toISOString() } : t));
     setTasks(updated);
     syncStorage('tasks', updated);
+    const target = updated.find((t) => t.id === taskId);
+    if (target) syncEntityToSupabase('tasks', taskToDb(target));
   };
 
   const updateTaskStatus = (taskId: string, newStatus: TaskStatus) => {
@@ -441,6 +576,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     );
     setTasks(updated);
     syncStorage('tasks', updated);
+    const target = updated.find((t) => t.id === taskId);
+    if (target) syncEntityToSupabase('tasks', taskToDb(target));
+
 
     // If moved to Done, throw celebration
     if (newStatus === 'Done' && oldStatus !== 'Done') {
@@ -528,6 +666,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const updated = [newProj, ...projects];
     setProjects(updated);
     syncStorage('projects', updated);
+    syncEntityToSupabase('projects', projectToDb(newProj));
   };
 
   const updateProject = (projectId: string, updates: Partial<Project>) => {
@@ -538,12 +677,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const updated = projects.map((p) => (p.id === projectId ? { ...p, ...updates } : p));
     setProjects(updated);
     syncStorage('projects', updated);
+    const target = updated.find((p) => p.id === projectId);
+    if (target) syncEntityToSupabase('projects', projectToDb(target));
   };
 
   const deleteProject = (projectId: string) => {
     const updated = projects.filter((p) => p.id !== projectId);
     setProjects(updated);
     syncStorage('projects', updated);
+    deleteEntityFromSupabase('projects', projectId);
     if (selectedProjectId === projectId) {
       setSelectedProjectId(null);
     }
@@ -558,28 +700,34 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const updated = [...modules, newMod];
     setModules(updated);
     syncStorage('modules', updated);
+    syncEntityToSupabase('modules', moduleToDb(newMod));
   };
 
   const updateModule = (moduleId: string, updates: Partial<ProjectModule>) => {
     const updated = modules.map((m) => (m.id === moduleId ? { ...m, ...updates } : m));
     setModules(updated);
     syncStorage('modules', updated);
+    const target = updated.find((m) => m.id === moduleId);
+    if (target) syncEntityToSupabase('modules', moduleToDb(target));
   };
 
   const deleteModule = (moduleId: string) => {
     const updated = modules.filter((m) => m.id !== moduleId);
     setModules(updated);
     syncStorage('modules', updated);
+    deleteEntityFromSupabase('modules', moduleId);
   };
 
   const deleteTask = (taskId: string) => {
     const updated = tasks.filter((t) => t.id !== taskId);
     setTasks(updated);
     syncStorage('tasks', updated);
+    deleteEntityFromSupabase('tasks', taskId);
     if (selectedTaskId === taskId) {
       setSelectedTaskId(null);
     }
   };
+
 
   const deleteBug = (bugId: string) => {
     const updated = bugs.filter((b) => b.id !== bugId);
@@ -913,6 +1061,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         markNotificationRead,
         markAllNotificationsRead,
         resetToSeedData,
+        supabaseSyncStatus,
+        retrySupabaseSync: initSupabaseData,
       }}
     >
       {children}
