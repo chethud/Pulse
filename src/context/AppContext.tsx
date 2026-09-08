@@ -24,6 +24,9 @@ import {
   TestCase,
   TestRun,
   ClientUATItem,
+  ModulePhase,
+  inferModulePhaseFromOrder,
+  getModulePhase,
 } from '../types';
 import {
   INITIAL_USERS,
@@ -217,6 +220,39 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
+  /** Ensure modules have correct Phase 1–4 segregation (backfill from seed / order). */
+  const normalizeModulesWithPhases = (mods: ProjectModule[]): ProjectModule[] => {
+    const seedById = new Map(INITIAL_MODULES.map((m) => [m.id, m]));
+    const forceReseed = localStorage.getItem('admark_modules_phase_v2') !== 'true';
+
+    const next = mods.map((m) => {
+      const seed = seedById.get(m.id);
+      const current = getModulePhase(m);
+      // One-time: re-apply seed phases so modules that defaulted to Phase 1 get split correctly
+      if (forceReseed && seed?.phase) {
+        return { ...m, phase: seed.phase };
+      }
+      if (m.phase === 'Phase 1' || m.phase === 'Phase 2' || m.phase === 'Phase 3' || m.phase === 'Phase 4') {
+        return m.phase === current ? m : { ...m, phase: current };
+      }
+      return {
+        ...m,
+        phase: (seed?.phase as ModulePhase | undefined) || inferModulePhaseFromOrder(m.order || 1),
+      };
+    });
+
+    if (forceReseed) {
+      try {
+        localStorage.setItem('admark_modules_phase_v2', 'true');
+        localStorage.setItem('admark_modules', JSON.stringify(next));
+      } catch {
+        // ignore quota
+      }
+    }
+
+    return next;
+  };
+
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
     return (localStorage.getItem('admark_theme') as 'dark' | 'light') || 'dark';
   });
@@ -379,7 +415,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const [clients, setClients] = useState<Client[]>(() => loadStored('clients', INITIAL_CLIENTS));
   const [projects, setProjects] = useState<Project[]>(() => loadStored('projects', INITIAL_PROJECTS));
-  const [modules, setModules] = useState<ProjectModule[]>(() => loadStored('modules', INITIAL_MODULES));
+  const [modules, setModules] = useState<ProjectModule[]>(() =>
+    normalizeModulesWithPhases(loadStored('modules', INITIAL_MODULES))
+  );
 
   // Dynamically compute project progress from module percentages
   const computedProjects = React.useMemo(() => {
@@ -514,13 +552,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       // 4. Modules
       const { data: remoteModules, error: modErr } = await supabase.from('modules').select('*');
       if (!modErr && remoteModules && remoteModules.length > 0) {
-        const parsedModules = remoteModules.map(dbToModule);
+        const parsedModules = normalizeModulesWithPhases(remoteModules.map(dbToModule));
         setModules(parsedModules);
         syncStorage('modules', parsedModules);
       } else if (!modErr && (!remoteModules || remoteModules.length === 0)) {
         // Bootstrap using local modules (preserves user's exact module progress e.g. 75%, 60%, 40%)
-        const localModules = loadStored('modules', INITIAL_MODULES);
+        const localModules = normalizeModulesWithPhases(loadStored('modules', INITIAL_MODULES));
         await bootstrapTableIfEmpty('modules', localModules, moduleToDb);
+        setModules(localModules);
+        syncStorage('modules', localModules);
       }
 
       // 5. Tasks

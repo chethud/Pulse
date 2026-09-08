@@ -37,7 +37,7 @@ import {
   UserCheck,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
-import { TaskStatus, TaskPriority, ChangeRequestStatus, MaintenanceTask, isPhotoAdminUser } from '../../types';
+import { TaskStatus, TaskPriority, ChangeRequestStatus, MaintenanceTask, isPhotoAdminUser, ModulePhase, MODULE_PHASES, getModulePhase } from '../../types';
 
 interface ProjectDetailViewProps {
   currentTab: string;
@@ -122,6 +122,7 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
   const [newModuleStatus, setNewModuleStatus] = useState<'Planned' | 'In Progress' | 'Completed' | 'Delayed'>('In Progress');
   const [newModuleProgress, setNewModuleProgress] = useState<number>(0);
   const [newModuleDeliverables, setNewModuleDeliverables] = useState('');
+  const [newModulePhase, setNewModulePhase] = useState<ModulePhase>('Phase 1');
 
   // Edit Module state
   const [editingModule, setEditingModule] = useState<any>(null);
@@ -132,6 +133,8 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
   const [editModuleStatus, setEditModuleStatus] = useState<'Planned' | 'In Progress' | 'Completed' | 'Delayed'>('In Progress');
   const [editModuleProgress, setEditModuleProgress] = useState<number>(0);
   const [editModuleDeliverables, setEditModuleDeliverables] = useState('');
+  const [editModulePhase, setEditModulePhase] = useState<ModulePhase>('Phase 1');
+  const [modulePhaseFilter, setModulePhaseFilter] = useState<'All' | ModulePhase>('All');
 
   const [taskViewMode, setTaskViewMode] = useState<'board' | 'list' | 'gantt' | 'calendar'>('board');
   const [taskFilterStatus, setTaskFilterStatus] = useState<string>('All');
@@ -862,33 +865,77 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
               </div>
             </div>
 
-            {/* Project Module Progress */}
+            {/* Project Module Progress — phase-wise */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
               <div style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', padding: '0 0.25rem' }}>
                 Project Progress by Module
               </div>
 
               <div className="admark-card" style={{ padding: '0.85rem 1rem' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-                  {projectModules.map((mod) => {
-                    const modTasks = projectTasks.filter((t) => t.moduleId === mod.id);
-                    const modCompleted = modTasks.filter((t) => t.status === 'Done').length;
-                    const modProgress = typeof mod.progress === 'number' ? mod.progress : (modTasks.length > 0 ? Math.round((modCompleted / modTasks.length) * 100) : 0);
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
+                  {MODULE_PHASES.map((phase) => {
+                    const phaseMods = projectModules.filter((m) => getModulePhase(m) === phase.id);
+                    if (phaseMods.length === 0) return null;
+
+                    const phaseAvg = Math.round(
+                      phaseMods.reduce((acc, mod) => {
+                        const modTasks = projectTasks.filter((t) => t.moduleId === mod.id);
+                        const modCompleted = modTasks.filter((t) => t.status === 'Done').length;
+                        const modProgress =
+                          typeof mod.progress === 'number'
+                            ? mod.progress
+                            : modTasks.length > 0
+                            ? Math.round((modCompleted / modTasks.length) * 100)
+                            : 0;
+                        return acc + modProgress;
+                      }, 0) / phaseMods.length
+                    );
 
                     return (
-                      <div key={mod.id}>
-                        <div className="flex items-center justify-between" style={{ fontSize: '0.78rem', marginBottom: '4px' }}>
-                          <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{mod.name}</span>
-                          <span style={{ color: 'var(--text-secondary)', fontWeight: 500 }}>{modProgress}%</span>
+                      <div key={phase.id}>
+                        <div className="flex items-center justify-between" style={{ marginBottom: '0.55rem' }}>
+                          <div className="flex items-center gap-2">
+                            <span
+                              className="badge badge-neutral"
+                              style={{ fontSize: '0.65rem', fontWeight: 700, padding: '1px 7px', textTransform: 'uppercase', letterSpacing: '0.04em' }}
+                            >
+                              {phase.label}
+                            </span>
+                            <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{phase.subtitle}</span>
+                          </div>
+                          <span style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                            {phaseAvg}% · {phaseMods.length} module{phaseMods.length === 1 ? '' : 's'}
+                          </span>
                         </div>
-                        <div className="progress-bar-track" style={{ height: '4px' }}>
-                          <div
-                            className="progress-bar-fill"
-                            style={{
-                              width: `${modProgress}%`,
-                              backgroundColor: modProgress === 100 ? 'var(--status-healthy)' : 'var(--text-secondary)',
-                            }}
-                          />
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.7rem' }}>
+                          {phaseMods.map((mod) => {
+                            const modTasks = projectTasks.filter((t) => t.moduleId === mod.id);
+                            const modCompleted = modTasks.filter((t) => t.status === 'Done').length;
+                            const modProgress =
+                              typeof mod.progress === 'number'
+                                ? mod.progress
+                                : modTasks.length > 0
+                                ? Math.round((modCompleted / modTasks.length) * 100)
+                                : 0;
+
+                            return (
+                              <div key={mod.id}>
+                                <div className="flex items-center justify-between" style={{ fontSize: '0.78rem', marginBottom: '4px' }}>
+                                  <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{mod.name}</span>
+                                  <span style={{ color: 'var(--text-secondary)', fontWeight: 500 }}>{modProgress}%</span>
+                                </div>
+                                <div className="progress-bar-track" style={{ height: '4px' }}>
+                                  <div
+                                    className="progress-bar-fill"
+                                    style={{
+                                      width: `${modProgress}%`,
+                                      backgroundColor: modProgress === 100 ? 'var(--status-healthy)' : 'var(--text-secondary)',
+                                    }}
+                                  />
+                                </div>
+                              </div>
+                            );
+                          })}
                         </div>
                       </div>
                     );
@@ -1259,11 +1306,11 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
         {/* ================= TAB 3: MODULES & FEATURES ================= */}
         {currentTab === 'modules' && (
           <div className="flex flex-col gap-3">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between flex-wrap gap-3">
               <div>
                 <h2 style={{ fontSize: '1.1rem', fontWeight: 800 }}>Functional Modules & Deliverables</h2>
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                  Architecture modules, technical ownership, key deliverables, and execution progress
+                  Architecture modules segregated by delivery phase, with ownership and progress
                 </div>
               </div>
 
@@ -1283,6 +1330,32 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                 {!isSuperAdmin && <span style={{ fontSize: '0.65rem', opacity: 0.8, marginLeft: '2px' }}>(CEO only)</span>}
               </button>
             </div>
+
+            {projectModules.length > 0 && (
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <button
+                  onClick={() => setModulePhaseFilter('All')}
+                  className={`btn btn-sm ${modulePhaseFilter === 'All' ? 'btn-secondary' : 'btn-ghost'}`}
+                  style={{ fontSize: '0.75rem', padding: '0.25rem 0.65rem' }}
+                >
+                  All Phases ({projectModules.length})
+                </button>
+                {MODULE_PHASES.map((phase) => {
+                  const count = projectModules.filter((m) => getModulePhase(m) === phase.id).length;
+                  if (count === 0) return null;
+                  return (
+                    <button
+                      key={phase.id}
+                      onClick={() => setModulePhaseFilter(phase.id)}
+                      className={`btn btn-sm ${modulePhaseFilter === phase.id ? 'btn-secondary' : 'btn-ghost'}`}
+                      style={{ fontSize: '0.75rem', padding: '0.25rem 0.65rem' }}
+                    >
+                      {phase.label} ({count})
+                    </button>
+                  );
+                })}
+              </div>
+            )}
 
             {projectModules.length === 0 ? (
               <div
@@ -1308,7 +1381,7 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                   No Modules Configured Yet
                 </h3>
                 <p style={{ fontSize: '0.825rem', color: 'var(--text-secondary)', maxWidth: '440px', marginTop: '0.4rem', lineHeight: 1.5 }}>
-                  Functional modules break this project into distinct feature areas, technical ownership, milestones, and deliverable packages.
+                  Functional modules break this project into distinct feature areas by delivery phase, with technical ownership and deliverable packages.
                 </p>
                 <button
                   onClick={() => {
@@ -1327,8 +1400,29 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                 </button>
               </div>
             ) : (
-              <div className="grid grid-cols-2 gap-4">
-                {projectModules.map((mod) => {
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                {MODULE_PHASES.filter(
+                  (phase) => modulePhaseFilter === 'All' || modulePhaseFilter === phase.id
+                ).map((phase) => {
+                  const phaseMods = projectModules.filter((m) => getModulePhase(m) === phase.id);
+                  if (phaseMods.length === 0) return null;
+
+                  return (
+                    <div key={phase.id} style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+                      <div className="flex items-center justify-between" style={{ padding: '0 0.15rem' }}>
+                        <div className="flex items-center gap-2">
+                          <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                            {phase.label}
+                          </span>
+                          <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>— {phase.subtitle}</span>
+                        </div>
+                        <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                          {phaseMods.length} module{phaseMods.length === 1 ? '' : 's'}
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        {phaseMods.map((mod) => {
                   const lead = users.find((u) => u.id === mod.leadId);
                   const modTasks = projectTasks.filter((t) => t.moduleId === mod.id);
                   const modCompleted = modTasks.filter((t) => t.status === 'Done').length;
@@ -1348,6 +1442,12 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2 flex-wrap">
                           <h3 style={{ fontSize: '1rem', fontWeight: 700 }}>{mod.name}</h3>
+                          <span
+                            className="badge badge-neutral"
+                            style={{ fontSize: '0.62rem', fontWeight: 700, padding: '1px 6px' }}
+                          >
+                            {getModulePhase(mod)}
+                          </span>
                           {/* Interactive Status Selector */}
                           <select
                             value={mod.status || 'Planned'}
@@ -1448,6 +1548,7 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                               setEditModuleStatus(mod.status || 'In Progress');
                               setEditModuleProgress(typeof mod.progress === 'number' ? mod.progress : 0);
                               setEditModuleDeliverables(mod.deliverables ? mod.deliverables.join('\n') : '');
+                              setEditModulePhase(getModulePhase(mod));
                             }}
                             className="btn btn-secondary btn-sm"
                             title="Edit Module, Progress & Target Date"
@@ -1592,6 +1693,26 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
 
                       {/* Quick Actions */}
                       <div className="flex items-center justify-end gap-2" style={{ marginTop: '0.75rem', paddingTop: '0.5rem', borderTop: '1px solid var(--border-subtle)' }}>
+                        <select
+                          value={getModulePhase(mod)}
+                          onChange={(e) => updateModule(mod.id, { phase: e.target.value as ModulePhase })}
+                          className="input-field"
+                          style={{
+                            height: '26px',
+                            padding: '0 6px',
+                            fontSize: '0.7rem',
+                            fontWeight: 600,
+                            width: 'auto',
+                            marginRight: 'auto',
+                          }}
+                          title="Move module to another phase"
+                        >
+                          {MODULE_PHASES.map((p) => (
+                            <option key={p.id} value={p.id}>
+                              {p.label}
+                            </option>
+                          ))}
+                        </select>
                         {mod.status !== 'Completed' && calculatedModProgress < 100 ? (
                           <button
                             onClick={() => {
@@ -1643,6 +1764,10 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                             <span>✓ Completed</span>
                           </button>
                         )}
+                      </div>
+                    </div>
+                  );
+                        })}
                       </div>
                     </div>
                   );
@@ -2892,6 +3017,7 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                     order: projectModules.length + 1,
                     targetDate: newModuleTargetDate || project.deadline,
                     status: newModuleStatus,
+                    phase: newModulePhase,
                     progress: newModuleStatus === 'Completed' ? 100 : newModuleProgress,
                     deliverables: dels.length > 0 ? dels : undefined,
                   });
@@ -2900,6 +3026,7 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                   setNewModuleDesc('');
                   setNewModuleDeliverables('');
                   setNewModuleProgress(0);
+                  setNewModulePhase('Phase 1');
                   setShowAddModuleModal(false);
                 }}
                 className="flex flex-col gap-3"
@@ -2940,6 +3067,26 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
 
                   <div>
                     <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                      Delivery Phase
+                    </label>
+                    <select
+                      value={newModulePhase}
+                      onChange={(e) => setNewModulePhase(e.target.value as ModulePhase)}
+                      className="input-field"
+                      style={{ marginTop: '4px', fontWeight: 600 }}
+                    >
+                      {MODULE_PHASES.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.label} — {p.subtitle}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
                       Initial Status
                     </label>
                     <select
@@ -2957,6 +3104,19 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                       <option value="Completed">Completed</option>
                       <option value="Delayed">Delayed</option>
                     </select>
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                      Target Completion Date
+                    </label>
+                    <input
+                      type="date"
+                      value={newModuleTargetDate}
+                      onChange={(e) => setNewModuleTargetDate(e.target.value)}
+                      className="input-field"
+                      style={{ marginTop: '4px' }}
+                    />
                   </div>
                 </div>
 
@@ -2992,19 +3152,6 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                       <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>%</span>
                     </div>
                   </div>
-                </div>
-
-                <div>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                    Target Completion Date
-                  </label>
-                  <input
-                    type="date"
-                    value={newModuleTargetDate}
-                    onChange={(e) => setNewModuleTargetDate(e.target.value)}
-                    className="input-field"
-                    style={{ marginTop: '4px' }}
-                  />
                 </div>
 
                 <div>
@@ -3082,6 +3229,7 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                     leadId: editModuleLeadId || editingModule.leadId,
                     targetDate: editModuleTargetDate || undefined,
                     status: editModuleProgress === 100 ? 'Completed' : editModuleStatus,
+                    phase: editModulePhase,
                     deliverables: dels.length > 0 ? dels : undefined,
                     progress: editModuleStatus === 'Completed' ? 100 : editModuleProgress,
                   });
@@ -3125,6 +3273,25 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
 
                   <div>
                     <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                      Delivery Phase
+                    </label>
+                    <select
+                      value={editModulePhase}
+                      onChange={(e) => setEditModulePhase(e.target.value as ModulePhase)}
+                      className="input-field"
+                      style={{ marginTop: '4px', fontWeight: 600 }}
+                    >
+                      {MODULE_PHASES.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.label} — {p.subtitle}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
                       Module Status
                     </label>
                     <select
@@ -3142,7 +3309,6 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                       <option value="Delayed">Delayed</option>
                       <option value="Completed">Completed ✓</option>
                     </select>
-                  </div>
                 </div>
 
                 <div>

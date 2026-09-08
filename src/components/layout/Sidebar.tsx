@@ -45,7 +45,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ projectTab = 'overview', setPr
     return (
       <aside
         style={{
-          width: collapsed ? '60px' : '230px',
+          width: collapsed ? '60px' : '200px',
           backgroundColor: 'var(--bg-sidebar)',
           borderRight: '1px solid var(--border-subtle)',
           display: 'flex',
@@ -58,12 +58,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ projectTab = 'overview', setPr
           flexShrink: 0,
         }}
       >
-        <div style={{ padding: '0.85rem 1rem', borderBottom: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'center', height: '52px' }}>
+        <div style={{ padding: '0.85rem 1rem', borderBottom: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center', height: '80px', boxSizing: 'border-box' }}>
           <div className="flex items-center gap-2.5">
             <img
               src="/admark-logo.png"
               alt="Admark Digitals"
-              style={{ height: '24px', width: 'auto', objectFit: 'contain' }}
+              style={{ height: '56px', width: 'auto', maxWidth: '100%', objectFit: 'contain' }}
             />
             {!collapsed && (
               <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
@@ -129,7 +129,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ projectTab = 'overview', setPr
     return (
       <aside
         style={{
-          width: collapsed ? '60px' : '230px',
+          width: collapsed ? '60px' : '200px',
           backgroundColor: 'var(--bg-sidebar)',
           borderRight: '1px solid var(--border-subtle)',
           display: 'flex',
@@ -141,12 +141,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ projectTab = 'overview', setPr
           zIndex: 40,
         }}
       >
-        <div style={{ padding: '0.85rem 1rem', borderBottom: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'center', height: '52px' }}>
+        <div style={{ padding: '0.85rem 1rem', borderBottom: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center', height: '80px', boxSizing: 'border-box' }}>
           <div className="flex items-center gap-2.5">
             <img
               src="/admark-logo.png"
               alt="Admark Digitals"
-              style={{ height: '24px', width: 'auto', objectFit: 'contain' }}
+              style={{ height: '56px', width: 'auto', maxWidth: '100%', objectFit: 'contain' }}
             />
             {!collapsed && (
               <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
@@ -273,7 +273,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ projectTab = 'overview', setPr
   return (
     <aside
       style={{
-        width: collapsed ? '60px' : '230px',
+        width: collapsed ? '60px' : '200px',
         backgroundColor: 'var(--bg-sidebar)',
         borderRight: '1px solid var(--border-subtle)',
         display: 'flex',
@@ -293,7 +293,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ projectTab = 'overview', setPr
           borderBottom: '1px solid var(--border-subtle)',
           display: 'flex',
           alignItems: 'center',
-          height: '52px',
+          justifyContent: 'center',
+          height: '80px',
           boxSizing: 'border-box',
         }}
       >
@@ -301,8 +302,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ projectTab = 'overview', setPr
           src="/admark-logo.png"
           alt="Admark Digitals"
           style={{
-            height: '24px',
+            height: '56px',
             width: 'auto',
+            maxWidth: '100%',
             objectFit: 'contain',
             display: 'block',
           }}

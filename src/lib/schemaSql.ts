@@ -84,6 +84,7 @@ CREATE TABLE IF NOT EXISTS public.modules (
     "order" INTEGER DEFAULT 1,
     target_date TEXT,
     status TEXT DEFAULT 'Planned',
+    phase TEXT DEFAULT 'Phase 1',
     deliverables JSONB DEFAULT '[]'::jsonb,
     completed_deliverables JSONB DEFAULT '[]'::jsonb,
     created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -174,6 +175,10 @@ ALTER TABLE public.clients ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.projects ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.modules ENABLE ROW LEVEL SECURITY;
+
+-- Backfill phase column for existing databases
+ALTER TABLE public.modules ADD COLUMN IF NOT EXISTS phase TEXT DEFAULT 'Phase 1';
+UPDATE public.modules SET phase = 'Phase 1' WHERE phase IS NULL;
 ALTER TABLE public.tasks ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.bugs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.milestones ENABLE ROW LEVEL SECURITY;

@@ -150,8 +150,37 @@ export interface ProjectModule {
   order: number;
   targetDate?: string;
   status?: 'Planned' | 'In Progress' | 'Completed' | 'Delayed';
+  /** Delivery phase used to segregate modules on the project view */
+  phase?: ModulePhase;
   deliverables?: string[];
   completedDeliverables?: string[];
+}
+
+export type ModulePhase = 'Phase 1' | 'Phase 2' | 'Phase 3' | 'Phase 4';
+
+export const MODULE_PHASES: { id: ModulePhase; label: string; subtitle: string }[] = [
+  { id: 'Phase 1', label: 'Phase 1', subtitle: 'Foundation & Design' },
+  { id: 'Phase 2', label: 'Phase 2', subtitle: 'Core Build' },
+  { id: 'Phase 3', label: 'Phase 3', subtitle: 'Operations & Integration' },
+  { id: 'Phase 4', label: 'Phase 4', subtitle: 'Analytics & Hardening' },
+];
+
+export function inferModulePhaseFromOrder(order: number): ModulePhase {
+  if (order <= 3) return 'Phase 1';
+  if (order <= 6) return 'Phase 2';
+  if (order <= 9) return 'Phase 3';
+  return 'Phase 4';
+}
+
+export function resolveModulePhase(phase?: string | null, order?: number): ModulePhase {
+  if (phase === 'Phase 1' || phase === 'Phase 2' || phase === 'Phase 3' || phase === 'Phase 4') {
+    return phase;
+  }
+  return inferModulePhaseFromOrder(typeof order === 'number' ? order : 1);
+}
+
+export function getModulePhase(m: Pick<ProjectModule, 'phase' | 'order'>): ModulePhase {
+  return resolveModulePhase(m.phase, m.order);
 }
 
 export interface ProjectFeature {

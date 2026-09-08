@@ -1,5 +1,5 @@
 import { supabase, isSupabaseConfigured } from './supabase';
-import { Project, ProjectModule, Task, Bug, Client, User } from '../types';
+import { Project, ProjectModule, Task, Bug, Client, User, getModulePhase } from '../types';
 
 // Convert TS Client to DB Client Row
 export const clientToDb = (c: Client) => ({
@@ -149,6 +149,7 @@ export const moduleToDb = (m: ProjectModule) => ({
   order: m.order || 1,
   target_date: m.targetDate || null,
   status: m.status || 'Planned',
+  phase: getModulePhase(m),
   deliverables: m.deliverables || [],
   completed_deliverables: m.completedDeliverables || [],
 });
@@ -164,6 +165,10 @@ export const dbToModule = (row: any): ProjectModule => ({
   order: row.order || 1,
   targetDate: row.target_date,
   status: row.status || 'Planned',
+  phase: getModulePhase({
+    phase: row.phase,
+    order: row.order || 1,
+  }),
   deliverables: Array.isArray(row.deliverables) ? row.deliverables : [],
   completedDeliverables: Array.isArray(row.completed_deliverables) ? row.completed_deliverables : [],
 });
