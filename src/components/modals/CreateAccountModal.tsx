@@ -27,7 +27,7 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({ isOpen, 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [title, setTitle] = useState('Developer');
+  const [title, setTitle] = useState('Team Member');
   const [role, setRole] = useState<UserRole>('USER');
   const [department, setDepartment] = useState('Engineering');
   const [capacityHours, setCapacityHours] = useState(40);
@@ -41,7 +41,7 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({ isOpen, 
     setError(null);
 
     if (!canCreateAccount) {
-      setError('Permission denied. Only the CEO can create new user accounts.');
+      setError('Permission denied. Only Super Admin can add team members.');
       return;
     }
 
@@ -65,25 +65,25 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({ isOpen, 
         name: name.trim(),
         email: email.trim().toLowerCase(),
         password: password.trim(),
-        title: title.trim(),
-        role,
+        title: title.trim() || 'Team Member',
+        role: 'USER',
         department,
         capacityHoursPerWeek: Number(capacityHours) || 40,
         avatar: randomAvatar,
       });
 
-      setSuccessMsg(`Account for ${name.trim()} successfully created with role: ${role}!`);
+      setSuccessMsg(`${name.trim()} added to the team directory.`);
       setTimeout(() => {
         setSuccessMsg(null);
         setName('');
         setEmail('');
         setPassword('');
-        setTitle('Developer');
+        setTitle('Team Member');
         setRole('USER');
         onClose();
       }, 1200);
     } catch (err) {
-      setError('Failed to create account. Please try again.');
+      setError('Failed to add person. Please try again.');
     }
   };
 
@@ -247,62 +247,21 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({ isOpen, 
             </div>
           </div>
 
-          {/* Role Selection */}
-          <div>
-            <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-              Security Role *
-            </label>
-            <div className="grid grid-cols-2 gap-2.5" style={{ marginTop: '6px' }}>
-              {[
-                {
-                  id: 'ADMIN' as UserRole,
-                  title: 'ADMIN',
-                  badge: 'Can Delete',
-                  desc: 'Can delete projects, tasks, bugs, modules. Cannot create accounts.',
-                },
-                {
-                  id: 'USER' as UserRole,
-                  title: 'USER',
-                  badge: 'No Delete',
-                  desc: 'Standard member. No delete options anywhere across the system.',
-                },
-              ].map((r) => {
-                const isSelected = role === r.id;
-                return (
-                  <div
-                    key={r.id}
-                    onClick={() => setRole(r.id)}
-                    style={{
-                      padding: '0.85rem',
-                      borderRadius: '8px',
-                      border: isSelected ? '2px solid var(--brand-crimson)' : '1px solid var(--border-subtle)',
-                      backgroundColor: isSelected ? 'rgba(230, 57, 70, 0.08)' : 'var(--bg-app)',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      justifyContent: 'flex-start',
-                      gap: '4px',
-                      transition: 'border-color 0.15s, background-color 0.15s',
-                    }}
-                  >
-                    <div style={{ fontWeight: 700, fontSize: '0.82rem', color: isSelected ? 'var(--brand-crimson)' : 'var(--text-primary)' }}>
-                      {r.title}
-                    </div>
-                    <div>
-                      <span
-                        className={`badge ${r.id === 'ADMIN' ? 'badge-warning' : 'badge-neutral'}`}
-                        style={{ fontSize: '0.62rem', padding: '0.12rem 0.45rem', display: 'inline-block' }}
-                      >
-                        {r.badge}
-                      </span>
-                    </div>
-                    <p style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', margin: 0, marginTop: '4px', lineHeight: 1.35 }}>
-                      {r.desc}
-                    </p>
-                  </div>
-                );
-              })}
-            </div>
+          {/* Role Selection removed — only Tejas (Super Admin) and Harshith (Admin) have roles.
+              New people are added as team members for project assignment only. */}
+          <div
+            style={{
+              padding: '0.75rem 0.9rem',
+              borderRadius: '8px',
+              background: 'var(--bg-app)',
+              border: '1px solid var(--border-subtle)',
+              fontSize: '0.78rem',
+              color: 'var(--text-secondary)',
+              lineHeight: 1.45,
+            }}
+          >
+            New people are added as <strong style={{ color: 'var(--text-primary)' }}>team members</strong> only
+            (no Admin / Super Admin role). Use them to track who is working on projects.
           </div>
 
           {/* Job Title & Department */}
@@ -320,7 +279,7 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({ isOpen, 
                   type="text"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  placeholder="e.g. Senior Backend Engineer"
+                  placeholder="e.g. Designer, Developer"
                   className="input-field"
                   style={{ width: '100%', paddingLeft: '38px', height: '38px', boxSizing: 'border-box' }}
                 />
@@ -382,7 +341,7 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({ isOpen, 
             </button>
             <button type="submit" className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <UserPlus size={15} />
-              <span>Create Account</span>
+              <span>Add Person</span>
             </button>
           </div>
         </form>

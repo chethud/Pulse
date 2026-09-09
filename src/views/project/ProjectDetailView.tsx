@@ -136,6 +136,7 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
   const [editModuleDeliverables, setEditModuleDeliverables] = useState('');
   const [editModulePhase, setEditModulePhase] = useState<ModulePhase>('Phase 1');
   const [modulePhaseFilter, setModulePhaseFilter] = useState<'All' | ModulePhase>('All');
+  const [overviewPhase, setOverviewPhase] = useState<ModulePhase | null>(null);
 
   const [taskViewMode, setTaskViewMode] = useState<'board' | 'list' | 'gantt' | 'calendar'>('board');
   const [taskFilterStatus, setTaskFilterStatus] = useState<string>('All');
@@ -276,6 +277,14 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
   const projectTasks = tasks.filter((t) => t.projectId === project.id);
   const projectModules = modules.filter((m) => m.projectId === project.id);
   const projectReqs = requirements.filter((r) => r.projectId === project.id);
+
+  // Clear overview phase expansion if that phase no longer has modules
+  useEffect(() => {
+    if (!overviewPhase) return;
+    const stillHasModules = projectModules.some((m) => getModulePhase(m) === overviewPhase);
+    if (!stillHasModules) setOverviewPhase(null);
+  }, [project.id, modules, overviewPhase]);
+
   const projectMilestones = milestones.filter((m) => m.projectId === project.id);
   const projectSprints = sprints.filter((s) => s.projectId === project.id);
   const projectCRs = changeRequests.filter((c) => c.projectId === project.id);
@@ -886,14 +895,14 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
               </div>
             </div>
 
-            {/* Project Module Progress — phase-wise */}
+            {/* Project Module Progress — phase tabs */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
               <div style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', padding: '0 0.25rem' }}>
                 Project Progress by Module
               </div>
 
               <div className="admark-card" style={{ padding: '0.85rem 1rem' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
                   {MODULE_PHASES.map((phase) => {
                     const phaseMods = projectModules.filter((m) => getModulePhase(m) === phase.id);
                     if (phaseMods.length === 0) return null;
@@ -911,53 +920,83 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                         return acc + modProgress;
                       }, 0) / phaseMods.length
                     );
+                    const isExpanded = overviewPhase === phase.id;
 
                     return (
                       <div key={phase.id}>
-                        <div className="flex items-center justify-between" style={{ marginBottom: '0.55rem' }}>
-                          <div className="flex items-center gap-2">
-                            <span
-                              className="badge badge-neutral"
-                              style={{ fontSize: '0.65rem', fontWeight: 700, padding: '1px 7px', textTransform: 'uppercase', letterSpacing: '0.04em' }}
-                            >
-                              {phase.label}
-                            </span>
-                            <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{phase.subtitle}</span>
-                          </div>
-                          <span style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                            {phaseAvg}% · {phaseMods.length} module{phaseMods.length === 1 ? '' : 's'}
+                        <button
+                          type="button"
+                          onClick={() => setOverviewPhase(isExpanded ? null : phase.id)}
+                          className={`btn btn-sm ${isExpanded ? 'btn-secondary' : 'btn-ghost'}`}
+                          style={{
+                            display: 'flex',
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            width: '100%',
+                            height: 'auto',
+                            padding: '0.55rem 0.75rem',
+                            textAlign: 'left',
+                          }}
+                        >
+                          <span style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'flex-start' }}>
+                            <span style={{ fontWeight: 700, fontSize: '0.75rem' }}>{phase.label}</span>
+                            <span style={{ fontSize: '0.65rem', opacity: 0.8, fontWeight: 500 }}>{phase.subtitle}</span>
                           </span>
-                        </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.7rem' }}>
-                          {phaseMods.map((mod) => {
-                            const modTasks = projectTasks.filter((t) => t.moduleId === mod.id);
-                            const modCompleted = modTasks.filter((t) => t.status === 'Done').length;
-                            const modProgress =
-                              typeof mod.progress === 'number'
-                                ? mod.progress
-                                : modTasks.length > 0
-                                ? Math.round((modCompleted / modTasks.length) * 100)
-                                : 0;
+                          <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <span style={{ fontSize: '0.7rem', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                              {phaseAvg}% · {phaseMods.length} module{phaseMods.length === 1 ? '' : 's'}
+                            </span>
+                            <ChevronRight
+                              size={14}
+                              style={{
+                                transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)',
+                                transition: 'transform 0.15s ease',
+                                opacity: 0.7,
+                              }}
+                            />
+                          </span>
+                        </button>
 
-                            return (
-                              <div key={mod.id}>
-                                <div className="flex items-center justify-between" style={{ fontSize: '0.78rem', marginBottom: '4px' }}>
-                                  <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{mod.name}</span>
-                                  <span style={{ color: 'var(--text-secondary)', fontWeight: 500 }}>{modProgress}%</span>
+                        {isExpanded && (
+                          <div
+                            style={{
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: '0.7rem',
+                              padding: '0.75rem 0.75rem 0.35rem',
+                            }}
+                          >
+                            {phaseMods.map((mod) => {
+                              const modTasks = projectTasks.filter((t) => t.moduleId === mod.id);
+                              const modCompleted = modTasks.filter((t) => t.status === 'Done').length;
+                              const modProgress =
+                                typeof mod.progress === 'number'
+                                  ? mod.progress
+                                  : modTasks.length > 0
+                                  ? Math.round((modCompleted / modTasks.length) * 100)
+                                  : 0;
+
+                              return (
+                                <div key={mod.id}>
+                                  <div className="flex items-center justify-between" style={{ fontSize: '0.78rem', marginBottom: '4px' }}>
+                                    <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{mod.name}</span>
+                                    <span style={{ color: 'var(--text-secondary)', fontWeight: 500 }}>{modProgress}%</span>
+                                  </div>
+                                  <div className="progress-bar-track" style={{ height: '4px' }}>
+                                    <div
+                                      className="progress-bar-fill"
+                                      style={{
+                                        width: `${modProgress}%`,
+                                        backgroundColor: modProgress === 100 ? 'var(--status-healthy)' : 'var(--text-secondary)',
+                                      }}
+                                    />
+                                  </div>
                                 </div>
-                                <div className="progress-bar-track" style={{ height: '4px' }}>
-                                  <div
-                                    className="progress-bar-fill"
-                                    style={{
-                                      width: `${modProgress}%`,
-                                      backgroundColor: modProgress === 100 ? 'var(--status-healthy)' : 'var(--text-secondary)',
-                                    }}
-                                  />
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
+                              );
+                            })}
+                          </div>
+                        )}
                       </div>
                     );
                   })}

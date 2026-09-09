@@ -319,19 +319,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return users.find((u) => u.id === currentUserId) || users[0];
   }, [currentUserId, activeRole, users]);
 
-  // RBAC Permission Checks
+  // RBAC Permission Checks — Tejas = Super Admin, Harshith = Admin (fixed operators)
   const isSuperAdmin =
     currentUser.role === 'SUPERADMIN' ||
     currentUser.role === 'SUPER_ADMIN' ||
+    currentUser.name.toLowerCase().includes('tejas') ||
+    currentUser.name.toLowerCase().includes('jois') ||
     (currentUser.title === 'CEO' && currentUser.role !== 'ADMIN' && currentUser.role !== 'USER') ||
-    currentUser.name.toLowerCase().includes('jois');
+    (currentUser.title === 'Super Admin' && currentUser.role !== 'ADMIN' && currentUser.role !== 'USER');
   const isAdmin =
     !isSuperAdmin &&
     (currentUser.role === 'ADMIN' ||
-      (currentUser.role !== 'USER' && (currentUser.title === 'COO' || currentUser.title === 'CFO')));
+      currentUser.name.toLowerCase().includes('harshith') ||
+      currentUser.title === 'Admin');
   const canDelete = isSuperAdmin || isAdmin;
   const canCreateAccount = isSuperAdmin;
-  const canManageRoles = isSuperAdmin;
+  const canManageRoles = false; // Roles are fixed: Tejas = Super Admin, Harshith = Admin
   const isPhotoAdmin =
     currentUser.role === 'PHOTO_ADMIN' ||
     currentUser.email.toLowerCase() === 'photo@gmail.com';
