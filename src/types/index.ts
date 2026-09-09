@@ -124,6 +124,9 @@ export interface Project {
   maintenanceNotes?: string;
   uptimeSla?: string;
   slaTarget?: string;
+  /** Maintenance contract / coverage period */
+  maintenanceStartDate?: string;
+  maintenanceEndDate?: string;
   maintenanceTasks?: MaintenanceTask[];
 }
 
@@ -132,13 +135,21 @@ export interface MaintenanceTask {
   projectId: string;
   code: string;
   title: string;
+  /** How often this maintenance update is performed */
+  frequency: 'Monthly' | 'Annual';
   priority: 'Low' | 'Medium' | 'High' | 'Urgent';
   status: 'In Progress' | 'Ready' | 'Done' | 'Scheduled' | 'On Hold';
   assigneeName: string;
   assigneeId?: string;
+  /** Coverage / schedule window for this update */
+  startDate?: string;
+  endDate?: string;
+  /** @deprecated Prefer startDate/endDate */
   dueDate?: string;
   notes?: string;
 }
+
+export type MaintenanceFrequency = MaintenanceTask['frequency'];
 
 export interface ProjectModule {
   id: string;

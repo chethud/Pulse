@@ -38,7 +38,7 @@ import {
   Wrench,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
-import { TaskStatus, TaskPriority, ChangeRequestStatus, MaintenanceTask, isPhotoAdminUser, ModulePhase, MODULE_PHASES, getModulePhase } from '../../types';
+import { TaskStatus, TaskPriority, ChangeRequestStatus, MaintenanceTask, MaintenanceFrequency, isPhotoAdminUser, ModulePhase, MODULE_PHASES, getModulePhase } from '../../types';
 
 interface ProjectDetailViewProps {
   currentTab: string;
@@ -153,25 +153,29 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
   // Maintenance task management state
   const [showNewMaintenanceModal, setShowNewMaintenanceModal] = useState(false);
   const [newMntTitle, setNewMntTitle] = useState('');
+  const [newMntFrequency, setNewMntFrequency] = useState<MaintenanceFrequency>('Monthly');
   const [newMntAssignee, setNewMntAssignee] = useState('Harshith');
   const [newMntPriority, setNewMntPriority] = useState<'Low' | 'Medium' | 'High' | 'Urgent'>('Medium');
-  const [newMntStatus, setNewMntStatus] = useState<'In Progress' | 'Ready' | 'Done' | 'Scheduled' | 'On Hold'>('In Progress');
-  const [newMntDueDate, setNewMntDueDate] = useState('');
+  const [newMntStatus, setNewMntStatus] = useState<'In Progress' | 'Ready' | 'Done' | 'Scheduled' | 'On Hold'>('Scheduled');
+  const [newMntStartDate, setNewMntStartDate] = useState('');
+  const [newMntEndDate, setNewMntEndDate] = useState('');
   const [newMntNotes, setNewMntNotes] = useState('');
 
   // Edit maintenance task state
   const [editingMaintenanceTask, setEditingMaintenanceTask] = useState<MaintenanceTask | null>(null);
   const [editMntTitle, setEditMntTitle] = useState('');
+  const [editMntFrequency, setEditMntFrequency] = useState<MaintenanceFrequency>('Monthly');
   const [editMntAssignee, setEditMntAssignee] = useState('');
   const [editMntPriority, setEditMntPriority] = useState<'Low' | 'Medium' | 'High' | 'Urgent'>('Medium');
-  const [editMntStatus, setEditMntStatus] = useState<'In Progress' | 'Ready' | 'Done' | 'Scheduled' | 'On Hold'>('In Progress');
-  const [editMntDueDate, setEditMntDueDate] = useState('');
+  const [editMntStatus, setEditMntStatus] = useState<'In Progress' | 'Ready' | 'Done' | 'Scheduled' | 'On Hold'>('Scheduled');
+  const [editMntStartDate, setEditMntStartDate] = useState('');
+  const [editMntEndDate, setEditMntEndDate] = useState('');
   const [editMntNotes, setEditMntNotes] = useState('');
 
   // SLA & Maintenance Notes modal state
   const [showEditSlaModal, setShowEditSlaModal] = useState(false);
-  const [editUptimeSla, setEditUptimeSla] = useState('99.98%');
-  const [editSlaTarget, setEditSlaTarget] = useState('Resolved within 4h SLA');
+  const [editUptimeSla, setEditUptimeSla] = useState('');
+  const [editSlaTarget, setEditSlaTarget] = useState('');
   const [editMaintenanceNotes, setEditMaintenanceNotes] = useState('');
 
   useEffect(() => {
@@ -312,47 +316,25 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
     { id: 'Done', label: 'Done', color: '#10b981' },
   ];
 
-  // Maintenance task management logic
-  const defaultMaintenanceTasks: MaintenanceTask[] = [
-    {
-      id: `mnt-${project.id}-1`,
-      projectId: project.id,
-      code: 'MNT-101',
-      title: 'Payment gateway SSL certificate renewal (Annual)',
-      priority: 'High',
-      status: 'In Progress',
-      assigneeName: 'Vikram Patel',
-      dueDate: '2026-10-15',
-      notes: 'Renew production Wildcard SSL certificates on load balancers.',
-    },
-    {
-      id: `mnt-${project.id}-2`,
-      projectId: project.id,
-      code: 'MNT-102',
-      title: 'PostgreSQL database index re-indexing & vacuum optimization',
-      priority: 'Medium',
-      status: 'Ready',
-      assigneeName: 'Rahul Verma',
-      dueDate: '2026-10-25',
-      notes: 'Scheduled monthly autovacuum analyze and table bloat check.',
-    },
-    {
-      id: `mnt-${project.id}-3`,
-      projectId: project.id,
-      code: 'MNT-103',
-      title: 'Mobile push notification token cleanup cron job',
-      priority: 'Low',
-      status: 'Done',
-      assigneeName: 'Aisha Khan',
-      dueDate: '2026-09-30',
-      notes: 'Prune stale device FCM/APNS tokens older than 90 days.',
-    },
-  ];
+  // Maintenance updates are scheduled per-item with From → To dates
+  const currentMaintenanceTasks: MaintenanceTask[] = project.maintenanceTasks || [];
+  const hasMaintenanceDetails =
+    currentMaintenanceTasks.length > 0 ||
+    Boolean(project.uptimeSla?.trim()) ||
+    Boolean(project.slaTarget?.trim()) ||
+    Boolean(project.maintenanceNotes?.trim());
 
-  const currentMaintenanceTasks: MaintenanceTask[] =
-    project.maintenanceTasks && project.maintenanceTasks.length > 0
-      ? project.maintenanceTasks
-      : defaultMaintenanceTasks;
+  // Drop leftover auto-filled SLA placeholders so empty maintenance stays blank
+  useEffect(() => {
+    if (!project) return;
+    const clearUptime = project.uptimeSla === '99.98%';
+    const clearTarget = project.slaTarget === 'Resolved within 4h SLA';
+    if (!clearUptime && !clearTarget) return;
+    updateProject(project.id, {
+      ...(clearUptime ? { uptimeSla: undefined } : {}),
+      ...(clearTarget ? { slaTarget: undefined } : {}),
+    });
+  }, [project.id, project.uptimeSla, project.slaTarget]);
 
   const handleUpdateMaintenanceTask = (updatedTask: MaintenanceTask) => {
     const nextTasks = currentMaintenanceTasks.map((t) => (t.id === updatedTask.id ? updatedTask : t));
@@ -368,7 +350,9 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
       projectId: project.id,
       code,
     };
-    updateProject(project.id, { maintenanceTasks: [...currentMaintenanceTasks, newTask] });
+    updateProject(project.id, {
+      maintenanceTasks: [...currentMaintenanceTasks, newTask],
+    });
     setShowNewMaintenanceModal(false);
   };
 
@@ -380,26 +364,30 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
   const openEditMaintenanceTask = (task: MaintenanceTask) => {
     setEditingMaintenanceTask(task);
     setEditMntTitle(task.title);
+    setEditMntFrequency(task.frequency || 'Monthly');
     setEditMntAssignee(task.assigneeName);
     setEditMntPriority(task.priority);
     setEditMntStatus(task.status);
-    setEditMntDueDate(task.dueDate || '');
+    setEditMntStartDate(task.startDate || task.dueDate || '');
+    setEditMntEndDate(task.endDate || '');
     setEditMntNotes(task.notes || '');
   };
 
   const openNewMaintenanceModal = () => {
     setNewMntTitle('');
+    setNewMntFrequency('Monthly');
     setNewMntAssignee('Harshith');
     setNewMntPriority('Medium');
-    setNewMntStatus('In Progress');
-    setNewMntDueDate('');
+    setNewMntStatus('Scheduled');
+    setNewMntStartDate('');
+    setNewMntEndDate('');
     setNewMntNotes('');
     setShowNewMaintenanceModal(true);
   };
 
   const openEditSlaModal = () => {
-    setEditUptimeSla(project.uptimeSla || '99.98%');
-    setEditSlaTarget(project.slaTarget || 'Resolved within 4h SLA');
+    setEditUptimeSla(project.uptimeSla || '');
+    setEditSlaTarget(project.slaTarget || '');
     setEditMaintenanceNotes(project.maintenanceNotes || '');
     setShowEditSlaModal(true);
   };
@@ -407,9 +395,9 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
   const handleSaveSlaSettings = (e: React.FormEvent) => {
     e.preventDefault();
     updateProject(project.id, {
-      uptimeSla: editUptimeSla.trim() || '99.98%',
-      slaTarget: editSlaTarget.trim() || 'Resolved within 4h SLA',
-      maintenanceNotes: editMaintenanceNotes.trim(),
+      uptimeSla: editUptimeSla.trim() || undefined,
+      slaTarget: editSlaTarget.trim() || undefined,
+      maintenanceNotes: editMaintenanceNotes.trim() || undefined,
     });
     setShowEditSlaModal(false);
   };
@@ -428,7 +416,11 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
     { id: 'overview', label: 'Overview' },
     { id: 'modules', label: 'Modules', count: projectModules.length },
     { id: 'client-review', label: 'Client Review', count: projectUAT.length },
-    { id: 'maintenance', label: 'Project Maintenance', count: currentMaintenanceTasks.length },
+    {
+      id: 'maintenance',
+      label: 'Project Maintenance',
+      count: currentMaintenanceTasks.length > 0 ? currentMaintenanceTasks.length : undefined,
+    },
     { id: 'settings', label: 'Settings' },
   ];
 
@@ -2272,7 +2264,7 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                   <span>Project Maintenance</span>
                 </h2>
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-                  Patch tasks, uptime SLA, and post-delivery maintenance work
+                  Monthly and annual updates with From → To date ranges
                 </div>
               </div>
 
@@ -2283,46 +2275,54 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                 </button>
                 <button onClick={openNewMaintenanceModal} className="btn btn-primary btn-sm">
                   <Plus size={14} />
-                  <span>Add Maintenance Task</span>
+                  <span>Add Update</span>
                 </button>
               </div>
             </div>
 
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-                gap: '0.75rem',
-              }}
-            >
-              <div className="admark-card" style={{ padding: '1rem 1.1rem' }}>
-                <div style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                  Uptime SLA
-                </div>
-                <div style={{ fontSize: '1.35rem', fontWeight: 800, marginTop: '4px', color: 'var(--text-primary)' }}>
-                  {project.uptimeSla || '99.98%'}
-                </div>
+            {hasMaintenanceDetails && (
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+                  gap: '0.75rem',
+                }}
+              >
+                {project.uptimeSla?.trim() && (
+                  <div className="admark-card" style={{ padding: '1rem 1.1rem' }}>
+                    <div style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                      Uptime SLA
+                    </div>
+                    <div style={{ fontSize: '1.35rem', fontWeight: 800, marginTop: '4px', color: 'var(--text-primary)' }}>
+                      {project.uptimeSla}
+                    </div>
+                  </div>
+                )}
+                {project.slaTarget?.trim() && (
+                  <div className="admark-card" style={{ padding: '1rem 1.1rem' }}>
+                    <div style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                      Resolution Target
+                    </div>
+                    <div style={{ fontSize: '0.95rem', fontWeight: 700, marginTop: '6px', color: 'var(--text-primary)' }}>
+                      {project.slaTarget}
+                    </div>
+                  </div>
+                )}
+                {currentMaintenanceTasks.length > 0 && (
+                  <div className="admark-card" style={{ padding: '1rem 1.1rem' }}>
+                    <div style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                      Open Updates
+                    </div>
+                    <div style={{ fontSize: '1.35rem', fontWeight: 800, marginTop: '4px', color: 'var(--text-primary)' }}>
+                      {currentMaintenanceTasks.filter((t) => t.status !== 'Done').length}
+                      <span style={{ fontSize: '0.75rem', fontWeight: 500, color: 'var(--text-muted)', marginLeft: '6px' }}>
+                        / {currentMaintenanceTasks.length}
+                      </span>
+                    </div>
+                  </div>
+                )}
               </div>
-              <div className="admark-card" style={{ padding: '1rem 1.1rem' }}>
-                <div style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                  Resolution Target
-                </div>
-                <div style={{ fontSize: '0.95rem', fontWeight: 700, marginTop: '6px', color: 'var(--text-primary)' }}>
-                  {project.slaTarget || 'Resolved within 4h SLA'}
-                </div>
-              </div>
-              <div className="admark-card" style={{ padding: '1rem 1.1rem' }}>
-                <div style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                  Open Tasks
-                </div>
-                <div style={{ fontSize: '1.35rem', fontWeight: 800, marginTop: '4px', color: 'var(--text-primary)' }}>
-                  {currentMaintenanceTasks.filter((t) => t.status !== 'Done').length}
-                  <span style={{ fontSize: '0.75rem', fontWeight: 500, color: 'var(--text-muted)', marginLeft: '6px' }}>
-                    / {currentMaintenanceTasks.length}
-                  </span>
-                </div>
-              </div>
-            </div>
+            )}
 
             {project.maintenanceNotes && (
               <div
@@ -2342,7 +2342,7 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
               {currentMaintenanceTasks.length === 0 ? (
                 <div className="admark-card" style={{ padding: '2.5rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-                  No maintenance tasks yet. Click &quot;Add Maintenance Task&quot; above to create one.
+                  No monthly or annual updates yet. Click &quot;Add Update&quot; to schedule one with From → To dates.
                 </div>
               ) : (
                 currentMaintenanceTasks.map((task) => (
@@ -2363,17 +2363,8 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                           >
                             {task.code}
                           </span>
-                          <span
-                            className={`badge ${
-                              task.priority === 'Urgent' || task.priority === 'High'
-                                ? 'badge-critical'
-                                : task.priority === 'Medium'
-                                ? 'badge-neutral'
-                                : 'badge-healthy'
-                            }`}
-                            style={{ fontSize: '0.68rem' }}
-                          >
-                            {task.priority}
+                          <span className="badge badge-neutral" style={{ fontSize: '0.68rem', fontWeight: 700 }}>
+                            {task.frequency || 'Monthly'}
                           </span>
                           <span
                             className={`badge ${
@@ -2403,20 +2394,24 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                           <span>
                             Assignee: <strong style={{ color: 'var(--text-secondary)' }}>{task.assigneeName}</strong>
                           </span>
-                          {task.dueDate && (
+                          {task.startDate && task.endDate ? (
                             <>
                               <span>•</span>
-                              <span>Due: {task.dueDate}</span>
+                              <span>
+                                {task.startDate} → {task.endDate}
+                              </span>
                             </>
-                          )}
+                          ) : task.dueDate ? (
+                            <>
+                              <span>•</span>
+                              <span>Next update: {task.dueDate}</span>
+                            </>
+                          ) : null}
                         </div>
                       </div>
 
                       <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => openEditMaintenanceTask(task)}
-                          className="btn btn-secondary btn-sm"
-                        >
+                        <button onClick={() => openEditMaintenanceTask(task)} className="btn btn-secondary btn-sm">
                           <Edit3 size={13} />
                           <span>Edit</span>
                         </button>
@@ -2424,7 +2419,7 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                           onClick={() => handleDeleteMaintenanceTask(task.id)}
                           className="btn btn-ghost btn-sm"
                           style={{ color: 'var(--status-danger)' }}
-                          title="Delete maintenance task"
+                          title="Delete maintenance update"
                         >
                           <Trash2 size={13} />
                         </button>
@@ -3704,7 +3699,7 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
           </div>
         )}
 
-        {/* Create New Maintenance Task Modal */}
+        {/* Create New Maintenance Update Modal */}
         {showNewMaintenanceModal && (
           <div className="modal-backdrop animate-fade-in" onClick={() => setShowNewMaintenanceModal(false)}>
             <div
@@ -3715,23 +3710,30 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
               <div className="flex items-center justify-between" style={{ marginBottom: '1rem' }}>
                 <div className="flex items-center gap-2">
                   <Plus size={18} style={{ color: 'var(--brand-crimson)' }} />
-                  <h2 style={{ fontSize: '1.1rem', fontWeight: 700 }}>New Maintenance & Patch Task</h2>
+                  <h2 style={{ fontSize: '1.1rem', fontWeight: 700 }}>New Maintenance Update</h2>
                 </div>
                 <button onClick={() => setShowNewMaintenanceModal(false)} className="btn btn-ghost btn-icon">
                   <X size={16} />
                 </button>
               </div>
 
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '1rem', marginTop: '-0.35rem' }}>
+                Schedule a monthly or annual update and set its From → To date range.
+              </p>
+
               <form
                 onSubmit={(e) => {
                   e.preventDefault();
-                  if (!newMntTitle.trim()) return;
+                  if (!newMntTitle.trim() || !newMntStartDate || !newMntEndDate) return;
+                  if (newMntEndDate < newMntStartDate) return;
                   handleCreateMaintenanceTask({
                     title: newMntTitle.trim(),
+                    frequency: newMntFrequency,
                     assigneeName: newMntAssignee.trim() || 'Harshith',
                     priority: newMntPriority,
                     status: newMntStatus,
-                    dueDate: newMntDueDate || undefined,
+                    startDate: newMntStartDate,
+                    endDate: newMntEndDate,
                     notes: newMntNotes.trim() || undefined,
                   });
                 }}
@@ -3739,46 +3741,86 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
               >
                 <div>
                   <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                    Task Title *
+                    Update Title *
                   </label>
                   <input
                     required
                     type="text"
                     value={newMntTitle}
                     onChange={(e) => setNewMntTitle(e.target.value)}
-                    placeholder="e.g. SSL certificate renewal, Redis cache purge, DB re-index"
+                    placeholder="e.g. Security patches, dependency upgrades, SSL renewal"
                     className="input-field"
                     style={{ marginTop: '4px' }}
                   />
                 </div>
 
+                <div>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                    Update Cadence *
+                  </label>
+                  <div className="grid grid-cols-2 gap-2" style={{ marginTop: '6px' }}>
+                    {(['Monthly', 'Annual'] as MaintenanceFrequency[]).map((freq) => (
+                      <button
+                        key={freq}
+                        type="button"
+                        onClick={() => setNewMntFrequency(freq)}
+                        className="btn btn-sm"
+                        style={{
+                          justifyContent: 'center',
+                          fontWeight: 600,
+                          background: newMntFrequency === freq ? 'var(--brand-crimson)' : 'var(--bg-elevated)',
+                          color: newMntFrequency === freq ? '#fff' : 'var(--text-secondary)',
+                          border: newMntFrequency === freq ? '1px solid var(--brand-crimson)' : '1px solid var(--border-subtle)',
+                        }}
+                      >
+                        {freq}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                      Assignee
+                      From Date *
                     </label>
                     <input
-                      type="text"
-                      value={newMntAssignee}
-                      onChange={(e) => setNewMntAssignee(e.target.value)}
-                      placeholder="Assignee name"
+                      required
+                      type="date"
+                      value={newMntStartDate}
+                      onChange={(e) => setNewMntStartDate(e.target.value)}
                       className="input-field"
                       style={{ marginTop: '4px' }}
                     />
                   </div>
-
                   <div>
                     <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                      Due Date
+                      To Date *
                     </label>
                     <input
+                      required
                       type="date"
-                      value={newMntDueDate}
-                      onChange={(e) => setNewMntDueDate(e.target.value)}
+                      value={newMntEndDate}
+                      onChange={(e) => setNewMntEndDate(e.target.value)}
+                      min={newMntStartDate || undefined}
                       className="input-field"
                       style={{ marginTop: '4px' }}
                     />
                   </div>
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                    Assignee
+                  </label>
+                  <input
+                    type="text"
+                    value={newMntAssignee}
+                    onChange={(e) => setNewMntAssignee(e.target.value)}
+                    placeholder="Assignee name"
+                    className="input-field"
+                    style={{ marginTop: '4px' }}
+                  />
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
@@ -3801,17 +3843,17 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
 
                   <div>
                     <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                      Initial Status
+                      Status
                     </label>
                     <select
                       value={newMntStatus}
                       onChange={(e) => setNewMntStatus(e.target.value as any)}
                       className="input-field"
-                      style={{ marginTop: '4px' }}
+                      style={{ marginTop: '4px', fontWeight: 600 }}
                     >
+                      <option value="Scheduled">Scheduled</option>
                       <option value="In Progress">In Progress</option>
                       <option value="Ready">Ready</option>
-                      <option value="Scheduled">Scheduled</option>
                       <option value="On Hold">On Hold</option>
                       <option value="Done">Done</option>
                     </select>
@@ -3820,13 +3862,13 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
 
                 <div>
                   <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                    Task Notes & SOP Checklist
+                    Update Notes / Checklist
                   </label>
                   <textarea
                     rows={3}
                     value={newMntNotes}
                     onChange={(e) => setNewMntNotes(e.target.value)}
-                    placeholder="Standard operating procedure, rollout instructions, or impact details..."
+                    placeholder="What this monthly or annual update covers..."
                     className="input-field"
                     style={{ marginTop: '4px', resize: 'vertical' }}
                   />
@@ -3837,7 +3879,7 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                     Cancel
                   </button>
                   <button type="submit" className="btn btn-primary">
-                    Create Maintenance Task
+                    Schedule {newMntFrequency} Update
                   </button>
                 </div>
               </form>
@@ -3845,7 +3887,7 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
           </div>
         )}
 
-        {/* Edit Maintenance Task Modal */}
+        {/* Edit Maintenance Update Modal */}
         {editingMaintenanceTask && (
           <div className="modal-backdrop animate-fade-in" onClick={() => setEditingMaintenanceTask(null)}>
             <div
@@ -3857,7 +3899,7 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                 <div className="flex items-center gap-2">
                   <Edit3 size={18} style={{ color: 'var(--brand-crimson)' }} />
                   <h2 style={{ fontSize: '1.1rem', fontWeight: 700 }}>
-                    Edit Maintenance Task ({editingMaintenanceTask.code})
+                    Edit Update ({editingMaintenanceTask.code})
                   </h2>
                 </div>
                 <button onClick={() => setEditingMaintenanceTask(null)} className="btn btn-ghost btn-icon">
@@ -3868,14 +3910,17 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
               <form
                 onSubmit={(e) => {
                   e.preventDefault();
-                  if (!editMntTitle.trim()) return;
+                  if (!editMntTitle.trim() || !editMntStartDate || !editMntEndDate) return;
+                  if (editMntEndDate < editMntStartDate) return;
                   handleUpdateMaintenanceTask({
                     ...editingMaintenanceTask,
                     title: editMntTitle.trim(),
+                    frequency: editMntFrequency,
                     assigneeName: editMntAssignee.trim() || 'Harshith',
                     priority: editMntPriority,
                     status: editMntStatus,
-                    dueDate: editMntDueDate || undefined,
+                    startDate: editMntStartDate,
+                    endDate: editMntEndDate,
                     notes: editMntNotes.trim() || undefined,
                   });
                 }}
@@ -3883,7 +3928,7 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
               >
                 <div>
                   <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                    Task Title *
+                    Update Title *
                   </label>
                   <input
                     required
@@ -3895,32 +3940,72 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                   />
                 </div>
 
+                <div>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                    Update Cadence *
+                  </label>
+                  <div className="grid grid-cols-2 gap-2" style={{ marginTop: '6px' }}>
+                    {(['Monthly', 'Annual'] as MaintenanceFrequency[]).map((freq) => (
+                      <button
+                        key={freq}
+                        type="button"
+                        onClick={() => setEditMntFrequency(freq)}
+                        className="btn btn-sm"
+                        style={{
+                          justifyContent: 'center',
+                          fontWeight: 600,
+                          background: editMntFrequency === freq ? 'var(--brand-crimson)' : 'var(--bg-elevated)',
+                          color: editMntFrequency === freq ? '#fff' : 'var(--text-secondary)',
+                          border: editMntFrequency === freq ? '1px solid var(--brand-crimson)' : '1px solid var(--border-subtle)',
+                        }}
+                      >
+                        {freq}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                      Assignee
+                      From Date *
                     </label>
                     <input
-                      type="text"
-                      value={editMntAssignee}
-                      onChange={(e) => setEditMntAssignee(e.target.value)}
+                      required
+                      type="date"
+                      value={editMntStartDate}
+                      onChange={(e) => setEditMntStartDate(e.target.value)}
                       className="input-field"
                       style={{ marginTop: '4px' }}
                     />
                   </div>
-
                   <div>
                     <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                      Due Date
+                      To Date *
                     </label>
                     <input
+                      required
                       type="date"
-                      value={editMntDueDate}
-                      onChange={(e) => setEditMntDueDate(e.target.value)}
+                      value={editMntEndDate}
+                      onChange={(e) => setEditMntEndDate(e.target.value)}
+                      min={editMntStartDate || undefined}
                       className="input-field"
                       style={{ marginTop: '4px' }}
                     />
                   </div>
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                    Assignee
+                  </label>
+                  <input
+                    type="text"
+                    value={editMntAssignee}
+                    onChange={(e) => setEditMntAssignee(e.target.value)}
+                    className="input-field"
+                    style={{ marginTop: '4px' }}
+                  />
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
@@ -3943,7 +4028,7 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
 
                   <div>
                     <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                      Task Status
+                      Status
                     </label>
                     <select
                       value={editMntStatus}
@@ -3951,9 +4036,9 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                       className="input-field"
                       style={{ marginTop: '4px', fontWeight: 600 }}
                     >
+                      <option value="Scheduled">Scheduled</option>
                       <option value="In Progress">In Progress</option>
                       <option value="Ready">Ready</option>
-                      <option value="Scheduled">Scheduled</option>
                       <option value="On Hold">On Hold</option>
                       <option value="Done">Done ✓</option>
                     </select>
@@ -3962,7 +4047,7 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
 
                 <div>
                   <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                    Task Notes & Implementation Details
+                    Update Notes / Checklist
                   </label>
                   <textarea
                     rows={3}
@@ -3978,7 +4063,7 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                     Cancel
                   </button>
                   <button type="submit" className="btn btn-primary">
-                    Update Task
+                    Save Update
                   </button>
                 </div>
               </form>

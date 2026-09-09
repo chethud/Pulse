@@ -93,6 +93,8 @@ export const projectToDb = (p: Project) => ({
   maintenance_notes: p.maintenanceNotes || null,
   uptime_sla: p.uptimeSla || null,
   sla_target: p.slaTarget || null,
+  maintenance_start_date: p.maintenanceStartDate || null,
+  maintenance_end_date: p.maintenanceEndDate || null,
   maintenance_tasks: p.maintenanceTasks || [],
 });
 
@@ -135,6 +137,8 @@ export const dbToProject = (row: any): Project => ({
   maintenanceNotes: row.maintenance_notes,
   uptimeSla: row.uptime_sla,
   slaTarget: row.sla_target,
+  maintenanceStartDate: row.maintenance_start_date || undefined,
+  maintenanceEndDate: row.maintenance_end_date || undefined,
   maintenanceTasks: Array.isArray(row.maintenance_tasks) ? row.maintenance_tasks : [],
 });
 

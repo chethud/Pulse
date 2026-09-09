@@ -68,6 +68,8 @@ CREATE TABLE IF NOT EXISTS public.projects (
     maintenance_notes TEXT,
     uptime_sla TEXT,
     sla_target TEXT,
+    maintenance_start_date TEXT,
+    maintenance_end_date TEXT,
     maintenance_tasks JSONB DEFAULT '[]'::jsonb,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
