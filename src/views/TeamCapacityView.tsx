@@ -133,7 +133,9 @@ export const TeamCapacityView: React.FC = () => {
                             >
                               {roleLabel}
                             </span>
-                            <Lock size={11} style={{ color: 'var(--text-muted)', opacity: 0.7 }} title="Role is locked" />
+                            <span title="Role is locked" style={{ display: 'inline-flex' }}>
+                              <Lock size={11} style={{ color: 'var(--text-muted)', opacity: 0.7 }} aria-hidden />
+                            </span>
                           </div>
                         ) : (
                           <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>—</span>
