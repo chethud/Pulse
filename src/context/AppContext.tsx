@@ -334,7 +334,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       currentUser.name.toLowerCase().includes('harshith') ||
       currentUser.title === 'Admin');
   const canDelete = isSuperAdmin || isAdmin;
-  const canCreateAccount = isSuperAdmin;
+  const canCreateAccount = isSuperAdmin || isAdmin;
   const canManageRoles = false; // Roles are fixed: Tejas = Super Admin, Harshith = Admin
   const canManageProjects = isSuperAdmin || isAdmin; // Super Admin + Admin: create/edit/complete projects & modules
   const isPhotoAdmin =
@@ -977,8 +977,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const addUser = (newUser: Omit<User, 'id'>): User => {
-    if (!isSuperAdmin) {
-      throw new Error('Unauthorized: Only SuperAdmin can create accounts.');
+    if (!canCreateAccount) {
+      throw new Error('Unauthorized: Only Super Admin or Admin can create accounts.');
     }
     // SUPERADMIN and PHOTO_ADMIN cannot be provisioned — reserved system accounts only
     if (newUser.role === 'SUPERADMIN' || newUser.role === 'SUPER_ADMIN' || newUser.role === 'PHOTO_ADMIN') {

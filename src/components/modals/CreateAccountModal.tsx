@@ -41,7 +41,7 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({ isOpen, 
     setError(null);
 
     if (!canCreateAccount) {
-      setError('Permission denied. Only Super Admin can add team members.');
+      setError('Permission denied. Only Super Admin or Admin can add team members.');
       return;
     }
 
@@ -125,7 +125,7 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({ isOpen, 
             <div>
               <h2 style={{ fontSize: '1.15rem', fontWeight: 700, margin: 0 }}>Create User Account</h2>
               <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: 0, marginTop: '2px' }}>
-                Only the CEO can provision team credentials and assign security roles.
+                Super Admin or Admin can provision team credentials (email + password).
               </p>
             </div>
           </div>

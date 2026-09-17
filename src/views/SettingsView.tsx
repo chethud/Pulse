@@ -224,7 +224,7 @@ export const SettingsView: React.FC = () => {
               }}
             >
               <Lock size={13} />
-              <span>Account creation restricted to CEO</span>
+              <span>Account creation restricted to Super Admin / Admin</span>
             </div>
           )}
         </div>
@@ -268,8 +268,8 @@ export const SettingsView: React.FC = () => {
             </div>
             <p style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.4 }}>
               • Create, edit, delete & complete projects<br />
-              • Add modules, manage deliverables & team operations<br />
-              • <strong>Cannot</strong> create accounts or change roles (Super Admin only)
+              • Create accounts with email & password for team members<br />
+              • <strong>Cannot</strong> change security roles (Super Admin only)
             </p>
           </div>
 
@@ -510,7 +510,7 @@ export const SettingsView: React.FC = () => {
               {[
                 {
                   role: 'SUPERADMIN (CEO)',
-                  acc: 'Granted (CEO Exclusive)',
+                  acc: 'Granted',
                   del: 'Full Delete Access',
                   assign: 'Granted',
                   proj: 'Create, Edit, Delete',
@@ -519,7 +519,7 @@ export const SettingsView: React.FC = () => {
                 },
                 {
                   role: 'ADMIN (COO / CFO)',
-                  acc: 'Restricted (CEO Only)',
+                  acc: 'Granted (email + password)',
                   del: 'Granted (Can Delete)',
                   assign: 'Restricted',
                   proj: 'Create, Edit, Delete, Complete',
@@ -528,7 +528,7 @@ export const SettingsView: React.FC = () => {
                 },
                 {
                   role: 'USER (Developer / Intern)',
-                  acc: 'Restricted (CEO Only)',
+                  acc: 'Restricted',
                   del: 'Strictly Disabled (No Delete)',
                   assign: 'Restricted',
                   proj: 'View & Contribute',
@@ -539,7 +539,7 @@ export const SettingsView: React.FC = () => {
                 <tr key={idx} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
                   <td style={{ padding: '0.6rem 0.75rem', fontWeight: 700 }}>{row.role}</td>
                   <td style={{ padding: '0.6rem 0.75rem' }}>
-                    <span className={`badge ${row.isCritical ? 'badge-healthy' : 'badge-neutral'}`}>
+                    <span className={`badge ${row.isCritical || row.isWarning ? 'badge-healthy' : 'badge-neutral'}`}>
                       {row.acc}
                     </span>
                   </td>
