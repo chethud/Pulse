@@ -71,7 +71,7 @@ export const DashboardView: React.FC = () => {
   } = useApp();
 
   // KPI calculations
-  const activeProjects = projects.filter((p) => p.status === 'Active' || p.status === 'In Progress');
+  const activeProjects = projects.filter((p) => p.status === 'Active' || p.status === 'Planning');
   const overdueTasks = tasks.filter((t) => {
     if (t.status === 'Done' || !t.dueDate) return false;
     const due = new Date(t.dueDate);
