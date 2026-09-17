@@ -132,6 +132,7 @@ interface AppContextType {
   canCreateAccount: boolean;
   canManageRoles: boolean;
   canManageProfilePhotos: boolean;
+  canManageProjects: boolean;
   isSuperAdmin: boolean;
   isAdmin: boolean;
   isPhotoAdmin: boolean;
@@ -335,6 +336,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const canDelete = isSuperAdmin || isAdmin;
   const canCreateAccount = isSuperAdmin;
   const canManageRoles = false; // Roles are fixed: Tejas = Super Admin, Harshith = Admin
+  const canManageProjects = isSuperAdmin || isAdmin; // Super Admin + Admin: create/edit/complete projects & modules
   const isPhotoAdmin =
     currentUser.role === 'PHOTO_ADMIN' ||
     currentUser.email.toLowerCase() === 'photo@gmail.com';
@@ -906,8 +908,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const updateProject = (projectId: string, updates: Partial<Project>) => {
-    if (updates.status === 'Completed' && !isSuperAdmin) {
-      console.warn('Unauthorized: Only CEO (Super Admin) is authorized to mark a project as Completed.');
+    if (updates.status === 'Completed' && !canManageProjects) {
+      console.warn('Unauthorized: Only Super Admin or Admin can mark a project as Completed.');
       return;
     }
     const updated = projects.map((p) => (p.id === projectId ? { ...p, ...updates } : p));
@@ -1273,6 +1275,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         canCreateAccount,
         canManageRoles,
         canManageProfilePhotos,
+        canManageProjects,
         isSuperAdmin,
         isAdmin,
         isPhotoAdmin,

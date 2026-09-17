@@ -264,12 +264,12 @@ export const SettingsView: React.FC = () => {
               <span style={{ fontWeight: 700, fontSize: '0.8rem', color: 'var(--status-warning)' }}>
                 ADMIN (COO / CFO)
               </span>
-              <span className="badge badge-warning" style={{ fontSize: '0.65rem' }}>Can Delete</span>
+              <span className="badge badge-warning" style={{ fontSize: '0.65rem' }}>Full Access</span>
             </div>
             <p style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.4 }}>
-              • Delete privileges for projects, modules & tasks<br />
-              • Manage deliverables & team operations<br />
-              • <strong>Cannot</strong> create accounts or change roles
+              • Create, edit, delete & complete projects<br />
+              • Add modules, manage deliverables & team operations<br />
+              • <strong>Cannot</strong> create accounts or change roles (Super Admin only)
             </p>
           </div>
 
@@ -522,7 +522,7 @@ export const SettingsView: React.FC = () => {
                   acc: 'Restricted (CEO Only)',
                   del: 'Granted (Can Delete)',
                   assign: 'Restricted',
-                  proj: 'Edit, Manage, Delete',
+                  proj: 'Create, Edit, Delete, Complete',
                   tasks: 'Full Access & Delete',
                   isWarning: true,
                 },

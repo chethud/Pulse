@@ -22,6 +22,42 @@ function isDeadlineWithin15Days(dateStr: string): boolean {
   return diffDays <= 15;
 }
 
+/** Max billable projects per person — each slot is worth 100/3 of utilization. */
+const MAX_BILLABLE_PROJECTS = 3;
+
+function projectProgress(p: { progress?: number; status?: string }): number {
+  if (p.status === 'Completed') return 100;
+  const value = typeof p.progress === 'number' ? p.progress : 0;
+  return Math.max(0, Math.min(100, value));
+}
+
+/**
+ * Per-person utilization from project progress (not hours).
+ * Each of up to 3 billable projects contributes progress/3.
+ * Example: 1 project at 90% → 90/3 = 30%. Three projects at 20/80/40 → 46.7%.
+ */
+function personUtilization(
+  userId: string,
+  projects: { id: string; status: string; progress: number; projectManagerId: string; teamMemberIds: string[] }[]
+): { pct: number; projectCount: number; atCapacity: boolean } {
+  const assigned = projects
+    .filter(
+      (p) =>
+        p.status !== 'Archived' &&
+        (p.teamMemberIds?.includes(userId) || p.projectManagerId === userId)
+    )
+    .sort((a, b) => projectProgress(b) - projectProgress(a))
+    .slice(0, MAX_BILLABLE_PROJECTS);
+
+  const progressSum = assigned.reduce((sum, p) => sum + projectProgress(p), 0);
+  const pct = Math.round(progressSum / MAX_BILLABLE_PROJECTS);
+  return {
+    pct: Math.max(0, Math.min(100, pct)),
+    projectCount: assigned.length,
+    atCapacity: assigned.length >= MAX_BILLABLE_PROJECTS,
+  };
+}
+
 export const DashboardView: React.FC = () => {
   const {
     projects,
@@ -35,16 +71,25 @@ export const DashboardView: React.FC = () => {
   } = useApp();
 
   // KPI calculations
-  const activeProjects = projects.filter((p) => p.status === 'Active');
+  const activeProjects = projects.filter((p) => p.status === 'Active' || p.status === 'In Progress');
   const overdueTasks = tasks.filter((t) => {
-    return t.status !== 'Done' && new Date(t.dueDate) < new Date('2025-03-01');
+    if (t.status === 'Done' || !t.dueDate) return false;
+    const due = new Date(t.dueDate);
+    if (Number.isNaN(due.getTime())) return false;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    due.setHours(0, 0, 0, 0);
+    return due < today;
   });
 
-  // Team capacity
+  // Team utilization: average of each person's progress-weighted billable slots (max 3 projects)
   const teamMembers = users.filter((u) => u.role !== 'CLIENT' && u.role !== 'PHOTO_ADMIN');
-  const totalCapacity = teamMembers.length * 40;
-  const assignedHours = tasks.reduce((sum, t) => sum + (t.status !== 'Done' ? t.estimatedHours : 0), 0);
-  const utilizationPct = Math.min(96, Math.round((assignedHours / totalCapacity) * 100));
+  const memberUtils = teamMembers.map((u) => personUtilization(u.id, projects));
+  const utilizationPct =
+    teamMembers.length === 0
+      ? 0
+      : Math.round(memberUtils.reduce((sum, m) => sum + m.pct, 0) / teamMembers.length);
+  const membersAtCapacity = memberUtils.filter((m) => m.atCapacity).length;
 
   return (
     <div
@@ -122,11 +167,27 @@ export const DashboardView: React.FC = () => {
           </div>
         </div>
 
-        <div className="kpi-strip-item">
+        <div
+          className="kpi-strip-item"
+          title={`Avg of each person’s project progress across ${MAX_BILLABLE_PROJECTS} billable slots (progress ÷ ${MAX_BILLABLE_PROJECTS}). ${membersAtCapacity} of ${teamMembers.length} at full ${MAX_BILLABLE_PROJECTS}-project cap.`}
+          style={{ cursor: 'default' }}
+        >
           <div style={{ fontSize: '0.6875rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
             Team Utilization
           </div>
-          <div style={{ fontSize: '1.35rem', fontWeight: 700, color: 'var(--text-primary)', marginTop: '2px' }}>
+          <div
+            style={{
+              fontSize: '1.35rem',
+              fontWeight: 700,
+              color:
+                utilizationPct >= 90
+                  ? 'var(--status-danger)'
+                  : utilizationPct >= 70
+                  ? 'var(--status-warning)'
+                  : 'var(--text-primary)',
+              marginTop: '2px',
+            }}
+          >
             {utilizationPct}%
           </div>
         </div>

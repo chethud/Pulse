@@ -32,7 +32,7 @@ export const ProjectsListView: React.FC = () => {
     projects,
     clients,
     canDelete,
-    isSuperAdmin,
+    canManageProjects,
     setSelectedProjectId,
     setQuickCreateOpen,
     deleteProject,
@@ -90,14 +90,14 @@ export const ProjectsListView: React.FC = () => {
 
         <button
           onClick={() => {
-            if (isSuperAdmin) {
+            if (canManageProjects) {
               setQuickCreateOpen(true, 'project');
             } else {
               setShowCeoRequiredModal(true);
             }
           }}
           className="btn btn-primary btn-sm"
-          title={isSuperAdmin ? 'Create New Project' : 'Only CEO (Super Admin) can create projects'}
+          title={canManageProjects ? 'Create New Project' : 'Only Super Admin or Admin can create projects'}
         >
           <Plus size={14} />
           <span>Create Project</span>
@@ -252,7 +252,7 @@ export const ProjectsListView: React.FC = () => {
                   <td style={{ textAlign: 'center' }}>
                     <div className="flex items-center justify-center gap-1.5" onClick={(e) => e.stopPropagation()}>
                       {proj.status !== 'Completed' ? (
-                        isSuperAdmin ? (
+                        canManageProjects ? (
                           <button
                             onClick={() => updateProject(proj.id, { status: 'Completed', progress: 100 })}
                             className="btn btn-secondary btn-sm"
@@ -268,14 +268,14 @@ export const ProjectsListView: React.FC = () => {
                               background: 'rgba(56, 189, 248, 0.08)',
                               fontWeight: 600,
                             }}
-                            title="Mark project Completed (CEO / Super Admin authority)"
+                            title="Mark project Completed (Super Admin / Admin)"
                           >
                             <CheckCircle2 size={11} style={{ color: '#38bdf8' }} />
                             <span>Complete</span>
                           </button>
                         ) : null
                       ) : (
-                        isSuperAdmin ? (
+                        canManageProjects ? (
                           <button
                             onClick={() => updateProject(proj.id, { status: 'Active' })}
                             className="btn btn-secondary btn-sm"
@@ -307,7 +307,7 @@ export const ProjectsListView: React.FC = () => {
                               fontSize: '0.68rem',
                               padding: '2px 8px',
                             }}
-                            title="Project is Completed (Closed by CEO)"
+                            title="Project is Completed"
                           >
                             ✓ Done
                           </span>
@@ -402,7 +402,7 @@ export const ProjectsListView: React.FC = () => {
         </div>
       )}
 
-      {/* CEO Authorization Required Modal */}
+      {/* Authorization Required Modal */}
       {showCeoRequiredModal && (
         <div className="modal-backdrop animate-fade-in" onClick={() => setShowCeoRequiredModal(false)}>
           <div
@@ -413,7 +413,7 @@ export const ProjectsListView: React.FC = () => {
             <div className="flex items-center justify-between" style={{ marginBottom: '1rem' }}>
               <div className="flex items-center gap-2" style={{ color: 'var(--status-warning)' }}>
                 <ShieldAlert size={20} />
-                <h2 style={{ fontSize: '1.05rem', fontWeight: 700 }}>CEO Authorization Required</h2>
+                <h2 style={{ fontSize: '1.05rem', fontWeight: 700 }}>Authorization Required</h2>
               </div>
               <button onClick={() => setShowCeoRequiredModal(false)} className="btn btn-ghost btn-icon">
                 <X size={16} />
@@ -421,13 +421,13 @@ export const ProjectsListView: React.FC = () => {
             </div>
 
             <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-              Only <strong>CEO (T Jois)</strong> is authorized to create, delete, or mark projects as completed in the Admark Digitals workspace. Please sign in with the CEO account credentials to perform this action.
+              Only <strong>Super Admin</strong> or <strong>Admin</strong> can create projects or change project completion status. Sign in with an Admin account to continue.
             </p>
 
             <div style={{ marginTop: '1rem', padding: '0.75rem', background: 'var(--bg-app)', borderRadius: '6px', fontSize: '0.8rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
               <div>
-                <div style={{ fontWeight: 600 }}>CEO Account Required:</div>
-                <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>tjois@admarkdigitals.com</div>
+                <div style={{ fontWeight: 600 }}>Admin access required</div>
+                <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Super Admin or Admin role</div>
               </div>
               <button
                 onClick={() => {

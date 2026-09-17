@@ -30,10 +30,10 @@ export const QuickCreateModal: React.FC = () => {
     addModule,
     addProject,
     currentUser,
+    canManageProjects,
     logout,
   } = useApp();
 
-  const isCEO = currentUser.title === 'CEO' || currentUser.name.toLowerCase().includes('jois');
   const projectOnly = quickCreateMode === 'project';
   const showTabs = quickCreateMode === 'any';
 
@@ -96,7 +96,7 @@ export const QuickCreateModal: React.FC = () => {
 
   const handleCreateProject = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isCEO) return;
+    if (!canManageProjects) return;
     if (!projName.trim() || !projClientId) return;
 
     const code = projCode.trim() || projName.trim().slice(0, 3).toUpperCase() + '-APP';
@@ -347,9 +347,9 @@ export const QuickCreateModal: React.FC = () => {
 
           {activeTab === 'project' && (
             <form onSubmit={handleCreateProject} className="flex flex-col gap-4">
-              {!isCEO ? (
+              {!canManageProjects ? (
                 <div style={{ padding: '0.75rem 1rem', background: 'var(--status-warning-bg)', border: '1px solid rgba(245, 158, 11, 0.3)', borderRadius: '6px', fontSize: '0.8rem', color: 'var(--status-warning)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
-                  <span>Only CEO (T Jois) is authorized to create client projects.</span>
+                  <span>Only Super Admin or Admin can create client projects.</span>
                   <button
                     type="button"
                     onClick={() => {
@@ -364,7 +364,7 @@ export const QuickCreateModal: React.FC = () => {
                 </div>
               ) : (
                 <div style={{ padding: '0.5rem 0.85rem', background: 'rgba(34, 197, 94, 0.1)', border: '1px solid rgba(34, 197, 94, 0.3)', borderRadius: '6px', fontSize: '0.75rem', color: 'var(--status-healthy)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <span>✓ Authenticated as <strong>CEO (T Jois)</strong>. Project creation authorized.</span>
+                  <span>✓ Project creation authorized for Super Admin / Admin.</span>
                 </div>
               )}
               <div className="grid grid-cols-2 gap-3">
@@ -575,10 +575,10 @@ export const QuickCreateModal: React.FC = () => {
                 </button>
                 <button
                   type="submit"
-                  disabled={!isCEO}
+                  disabled={!canManageProjects}
                   className="btn btn-primary"
-                  style={{ opacity: !isCEO ? 0.5 : 1, cursor: !isCEO ? 'not-allowed' : 'pointer' }}
-                  title={!isCEO ? 'Only CEO T Jois can launch projects' : undefined}
+                  style={{ opacity: !canManageProjects ? 0.5 : 1, cursor: !canManageProjects ? 'not-allowed' : 'pointer' }}
+                  title={!canManageProjects ? 'Only Super Admin or Admin can launch projects' : undefined}
                 >
                   Launch Project
                 </button>

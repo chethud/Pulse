@@ -103,13 +103,13 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
     updateModule,
     deleteModule,
     canDelete,
-    isSuperAdmin,
+    canManageProjects,
     logout,
     setCurrentView,
     setSelectedProjectId,
   } = useApp();
 
-  const isCEO = isSuperAdmin;
+  const isCEO = canManageProjects;
 
   const [showDeleteProjectModal, setShowDeleteProjectModal] = useState(false);
   const [showCeoRequiredModal, setShowCeoRequiredModal] = useState(false);
@@ -245,7 +245,7 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
 
   const handleSaveProjectSettings = (e: React.FormEvent) => {
     e.preventDefault();
-    if (settingsStatus === 'Completed' && !isSuperAdmin) {
+    if (settingsStatus === 'Completed' && !canManageProjects) {
       setShowCeoRequiredModal(true);
       return;
     }
@@ -1376,18 +1376,18 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
 
               <button
                 onClick={() => {
-                  if (isSuperAdmin) {
+                  if (canManageProjects) {
                     setShowAddModuleModal(true);
                   } else {
                     setShowCeoRequiredModal(true);
                   }
                 }}
                 className="btn btn-primary btn-sm"
-                title={isSuperAdmin ? 'Add New Module' : 'Only CEO (Super Admin) is authorized to add modules'}
+                title={canManageProjects ? 'Add New Module' : 'Only Super Admin or Admin can add modules'}
               >
                 <Plus size={14} />
                 <span>Add Module</span>
-                {!isSuperAdmin && <span style={{ fontSize: '0.65rem', opacity: 0.8, marginLeft: '2px' }}>(CEO only)</span>}
+                {!canManageProjects && <span style={{ fontSize: '0.65rem', opacity: 0.8, marginLeft: '2px' }}>(Admin only)</span>}
               </button>
             </div>
 
@@ -1445,7 +1445,7 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                 </p>
                 <button
                   onClick={() => {
-                    if (isSuperAdmin) {
+                    if (canManageProjects) {
                       setShowAddModuleModal(true);
                     } else {
                       setShowCeoRequiredModal(true);
@@ -1456,7 +1456,7 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                 >
                   <Plus size={14} />
                   <span>Add First Module</span>
-                  {!isSuperAdmin && <span style={{ fontSize: '0.65rem', opacity: 0.8, marginLeft: '2px' }}>(CEO only)</span>}
+                  {!canManageProjects && <span style={{ fontSize: '0.65rem', opacity: 0.8, marginLeft: '2px' }}>(Admin only)</span>}
                 </button>
               </div>
             ) : (
@@ -2550,7 +2550,7 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                   {/* One-click Project Complete Button */}
                   <div className="flex items-center gap-2">
                     {project.status !== 'Completed' ? (
-                      isSuperAdmin ? (
+                      canManageProjects ? (
                         <button
                           type="button"
                           onClick={() => {
@@ -2570,7 +2570,7 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                             fontSize: '0.85rem',
                             padding: '0.5rem 1rem',
                           }}
-                          title="Mark project as 100% Completed (CEO / Superadmin Authority)"
+                          title="Mark project as 100% Completed (Super Admin / Admin)"
                         >
                           <CheckCircle2 size={16} />
                           <span>Mark Project as Completed</span>
@@ -2589,14 +2589,14 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                             fontSize: '0.78rem',
                             fontWeight: 600,
                           }}
-                          title="Only CEO (Super Admin) is authorized to mark a project as Completed"
+                          title="Only Super Admin or Admin can mark a project as Completed"
                         >
                           <Lock size={13} />
-                          <span>Complete Project: Restricted to CEO (Superadmin)</span>
+                          <span>Complete Project: Restricted to Super Admin / Admin</span>
                         </div>
                       )
                     ) : (
-                      isSuperAdmin ? (
+                      canManageProjects ? (
                         <button
                           type="button"
                           onClick={() => {
@@ -2615,7 +2615,7 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                             fontSize: '0.85rem',
                             padding: '0.5rem 1rem',
                           }}
-                          title="Reopen this project as Active (CEO Authority)"
+                          title="Reopen this project as Active"
                         >
                           <span>Reopen Project (Set to Active)</span>
                         </button>
@@ -2631,7 +2631,7 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                             fontSize: '0.8rem',
                           }}
                         >
-                          ✓ Project Completed (Closed by CEO)
+                          ✓ Project Completed
                         </span>
                       )
                     )}
@@ -2657,7 +2657,7 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                       value={settingsStatus}
                       onChange={(e) => {
                         const next = e.target.value as any;
-                        if (next === 'Completed' && !isSuperAdmin) {
+                        if (next === 'Completed' && !canManageProjects) {
                           setShowCeoRequiredModal(true);
                           return;
                         }
@@ -2678,11 +2678,11 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                       <option value="Planning">Planning</option>
                       <option value="In Progress">In Progress</option>
                       <option value="On Hold">On Hold</option>
-                      {isSuperAdmin ? (
+                      {canManageProjects ? (
                         <option value="Completed">Completed ✓</option>
                       ) : (
-                        <option value="Completed" disabled title="Only CEO (Super Admin) can complete projects">
-                          Completed (CEO / Superadmin Only)
+                        <option value="Completed" disabled title="Only Super Admin or Admin can complete projects">
+                          Completed (Admin Only)
                         </option>
                       )}
                       <option value="Deployed">Deployed / Live</option>
@@ -3691,7 +3691,7 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
           </div>
         )}
 
-        {/* CEO Authorization Required Modal */}
+        {/* Authorization Required Modal */}
         {showCeoRequiredModal && (
           <div className="modal-backdrop animate-fade-in" onClick={() => setShowCeoRequiredModal(false)}>
             <div
@@ -3702,7 +3702,7 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
               <div className="flex items-center justify-between" style={{ marginBottom: '1rem' }}>
                 <div className="flex items-center gap-2" style={{ color: 'var(--status-warning)' }}>
                   <ShieldAlert size={20} />
-                  <h2 style={{ fontSize: '1.05rem', fontWeight: 700 }}>CEO Authorization Required</h2>
+                  <h2 style={{ fontSize: '1.05rem', fontWeight: 700 }}>Authorization Required</h2>
                 </div>
                 <button onClick={() => setShowCeoRequiredModal(false)} className="btn btn-ghost btn-icon">
                   <X size={16} />
@@ -3710,13 +3710,13 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
               </div>
 
               <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                Only <strong>CEO (T Jois)</strong> is authorized to create/delete projects, mark projects as completed, and add modules in the Admark Digitals workspace. Please sign in with the CEO account credentials to perform this action.
+                Only <strong>Super Admin</strong> or <strong>Admin</strong> can create/delete projects, mark projects as completed, and add modules. Sign in with an Admin account to continue.
               </p>
 
               <div style={{ marginTop: '1rem', padding: '0.75rem', background: 'var(--bg-app)', borderRadius: '6px', fontSize: '0.8rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
                 <div>
-                  <div style={{ fontWeight: 600 }}>CEO Account Required:</div>
-                  <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>tjois@admarkdigitals.com</div>
+                  <div style={{ fontWeight: 600 }}>Admin access required</div>
+                  <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Super Admin or Admin role</div>
                 </div>
                 <button
                   onClick={() => {
