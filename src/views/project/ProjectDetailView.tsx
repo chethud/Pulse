@@ -215,6 +215,9 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
   const [settingsCode, setSettingsCode] = useState(project.code);
   const [settingsDesc, setSettingsDesc] = useState(project.description);
   const [settingsStatus, setSettingsStatus] = useState(project.status);
+  const [settingsProgress, setSettingsProgress] = useState(
+    typeof project.progress === 'number' ? project.progress : 0
+  );
   const [settingsPriority, setSettingsPriority] = useState(project.priority);
   const [settingsDeadline, setSettingsDeadline] = useState(project.deadline);
   const [settingsTech, setSettingsTech] = useState(project.techStack?.join(', ') || '');
@@ -238,6 +241,7 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
     setSettingsCode(project.code);
     setSettingsDesc(project.description);
     setSettingsStatus(project.status);
+    setSettingsProgress(typeof project.progress === 'number' ? project.progress : 0);
     setSettingsPriority(project.priority);
     setSettingsDeadline(project.deadline);
     setSettingsTech(project.techStack?.join(', ') || '');
@@ -267,7 +271,7 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
       priority: settingsPriority,
       deadline: settingsDeadline,
       techStack: settingsTech.split(',').map((t) => t.trim()).filter(Boolean),
-      progress: settingsStatus === 'Completed' ? 100 : project.progress,
+      progress: settingsStatus === 'Completed' ? 100 : Math.max(0, Math.min(100, Number(settingsProgress) || 0)),
     });
     setSettingsSavedNotice(true);
     setTimeout(() => setSettingsSavedNotice(false), 3500);
@@ -2556,6 +2560,7 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                           onClick={() => {
                             updateProject(project.id, { status: 'Completed', progress: 100 });
                             setSettingsStatus('Completed');
+                            setSettingsProgress(100);
                             setSettingsSavedNotice(true);
                             setTimeout(() => setSettingsSavedNotice(false), 3500);
                           }}
@@ -2662,6 +2667,7 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                           return;
                         }
                         setSettingsStatus(next);
+                        if (next === 'Completed') setSettingsProgress(100);
                         updateProject(project.id, {
                           status: next,
                           progress: next === 'Completed' ? 100 : project.progress,
@@ -2696,23 +2702,56 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ currentTab
                       Overall Delivery Progress
                     </label>
                     <div className="flex items-center gap-3" style={{ marginTop: '6px' }}>
-                      <div className="progress-bar-track" style={{ flex: 1, margin: 0, height: '8px' }}>
-                        <div
-                          className="progress-bar-fill"
-                          style={{
-                            width: `${project.progress}%`,
-                            backgroundColor: project.progress === 100 ? 'var(--status-healthy)' : 'var(--brand-crimson)',
-                          }}
-                        />
-                      </div>
-                      <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)', minWidth: '42px' }}>
-                        {project.progress}%
-                      </span>
+                      <input
+                        type="range"
+                        min={0}
+                        max={100}
+                        step={1}
+                        value={settingsProgress}
+                        disabled={!canManageProjects}
+                        onChange={(e) => {
+                          const next = Number(e.target.value);
+                          setSettingsProgress(next);
+                          if (next < 100 && settingsStatus === 'Completed') {
+                            setSettingsStatus('Active');
+                          }
+                        }}
+                        style={{ flex: 1, accentColor: 'var(--brand-crimson)', cursor: canManageProjects ? 'pointer' : 'not-allowed' }}
+                        title={canManageProjects ? 'Drag to set project progress %' : 'Only Admin / Super Admin can edit progress'}
+                      />
+                      <input
+                        type="number"
+                        min={0}
+                        max={100}
+                        value={settingsProgress}
+                        disabled={!canManageProjects}
+                        onChange={(e) => {
+                          const raw = Number(e.target.value);
+                          const next = Number.isFinite(raw) ? Math.max(0, Math.min(100, raw)) : 0;
+                          setSettingsProgress(next);
+                          if (next < 100 && settingsStatus === 'Completed') {
+                            setSettingsStatus('Active');
+                          }
+                        }}
+                        className="input-field"
+                        style={{ width: '72px', textAlign: 'center', fontWeight: 700, padding: '0.35rem 0.4rem' }}
+                        title={canManageProjects ? 'Type progress %' : 'Only Admin / Super Admin can edit progress'}
+                      />
+                      <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)', minWidth: '18px' }}>%</span>
+                    </div>
+                    <div className="progress-bar-track" style={{ marginTop: '8px', height: '6px' }}>
+                      <div
+                        className="progress-bar-fill"
+                        style={{
+                          width: `${settingsProgress}%`,
+                          backgroundColor: settingsProgress === 100 ? 'var(--status-healthy)' : 'var(--brand-crimson)',
+                        }}
+                      />
                     </div>
                     <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '6px' }}>
-                      {projectModules.length > 0
-                        ? `Calculated dynamically from the average of ${projectModules.length} operational modules.`
-                        : 'Calculated from delivery progress.'}
+                      {canManageProjects
+                        ? 'Editable — save project settings to apply. Setting below 100% reopens Completed projects to Active.'
+                        : 'Only Admin / Super Admin can change delivery progress.'}
                     </div>
                   </div>
                 </div>

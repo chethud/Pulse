@@ -35,6 +35,7 @@ CREATE TABLE IF NOT EXISTS public.users (
     client_id TEXT,
     department TEXT,
     capacity_hours_per_week NUMERIC DEFAULT 40,
+    password TEXT DEFAULT 'password123',
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -164,6 +165,10 @@ ALTER TABLE public.milestones ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.change_requests ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.activities ENABLE ROW LEVEL SECURITY;
 
+-- Backfill password for Admin/SuperAdmin credential sync
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS password TEXT DEFAULT 'password123';
+UPDATE public.users SET password = 'password123' WHERE password IS NULL;
+
 -- 10. CREATE OPEN ACCESS POLICIES FOR INTERNAL ACCESS
 DROP POLICY IF EXISTS "Public access clients" ON public.clients;
 CREATE POLICY "Public access clients" ON public.clients FOR ALL USING (true) WITH CHECK (true);
@@ -223,5 +228,12 @@ BEGIN
         WHERE pubname = 'supabase_realtime' AND tablename = 'tasks'
     ) THEN
         ALTER PUBLICATION supabase_realtime ADD TABLE public.tasks;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_publication_tables 
+        WHERE pubname = 'supabase_realtime' AND tablename = 'users'
+    ) THEN
+        ALTER PUBLICATION supabase_realtime ADD TABLE public.users;
     END IF;
 END $$;

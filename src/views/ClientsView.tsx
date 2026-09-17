@@ -183,7 +183,14 @@ export const ClientsView: React.FC = () => {
                     </td>
                     <td>
                       <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
-                        {clientProjects.length} active
+                        {(() => {
+                          const active = clientProjects.filter((p) => p.status !== 'Completed' && p.status !== 'Archived').length;
+                          const done = clientProjects.filter((p) => p.status === 'Completed').length;
+                          if (clientProjects.length === 0) return '0 projects';
+                          if (done > 0 && active === 0) return `${done} completed`;
+                          if (done > 0) return `${active} active · ${done} done`;
+                          return `${active} active`;
+                        })()}
                       </span>
                     </td>
                     <td>
@@ -306,10 +313,10 @@ export const ClientsView: React.FC = () => {
               </div>
             </div>
 
-            {/* Active Projects */}
+            {/* Client Projects */}
             <div>
               <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.5rem', letterSpacing: '0.04em' }}>
-                Active Projects Under Delivery
+                Projects
               </div>
               {selectedProjects.length === 0 ? (
                 <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', padding: '0.5rem 0' }}>
@@ -342,9 +349,14 @@ export const ClientsView: React.FC = () => {
                           <span style={{ fontSize: '0.8125rem', fontWeight: 600 }} className="truncate">
                             {p.name}
                           </span>
+                          {p.status === 'Completed' && (
+                            <span className="badge badge-healthy" style={{ fontSize: '0.62rem', fontWeight: 700, flexShrink: 0 }}>
+                              Done
+                            </span>
+                          )}
                         </div>
                         <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-                          Progress: {p.progress}%
+                          {p.status === 'Completed' ? 'Completed' : `Progress: ${p.progress}%`}
                         </div>
                       </div>
                       <ExternalLink size={14} color="var(--text-muted)" style={{ flexShrink: 0 }} />

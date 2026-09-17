@@ -48,6 +48,7 @@ export const userToDb = (u: User) => ({
   client_id: u.clientId || null,
   department: u.department || null,
   capacity_hours_per_week: u.capacityHoursPerWeek || 40,
+  password: u.password || 'password123',
 });
 
 // Convert DB User Row to TS User
@@ -61,6 +62,7 @@ export const dbToUser = (row: any): User => ({
   clientId: row.client_id,
   department: row.department || '',
   capacityHoursPerWeek: row.capacity_hours_per_week || 40,
+  password: row.password || undefined,
 });
 
 // Convert TS Project to DB Project Row
@@ -230,6 +232,17 @@ export async function syncEntityToSupabase(table: string, payload: any) {
   try {
     const { error } = await supabase.from(table).upsert(payload, { onConflict: 'id' });
     if (error) {
+      // Older DBs may not have users.password yet — retry without it and warn
+      if (table === 'users' && Object.prototype.hasOwnProperty.call(payload, 'password')) {
+        const { password: _password, ...withoutPassword } = payload;
+        const retry = await supabase.from(table).upsert(withoutPassword, { onConflict: 'id' });
+        if (!retry.error) {
+          console.warn(
+            '[Supabase Sync] users.password column missing. Run: ALTER TABLE public.users ADD COLUMN IF NOT EXISTS password TEXT DEFAULT \'password123\';'
+          );
+          return;
+        }
+      }
       console.warn(`[Supabase Sync] Error syncing to ${table}:`, error.message);
     }
   } catch (err) {

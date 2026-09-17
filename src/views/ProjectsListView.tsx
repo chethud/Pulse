@@ -27,6 +27,11 @@ function isDeadlineWithin15Days(dateStr: string): boolean {
   return diffDays <= 15;
 }
 
+function isProjectCompleted(p: { status?: string; progress?: number }): boolean {
+  // Status is the source of truth so Admin can reopen Completed → Active
+  return p.status === 'Completed';
+}
+
 export const ProjectsListView: React.FC = () => {
   const {
     projects,
@@ -47,10 +52,17 @@ export const ProjectsListView: React.FC = () => {
   const [healthFilter, setHealthFilter] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState('');
 
+  const completedCount = projects.filter(isProjectCompleted).length;
+
   const filteredProjects = projects
     .filter((p) => {
-      if (statusFilter !== 'All' && p.status !== statusFilter) return false;
-      if (healthFilter !== 'All' && p.health.overall !== healthFilter) return false;
+      if (statusFilter === 'Completed') {
+        if (!isProjectCompleted(p)) return false;
+      } else if (statusFilter !== 'All') {
+        // Keep completed projects out of Active/Planning/On Hold tabs only
+        if (isProjectCompleted(p) || p.status !== statusFilter) return false;
+      }
+      if (healthFilter !== 'All' && p.health?.overall !== healthFilter) return false;
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
         return p.name.toLowerCase().includes(q) || p.code.toLowerCase().includes(q);
@@ -58,11 +70,14 @@ export const ProjectsListView: React.FC = () => {
       return true;
     })
     .sort((a, b) => {
-      const aCompleted = a.status === 'Completed' || a.progress === 100;
-      const bCompleted = b.status === 'Completed' || b.progress === 100;
-      if (aCompleted && !bCompleted) return 1;
-      if (!aCompleted && bCompleted) return -1;
-      return 0;
+      // All: show active work first, then completed (still visible)
+      if (statusFilter === 'All') {
+        const aDone = isProjectCompleted(a);
+        const bDone = isProjectCompleted(b);
+        if (aDone && !bDone) return 1;
+        if (!aDone && bDone) return -1;
+      }
+      return a.name.localeCompare(b.name);
     });
 
   return (
@@ -84,7 +99,7 @@ export const ProjectsListView: React.FC = () => {
             Projects
           </h1>
           <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
-            Active client software delivery projects under engineering, testing, and deployment.
+            All delivery projects including active and completed work.
           </p>
         </div>
 
@@ -107,14 +122,18 @@ export const ProjectsListView: React.FC = () => {
       {/* Filter and Search Controls */}
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-1.5">
-          {['All', 'Active', 'Planning', 'On Hold', 'Completed'].map((tab) => (
+          {(['All', 'Active', 'Planning', 'On Hold', 'Completed'] as const).map((tab) => (
             <button
               key={tab}
               onClick={() => setStatusFilter(tab)}
               className={`btn btn-sm ${statusFilter === tab ? 'btn-secondary' : 'btn-ghost'}`}
               style={{ fontSize: '0.75rem' }}
             >
-              {tab}
+              {tab === 'All'
+                ? `All (${projects.length})`
+                : tab === 'Completed'
+                ? `Completed (${completedCount})`
+                : tab}
             </button>
           ))}
 
@@ -150,25 +169,40 @@ export const ProjectsListView: React.FC = () => {
         <table className="admark-table">
           <thead>
             <tr>
-              <th style={{ width: '30%' }}>Project</th>
-              <th style={{ width: '20%' }}>Client</th>
+              <th style={{ width: '26%' }}>Project</th>
+              <th style={{ width: '18%' }}>Client</th>
+              <th style={{ width: '12%' }}>Status</th>
               <th style={{ width: '14%' }}>Progress</th>
               <th style={{ width: '12%' }}>Health</th>
-              <th style={{ width: '12%', textAlign: 'right' }}>Deadline</th>
+              <th style={{ width: '10%', textAlign: 'right' }}>Deadline</th>
               <th style={{ width: '12%', textAlign: 'center' }}>Actions</th>
             </tr>
           </thead>
           <tbody>
+            {filteredProjects.length === 0 ? (
+              <tr>
+                <td colSpan={7} style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                  {statusFilter === 'Completed'
+                    ? 'No completed projects yet. Mark a project as Completed to see it here.'
+                    : 'No projects match this filter.'}
+                </td>
+              </tr>
+            ) : null}
             {filteredProjects.map((proj) => {
               const client = clients.find((c) => c.id === proj.clientId);
+              const completed = isProjectCompleted(proj);
               const deadlineUrgent =
-                proj.status !== 'Completed' && isDeadlineWithin15Days(proj.deadline);
+                !completed && isDeadlineWithin15Days(proj.deadline);
 
               return (
                 <tr
                   key={proj.id}
                   onClick={() => setSelectedProjectId(proj.id)}
-                  style={{ cursor: 'pointer' }}
+                  style={{
+                    cursor: 'pointer',
+                    opacity: completed ? 0.92 : 1,
+                    background: completed ? 'rgba(16, 185, 129, 0.04)' : undefined,
+                  }}
                 >
                   <td>
                     <div className="flex items-center gap-2.5">
@@ -201,18 +235,28 @@ export const ProjectsListView: React.FC = () => {
                   </td>
 
                   <td>
+                    <span
+                      className={`badge ${completed ? 'badge-healthy' : 'badge-neutral'}`}
+                      style={{ fontSize: '0.68rem', fontWeight: 700 }}
+                    >
+                      {completed ? 'Completed' : proj.status}
+                    </span>
+                  </td>
+
+                  <td>
                     <div className="flex items-center gap-2">
                       <div className="progress-bar-track" style={{ flex: 1, height: '4px' }}>
                         <div
                           className="progress-bar-fill"
                           style={{
                             width: `${proj.progress}%`,
-                            backgroundColor:
-                              proj.health.overall === 'Healthy'
-                                ? 'var(--status-healthy)'
-                                : proj.health.overall === 'At Risk'
-                                ? 'var(--status-warning)'
-                                : 'var(--status-danger)',
+                            backgroundColor: completed
+                              ? 'var(--status-healthy)'
+                              : proj.health?.overall === 'Healthy'
+                              ? 'var(--status-healthy)'
+                              : proj.health?.overall === 'At Risk'
+                              ? 'var(--status-warning)'
+                              : 'var(--status-danger)',
                           }}
                         />
                       </div>
@@ -226,14 +270,14 @@ export const ProjectsListView: React.FC = () => {
                     <span className="status-indicator">
                       <span
                         className={`status-dot ${
-                          proj.health.overall === 'Healthy'
+                          proj.health?.overall === 'Healthy'
                             ? 'healthy'
-                            : proj.health.overall === 'At Risk'
+                            : proj.health?.overall === 'At Risk'
                             ? 'warning'
                             : 'danger'
                         }`}
                       />
-                      <span>{proj.health.overall}</span>
+                      <span>{proj.health?.overall || 'Healthy'}</span>
                     </span>
                   </td>
 
@@ -251,7 +295,7 @@ export const ProjectsListView: React.FC = () => {
 
                   <td style={{ textAlign: 'center' }}>
                     <div className="flex items-center justify-center gap-1.5" onClick={(e) => e.stopPropagation()}>
-                      {proj.status !== 'Completed' ? (
+                      {!completed ? (
                         canManageProjects ? (
                           <button
                             onClick={() => updateProject(proj.id, { status: 'Completed', progress: 100 })}
@@ -291,10 +335,10 @@ export const ProjectsListView: React.FC = () => {
                               borderColor: 'rgba(16, 185, 129, 0.5)',
                               fontWeight: 700,
                             }}
-                            title="Project is Completed (click to reopen as Active)"
+                            title="Revert to Active — reopen this completed project"
                           >
                             <CheckCircle2 size={11} style={{ color: '#34d399' }} />
-                            <span>✓ Done</span>
+                            <span>Reopen</span>
                           </button>
                         ) : (
                           <span

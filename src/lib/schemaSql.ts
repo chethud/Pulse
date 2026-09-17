@@ -35,6 +35,7 @@ CREATE TABLE IF NOT EXISTS public.users (
     client_id TEXT,
     department TEXT,
     capacity_hours_per_week NUMERIC DEFAULT 40,
+    password TEXT DEFAULT 'password123',
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -181,6 +182,9 @@ ALTER TABLE public.modules ENABLE ROW LEVEL SECURITY;
 -- Backfill phase column for existing databases
 ALTER TABLE public.modules ADD COLUMN IF NOT EXISTS phase TEXT DEFAULT 'Phase 1';
 UPDATE public.modules SET phase = 'Phase 1' WHERE phase IS NULL;
+-- Backfill password column so Admin/SuperAdmin account credentials sync to cloud
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS password TEXT DEFAULT 'password123';
+UPDATE public.users SET password = 'password123' WHERE password IS NULL;
 ALTER TABLE public.tasks ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.bugs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.milestones ENABLE ROW LEVEL SECURITY;
@@ -249,6 +253,13 @@ BEGIN
         WHERE pubname = 'supabase_realtime' AND tablename = 'tasks'
     ) THEN
         ALTER PUBLICATION supabase_realtime ADD TABLE public.tasks;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_publication_tables 
+        WHERE pubname = 'supabase_realtime' AND tablename = 'users'
+    ) THEN
+        ALTER PUBLICATION supabase_realtime ADD TABLE public.users;
     END IF;
 END $$;
 `;

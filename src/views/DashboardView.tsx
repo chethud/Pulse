@@ -221,11 +221,20 @@ export const DashboardView: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {projects.map((proj) => {
+              {[...projects]
+                .sort((a, b) => {
+                  const aDone = a.status === 'Completed' || a.progress === 100;
+                  const bDone = b.status === 'Completed' || b.progress === 100;
+                  if (aDone && !bDone) return 1;
+                  if (!aDone && bDone) return -1;
+                  return b.progress - a.progress;
+                })
+                .map((proj) => {
                 const client = clients.find((c) => c.id === proj.clientId);
                 const pm = users.find((u) => u.id === proj.projectManagerId);
+                const isDone = proj.status === 'Completed' || proj.progress === 100;
                 const deadlineUrgent =
-                  proj.status !== 'Completed' && isDeadlineWithin15Days(proj.deadline);
+                  !isDone && isDeadlineWithin15Days(proj.deadline);
 
                 return (
                   <tr
@@ -234,7 +243,11 @@ export const DashboardView: React.FC = () => {
                       setSelectedProjectId(proj.id);
                       setCurrentView('projects');
                     }}
-                    style={{ cursor: 'pointer' }}
+                    style={{
+                      cursor: 'pointer',
+                      opacity: isDone ? 0.72 : 1,
+                      background: isDone ? 'rgba(16, 185, 129, 0.04)' : undefined,
+                    }}
                   >
                     {/* Project Icon / Code & Name */}
                     <td>

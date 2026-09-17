@@ -181,7 +181,7 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // One-time load of live production clients and projects
-  const LIVE_DATA_TAG = 'pulse_pm_harshith_v10';
+  const LIVE_DATA_TAG = 'pulse_pm_harshith_v11';
   try {
     if (localStorage.getItem(LIVE_DATA_TAG) !== 'true') {
       localStorage.setItem('admark_clients', JSON.stringify(INITIAL_CLIENTS));
@@ -424,21 +424,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     normalizeModulesWithPhases(loadStored('modules', INITIAL_MODULES))
   );
 
-  // Dynamically compute project progress from module percentages
+  // Project progress: stored value is source of truth (editable in settings). Completed always shows 100.
   const computedProjects = React.useMemo(() => {
     return projects.map((p) => {
       if (p.status === 'Completed') {
         return { ...p, progress: 100 };
       }
-      const projMods = modules.filter((m) => m.projectId === p.id);
-      if (projMods.length > 0) {
-        const totalModProgress = projMods.reduce((sum, m) => sum + (typeof m.progress === 'number' ? m.progress : 0), 0);
-        const avgProgress = Math.round(totalModProgress / projMods.length);
-        return { ...p, progress: avgProgress };
-      }
-      return p;
+      const stored = typeof p.progress === 'number' ? Math.max(0, Math.min(100, p.progress)) : 0;
+      return { ...p, progress: stored };
     });
-  }, [projects, modules]);
+  }, [projects]);
 
   const [requirements, setRequirements] = useState<Requirement[]>(() => loadStored('requirements', INITIAL_REQUIREMENTS));
   const [tasks, setTasks] = useState<Task[]>(() => loadStored('tasks', INITIAL_TASKS));
@@ -513,18 +508,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       try {
         const { data: remoteUsers, error: usrErr } = await supabase.from('users').select('*');
         if (!usrErr && remoteUsers && remoteUsers.length > 0) {
-          const parsedUsers = ensurePhotoAdminUsers(remoteUsers.map(dbToUser));
+          const localUsers = ensurePhotoAdminUsers(loadStored('users', INITIAL_USERS));
+          const parsedUsers = ensurePhotoAdminUsers(
+            remoteUsers.map(dbToUser).map((u) => {
+              if (u.password) return u;
+              const local = localUsers.find(
+                (l) => l.id === u.id || l.email.toLowerCase() === u.email.toLowerCase()
+              );
+              return { ...u, password: local?.password || 'password123' };
+            })
+          );
           setUsers(parsedUsers);
           syncStorage('users', parsedUsers);
-          // Upsert Photo Admin locally-required account into cloud if missing
-          const photoAdmin = parsedUsers.find((u) => u.email.toLowerCase() === 'photo@gmail.com');
-          if (photoAdmin && !remoteUsers.some((r: { email?: string }) => (r.email || '').toLowerCase() === 'photo@gmail.com')) {
-            syncEntityToSupabase('users', userToDb(photoAdmin));
-          }
+          // Keep cloud credentials in sync (password column + Photo Admin)
+          parsedUsers.forEach((u) => syncEntityToSupabase('users', userToDb(u)));
         } else if (!usrErr && (!remoteUsers || remoteUsers.length === 0)) {
           const localUsers = ensurePhotoAdminUsers(loadStored('users', INITIAL_USERS));
           await bootstrapTableIfEmpty('users', localUsers, userToDb);
           setUsers(localUsers);
+          syncStorage('users', localUsers);
         }
       } catch (err) {
         console.warn('[Supabase Users Sync Error]', err);
@@ -699,11 +701,48 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       })
       .subscribe();
 
+    const userSub = supabase
+      .channel('public:users')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'users' }, (payload) => {
+        if (payload.eventType === 'INSERT') {
+          const newUser = dbToUser(payload.new);
+          setUsers((prev) => {
+            const withPwd = newUser.password
+              ? newUser
+              : { ...newUser, password: prev.find((u) => u.id === newUser.id)?.password || 'password123' };
+            const next = prev.some((u) => u.id === withPwd.id) ? prev : ensurePhotoAdminUsers([...prev, withPwd]);
+            syncStorage('users', next);
+            return next;
+          });
+        } else if (payload.eventType === 'UPDATE') {
+          const updatedUser = dbToUser(payload.new);
+          setUsers((prev) => {
+            const next = ensurePhotoAdminUsers(
+              prev.map((u) =>
+                u.id === updatedUser.id
+                  ? { ...updatedUser, password: updatedUser.password || u.password || 'password123' }
+                  : u
+              )
+            );
+            syncStorage('users', next);
+            return next;
+          });
+        } else if (payload.eventType === 'DELETE') {
+          setUsers((prev) => {
+            const next = ensurePhotoAdminUsers(prev.filter((u) => u.id !== (payload.old as any).id));
+            syncStorage('users', next);
+            return next;
+          });
+        }
+      })
+      .subscribe();
+
     return () => {
       supabase?.removeChannel(projectSub);
       supabase?.removeChannel(moduleSub);
       supabase?.removeChannel(clientSub);
       supabase?.removeChannel(taskSub);
+      supabase?.removeChannel(userSub);
     };
 
   }, []);
@@ -992,10 +1031,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         newUser.avatar ||
         'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
       capacityHoursPerWeek: newUser.capacityHoursPerWeek || 40,
+      password: newUser.password || 'password123',
     };
     const updated = [...users, user];
     setUsers(updated);
     syncStorage('users', updated);
+    syncEntityToSupabase('users', userToDb(user));
     return user;
   };
 
@@ -1030,6 +1071,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const updated = users.map((u) => (u.id === userId ? { ...u, role: newRole } : u));
     setUsers(updated);
     syncStorage('users', updated);
+    const next = updated.find((u) => u.id === userId);
+    if (next) syncEntityToSupabase('users', userToDb(next));
   };
 
   const updateUserProfile = (userId: string, updates: Partial<User>) => {
@@ -1049,6 +1092,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const updated = users.filter((u) => u.id !== userId);
     setUsers(updated);
     syncStorage('users', updated);
+    deleteEntityFromSupabase('users', userId);
   };
 
   const addMilestone = (mil: Omit<Milestone, 'id' | 'number' | 'progress' | 'isClientApproved'>) => {
